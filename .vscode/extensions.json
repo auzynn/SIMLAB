@@ -1,0 +1,34 @@
+{
+  // Daftar extension yang direkomendasikan untuk proyek ini.
+  // VSCode akan otomatis menawarkan instalasi saat folder ini dibuka pertama kali.
+  "recommendations": [
+    // ===== AI AGENT / "MANDOR" =====
+    "rooveterinaryinc.roo-cline",        // Roo Code — AI agent utama proyek ini
+
+    // ===== PHP / LARAVEL =====
+    "open-southeners.laravel-pint",      // Formatter resmi Laravel Pint
+    "bmewburn.vscode-intelephense-client", // Intelligent PHP language server
+    "ryannaddy.laravel-artisan",         // Jalankan perintah Artisan dari VSCode
+    "amiralizadeh9480.laravel-extra-intellisense", // Autocomplete route, view, config Laravel
+
+    // ===== VUE / JAVASCRIPT =====
+    "vue.volar",                         // Vue 3 language support (official)
+    "esbenp.prettier-vscode",            // Formatter JS/Vue
+    "dbaeumer.vscode-eslint",            // Linter JS/Vue
+
+    // ===== DATABASE (MySQL) =====
+    "cweijan.vscode-mysql-client2",      // Klien MySQL langsung dari VSCode
+
+    // ===== GIT & PRODUKTIVITAS =====
+    "eamodio.gitlens",                   // Riwayat & blame Git
+    "editorconfig.editorconfig",         // Konsistensi style lintas editor
+    "mikestead.dotenv",                  // Syntax highlight file .env
+    "yzhang.markdown-all-in-one"         // Bantu menulis docs/ & laporan magang
+  ],
+
+  // Extension yang TIDAK direkomendasikan (untuk hindari konflik formatter ganda)
+  "unwantedRecommendations": [
+    "hookyqr.beautify",
+    "ms-vscode.vscode-typescript-tslint-plugin"
+  ]
+}

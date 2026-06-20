@@ -1,0 +1,80 @@
+{
+  // ===== PENGATURAN UMUM EDITOR =====
+  "editor.formatOnSave": true,
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": false,
+  "editor.trimAutoWhitespace": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "files.trimFinalNewlines": true,
+
+  // ===== FORMATTER PER BAHASA =====
+  // PHP (Laravel) -> Laravel Pint
+  "[php]": {
+    "editor.defaultFormatter": "open-southeners.laravel-pint",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 4
+  },
+
+  // Vue, JS, TS -> Prettier
+  "[vue]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.formatOnSave": true,
+    "editor.tabSize": 2
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "editor.tabSize": 2
+  },
+
+  // Markdown (docs/) -> rapikan tapi jangan ganggu penulisan laporan
+  "[markdown]": {
+    "editor.formatOnSave": false,
+    "editor.wordWrap": "on"
+  },
+
+  // ===== ESLINT =====
+  "eslint.validate": ["javascript", "typescript", "vue"],
+  "eslint.workingDirectories": [{ "directory": "src/frontend", "changeProcessCWD": true }],
+
+  // ===== PHP / LARAVEL PINT =====
+  "laravel-pint.enable": true,
+  "laravel-pint.executablePath": "src/backend/vendor/bin/pint",
+
+  // ===== FILE EXCLUDE (biar workspace tidak berat & rapi) =====
+  "files.exclude": {
+    "**/.git": true,
+    "**/node_modules": true,
+    "**/vendor": true,
+    "src/backend/storage/framework/cache": true,
+    "src/backend/storage/framework/sessions": true,
+    "src/backend/storage/framework/views": true,
+    "src/backend/bootstrap/cache": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/vendor": true,
+    "**/*.lock": true,
+    "src/backend/storage": true
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/vendor/**": true,
+    "src/backend/storage/**": true
+  },
+
+  // ===== KONTEKS UNTUK AI AGENT (Roo Code / Hermes) =====
+  // Memastikan Roo Code membaca .clinerules sebagai instruksi utama
+  "roo-cline.rulesFilePath": ".clinerules/agent.md"
+}
