@@ -1,0 +1,32 @@
+# Dependencies (jangan pernah di-backup, bisa di-install ulang)
+node_modules/
+vendor/
+
+# Environment files (berisi password/secret)
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+
+# Log files
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# IDE
+.idea/
+*.swp
+*.swo
+
+# Cache
+.phpunit.result.cache
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
