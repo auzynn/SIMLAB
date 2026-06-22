@@ -16,8 +16,9 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | Modul | Admin | Supervisor | Dosen | Mahasiswa |
 |---|---|---|---|---|
 | Data User & Role | CRUD | – | – | – |
-| Data Master (ruangan, perangkat) | CRUD | CRUD | – | – |
+| Data Master (ruangan, perangkat, mata kuliah) | CRUD | CRUD | – | – |
 | Jadwal Peminjaman Lab | CRUD | CRUD | R, U (jadwal sendiri) | R |
+| Kelas Lab/Praktikum (jadwal semester) | R saja (tidak bisa membuka kelas) | C (atas permintaan Dosen), R | CRUD (milik sendiri) | R, daftar sebagai peserta |
 | Pengajuan Peminjaman Ruangan | R (approve/reject) | R (approve/reject) | C, R (milik sendiri) | C, R (milik sendiri) |
 | Pengajuan Peminjaman Perangkat & Perpanjangan | R (approve/reject) | R (approve/reject) | – | C, R, U (milik sendiri, sebelum disetujui) |
 | Presensi | R (rekap) | R (rekap) | C, R, U, D (milik sendiri & mahasiswa bimbingan) | C, R (milik sendiri) |
@@ -62,6 +63,7 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | F-SV-06 | Kelola data perangkat | CRUD nomor seri, status (Tersedia/Dipinjam/Perbaikan) |
 | F-SV-07 | Kelola katalog informasi sertifikasi | Tambah/ubah/hapus info sertifikasi eksternal (penyelenggara, jadwal, syarat, link/kontak pendaftaran) yang ditampilkan ke mahasiswa |
 | F-SV-08 | Unduh laporan (report) | Filter berdasarkan rentang tanggal, ekspor PDF |
+| F-SV-09 | Membuka Kelas Lab/Praktikum atas permintaan Dosen | Supervisor dapat membuat jadwal kelas atas nama Dosen terkait; Admin tidak memiliki kewenangan ini |
 
 ### 2.3 Dosen
 | ID | Fungsi | Keterangan |
@@ -71,6 +73,8 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | F-DS-03 | Kelola portofolio & roadmap riset pribadi | CRUD konten riset pribadi |
 | F-DS-04 | Kelola presensi mahasiswa bimbingan | CRUD entri presensi terkait |
 | F-DS-05 | Lihat & mengajukan jadwal peminjaman lab | R untuk jadwal umum, C untuk pengajuan pribadi |
+| F-DS-06 | Membuka & mengelola Kelas Lab/Praktikum | Tentukan mata kuliah (dari daftar yang sudah ada), ruangan, jadwal berulang (mingguan) selama satu semester, kuota peserta (30-40), bisa multi-sesi paralel (lihat UC-02a) |
+| F-DS-07 | Lihat daftar mata kuliah | Read-only, untuk dipilih saat membuka Kelas Lab |
 
 ### 2.4 Mahasiswa
 | ID | Fungsi | Keterangan |
@@ -79,7 +83,8 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | F-MH-02 | Login via Google OAuth UNSIL + login manual (setelah set password) | Sama seperti role lain |
 | F-MH-03 | Edit profil pribadi | Update data diri |
 | F-MH-04 | Lihat jadwal ketersediaan lab | Read-only, tampilan kalender |
-| F-MH-05 | Ajukan peminjaman ruangan lab | Isi form (tanggal, waktu, keperluan) |
+| F-MH-05 | Ajukan peminjaman ruangan lab | Isi form (tanggal, waktu, keperluan); slot yang sudah dipakai Kelas Lab/Praktikum tidak tersedia |
+| F-MH-05a | Mendaftar sesi Kelas Lab/Praktikum | Pilih sesi (mis. Kelas A/B/C) selama kuota belum penuh |
 | F-MH-06 | Ajukan peminjaman perangkat | Pilih dari daftar perangkat status "Tersedia" |
 | F-MH-07 | Ajukan perpanjangan peminjaman perangkat | Sebelum batas waktu pinjam habis |
 | F-MH-08 | Presensi (check-in/check-out) | Pilih keperluan riset saat check-in |
@@ -132,18 +137,37 @@ Bagian ini merinci skenario normal dan alternatif untuk use case yang punya pote
 **Catatan konteks keamanan**: Karena sistem ini hanya digunakan di lingkup internal kampus dan akun hanya bisa dibuat lewat Google OAuth UNSIL terlebih dahulu, proteksi tambahan seperti rate limiting percobaan login atau syarat kompleksitas password **tidak diwajibkan** untuk MVP ini.
 
 ### UC-02: Pengajuan Peminjaman Ruangan Lab
-**Aktor**: Mahasiswa (pengaju), Supervisor/Admin (penyetuju)
+**Aktor**: Mahasiswa/Dosen (pengaju), Supervisor/Admin (penyetuju)
+
+> **Catatan**: Terpisah dari UC-02a (Kelas Lab/Praktikum). Slot yang sudah terisi jadwal Kelas Lab/Praktikum diperlakukan sama seperti pengajuan berstatus "Disetujui" — ikut dicek dalam validasi bentrok di langkah 3.
 
 | Skenario Normal | Skenario Alternatif (Bentrok Jadwal) |
 |---|---|
-| 1. Mahasiswa membuka kalender ketersediaan ruangan | 1. Mahasiswa membuka kalender ketersediaan ruangan |
-| 2. Mahasiswa memilih ruangan, mengisi tanggal/waktu/keperluan | 2. Mahasiswa memilih ruangan & waktu yang **sudah dipesan/disetujui** pengguna lain |
-| 3. Sistem memvalidasi tidak ada bentrok jadwal pada ruangan & waktu yang sama | 3. Sistem mendeteksi bentrok → menolak pengajuan dengan pesan error yang jelas |
-| 4. Pengajuan tersimpan dengan status "Menunggu Persetujuan" | 4. Mahasiswa diarahkan memilih ulang waktu/ruangan lain |
+| 1. Pengaju membuka kalender ketersediaan ruangan | 1. Pengaju membuka kalender ketersediaan ruangan |
+| 2. Pengaju memilih ruangan, mengisi tanggal/waktu/keperluan | 2. Pengaju memilih ruangan & waktu yang **sudah dipesan/disetujui pengguna lain, atau sudah terisi jadwal Kelas Lab/Praktikum** |
+| 3. Sistem memvalidasi tidak ada bentrok jadwal pada ruangan & waktu yang sama (termasuk terhadap jadwal Kelas Lab/Praktikum) | 3. Sistem mendeteksi bentrok → menolak pengajuan dengan pesan error yang jelas |
+| 4. Pengajuan tersimpan dengan status "Menunggu Persetujuan" | 4. Pengaju diarahkan memilih ulang waktu/ruangan lain |
 | 5. Supervisor/Admin meninjau → Approve/Reject | |
-| 6. Status pengajuan terupdate, mahasiswa menerima notifikasi | |
+| 6. Status pengajuan terupdate, pengaju menerima notifikasi | |
 
-**Aturan validasi kunci**: Sistem **wajib** mencegah dua pengajuan dengan status "Disetujui" pada ruangan dan rentang waktu yang sama. Validasi dilakukan di level backend (bukan hanya di frontend) menggunakan Form Request.
+**Aturan validasi kunci**: Sistem **wajib** mencegah dua pengajuan dengan status "Disetujui" pada ruangan dan rentang waktu yang sama, **dan** mencegah pengajuan pada slot yang sudah terisi jadwal Kelas Lab/Praktikum (UC-02a). Validasi dilakukan di level backend (bukan hanya di frontend) menggunakan Form Request.
+
+### UC-02a: Membuka & Mendaftar Kelas Lab/Praktikum
+**Aktor**: Dosen/Supervisor (pembuka kelas), Mahasiswa (pendaftar peserta)
+
+> **Catatan**: Mekanisme **terpisah** dari UC-02. Dibuka di awal semester untuk sesi mengajar terjadwal tetap (umumnya mingguan) hingga akhir semester. **Admin tidak memiliki kewenangan membuka Kelas Lab.**
+
+| Skenario Normal (Pembukaan Kelas) | Skenario Pendaftaran Peserta |
+|---|---|
+| 1. Dosen (atau Supervisor atas permintaan Dosen) membuka menu Kelas Lab/Praktikum | 1. Mahasiswa membuka menu Kelas Lab/Praktikum |
+| 2. Mengisi data: nama kelas/mata kuliah, ruangan, hari & jam (pola berulang mingguan), tanggal mulai-selesai semester, kuota peserta (maks. 30-40) | 2. Mahasiswa melihat daftar sesi yang tersedia (mis. Kelas A 08.00, Kelas B 10.00) beserta sisa kuota |
+| 3. Dapat menambahkan beberapa sesi paralel untuk kelas/mata kuliah yang sama, masing-masing dengan kuota independen | 3. Mahasiswa memilih satu sesi dan mendaftar |
+| 4. Sistem memvalidasi tidak ada bentrok dengan jadwal ruangan lain yang sudah ada (sesuai UC-02 aturan validasi kunci) | 4. Sistem memvalidasi kuota sesi belum penuh sebelum menerima pendaftaran |
+| 5. Jadwal Kelas Lab/Praktikum tersimpan dan langsung "mengisi" kalender ruangan untuk seluruh rentang semester | 5. Pendaftaran tersimpan; jika kuota penuh, sistem menolak dengan pesan jelas dan mahasiswa dapat memilih sesi paralel lain |
+
+**Aturan validasi kunci**:
+- Sistem **wajib** menolak pendaftaran peserta baru jika kuota sesi sudah penuh
+- Sistem **wajib** mencegah pembukaan Kelas Lab/Praktikum baru yang bentrok dengan jadwal ruangan yang sudah terisi (baik dari Kelas Lab lain maupun peminjaman ruangan biasa yang sudah disetujui)
 
 ### UC-03: Peminjaman & Perpanjangan Perangkat
 **Aktor**: Mahasiswa

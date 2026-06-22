@@ -158,9 +158,58 @@ Pengajuan peminjaman ruangan oleh Mahasiswa/Dosen.
 | `disetujui_oleh` | bigint, FK → `users.id`, nullable | Supervisor/Admin yang memproses |
 | `created_at`, `updated_at` | timestamp | |
 
-**Constraint penting (SRS UC-02)**: kombinasi `ruangan_id` + `tanggal` + rentang `jam_mulai`–`jam_selesai` dengan status `disetujui` **tidak boleh tumpang tindih** dengan pengajuan lain berstatus `disetujui`. Divalidasi di Form Request backend, bukan hanya constraint database.
+**Constraint penting (SRS UC-02)**: kombinasi `ruangan_id` + `tanggal` + rentang `jam_mulai`–`jam_selesai` dengan status `disetujui` **tidak boleh tumpang tindih** dengan pengajuan lain berstatus `disetujui`, **maupun** dengan jadwal `kelas_lab` (3.6) yang aktif pada ruangan, hari, dan jam yang sama. Divalidasi di Form Request backend, bukan hanya constraint database.
 
-### 3.6 `perangkat`
+### 3.6 `mata_kuliah`
+Data master mata kuliah/praktikum — induk yang mengelompokkan sesi-sesi Kelas Lab (Kelas A/B/C) yang merupakan sesi paralel dari mata kuliah yang sama.
+
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| `id` | bigint, PK | |
+| `kode_mk` | varchar, nullable, unique | Mis. "JKF301", jika ada kodefikasi resmi dari kampus |
+| `nama_mk` | varchar | Mis. "Praktikum Jaringan Komputer" |
+| `sks` | int, nullable | |
+| `created_at`, `updated_at` | timestamp | |
+
+**Aturan akses (konsisten dengan pola data master lain)**: CRUD data `mata_kuliah` dikelola **Admin/Supervisor** (lihat `ruangan`, `perangkat`). Dosen **tidak** membuat entri mata kuliah baru sendiri — saat membuka Kelas Lab, Dosen memilih dari daftar `mata_kuliah` yang sudah tersedia.
+
+### 3.7 `kelas_lab`
+Jadwal Kelas Lab/Praktikum — satu sesi terjadwal tetap (umumnya mingguan) selama satu semester, merupakan satu sesi dari sebuah `mata_kuliah`. Mekanisme **terpisah** dari `peminjaman_ruangan` (SRS UC-02a).
+
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| `id` | bigint, PK | |
+| `mata_kuliah_id` | bigint, FK → `mata_kuliah.id` | Mata kuliah/praktikum induk |
+| `dosen_id` | bigint, FK → `dosen.id` | Pemilik/pengampu kelas |
+| `ruangan_id` | bigint, FK → `ruangan.id` | |
+| `dibuat_oleh` | bigint, FK → `users.id` | User yang membuat entri — Dosen sendiri, atau Supervisor (atas permintaan Dosen). **Bukan** berarti pengampu kelas; pengampu selalu mengacu ke `dosen_id` |
+| `nama_sesi` | varchar | Label pembeda sesi paralel, mis. "Kelas A", "Kelas B" — digabung dengan `mata_kuliah.nama_mk` saat ditampilkan (mis. "Praktikum Jaringan Komputer — Kelas A") |
+| `hari` | enum(`senin`,`selasa`,`rabu`,`kamis`,`jumat`,`sabtu`) | Pola berulang mingguan |
+| `jam_mulai` | time | |
+| `jam_selesai` | time | |
+| `tanggal_mulai_semester` | date | |
+| `tanggal_selesai_semester` | date | |
+| `kuota` | int | Maksimal 30-40 (divalidasi range di Form Request, bukan hardcode di kolom) |
+| `created_at`, `updated_at` | timestamp | |
+
+**Catatan implementasi**:
+- Beberapa sesi paralel (Kelas A, B, C) dari mata kuliah yang sama disimpan sebagai **baris terpisah** di tabel ini, semuanya merujuk `mata_kuliah_id` yang sama, masing-masing dengan `kuota` independen — pengelompokan formal kini tersedia lewat relasi ini (mis. untuk menampilkan "semua sesi Praktikum Jaringan Komputer" atau laporan rekap per mata kuliah)
+- Backend **wajib** memvalidasi `dosen_id` yang dimasukkan benar merujuk dosen yang sah, terlepas dari apakah yang membuat entri adalah Dosen itu sendiri (`dibuat_oleh = dosen_id`'s `user_id`) atau Supervisor atas permintaannya
+- Constraint bentrok jadwal terhadap `peminjaman_ruangan` dan sesama `kelas_lab` lain divalidasi di Form Request, mengecek ruangan + hari + rentang jam yang overlap, dalam rentang `tanggal_mulai_semester`–`tanggal_selesai_semester`
+
+### 3.8 `kelas_lab_peserta`
+Pendaftaran mahasiswa sebagai peserta suatu sesi Kelas Lab/Praktikum.
+
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| `id` | bigint, PK | |
+| `kelas_lab_id` | bigint, FK → `kelas_lab.id` | |
+| `mahasiswa_id` | bigint, FK → `mahasiswa.id` | |
+| `created_at`, `updated_at` | timestamp | |
+
+**Constraint penting (SRS UC-02a)**: jumlah baris dengan `kelas_lab_id` yang sama **tidak boleh melebihi** nilai `kuota` pada `kelas_lab` terkait — divalidasi di Form Request sebelum insert. Kombinasi `kelas_lab_id` + `mahasiswa_id` harus unique (satu mahasiswa tidak bisa mendaftar dua kali ke sesi yang sama).
+
+### 3.9 `perangkat`
 Data master perangkat lab (PC, Router, Switch, IoT Kit, dll).
 
 | Kolom | Tipe | Keterangan |
@@ -172,7 +221,7 @@ Data master perangkat lab (PC, Router, Switch, IoT Kit, dll).
 | `status` | enum(`tersedia`,`dipinjam`,`perbaikan`) | |
 | `created_at`, `updated_at` | timestamp | |
 
-### 3.7 `peminjaman_perangkat`
+### 3.10 `peminjaman_perangkat`
 Pengajuan peminjaman perangkat oleh Mahasiswa.
 
 | Kolom | Tipe | Keterangan |
@@ -187,7 +236,7 @@ Pengajuan peminjaman perangkat oleh Mahasiswa.
 | `disetujui_oleh` | bigint, FK → `users.id`, nullable | |
 | `created_at`, `updated_at` | timestamp | |
 
-### 3.8 `perpanjangan_peminjaman`
+### 3.11 `perpanjangan_peminjaman`
 Pengajuan perpanjangan waktu pinjam perangkat (SRS UC-03).
 
 | Kolom | Tipe | Keterangan |
@@ -201,7 +250,7 @@ Pengajuan perpanjangan waktu pinjam perangkat (SRS UC-03).
 
 **Aturan (SRS UC-03)**: backend menolak insert baru di tabel ini jika `tanggal_kembali_rencana` pada `peminjaman_perangkat` terkait sudah lewat dari tanggal hari ini.
 
-### 3.9 `presensi`
+### 3.12 `presensi`
 Log kehadiran mahasiswa di lab.
 
 | Kolom | Tipe | Keterangan |
@@ -216,7 +265,7 @@ Log kehadiran mahasiswa di lab.
 
 **Aturan (SRS UC-04)**: backend menolak `check_in` baru dari user yang sama jika masih ada entri miliknya dengan `check_out IS NULL`.
 
-### 3.10 `sertifikasi`
+### 3.13 `sertifikasi`
 Katalog informasi sertifikasi eksternal (**bukan** transaksi pendaftaran — lihat SRS Bagian 3, UC-05).
 
 | Kolom | Tipe | Keterangan |
@@ -229,7 +278,7 @@ Katalog informasi sertifikasi eksternal (**bukan** transaksi pendaftaran — lih
 | `tautan_pendaftaran` | varchar, nullable | Link/kontak eksternal untuk mendaftar |
 | `created_at`, `updated_at` | timestamp | |
 
-### 3.11 `portofolio`
+### 3.14 `portofolio`
 Hasil riset/proyek/publikasi milik mahasiswa.
 
 | Kolom | Tipe | Keterangan |
@@ -242,7 +291,7 @@ Hasil riset/proyek/publikasi milik mahasiswa.
 | `tanggal` | date, nullable | |
 | `created_at`, `updated_at` | timestamp | |
 
-### 3.12 `info_lab`
+### 3.15 `info_lab`
 Konten halaman informasi lab (Beranda, Visi-Misi, Profil Kepala Lab, Roadmap Lab tingkat KK) — dikelola Admin (PRD 2.5).
 
 | Kolom | Tipe | Keterangan |
@@ -268,6 +317,12 @@ users (1) ──── (M) presensi
 users (1) ──── (M) portofolio
 
 ruangan (1) ──── (M) peminjaman_ruangan
+ruangan (1) ──── (M) kelas_lab
+mata_kuliah (1) ──── (M) kelas_lab
+dosen (1) ──── (M) kelas_lab
+kelas_lab (1) ──── (M) kelas_lab_peserta
+mahasiswa (1) ──── (M) kelas_lab_peserta
+
 perangkat (1) ──── (M) peminjaman_perangkat
 peminjaman_perangkat (1) ──── (M) perpanjangan_peminjaman
 
@@ -324,7 +379,27 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | PATCH | `/api/peminjaman-ruangan/{id}/approve` | Setujui (Admin/Supervisor) |
 | PATCH | `/api/peminjaman-ruangan/{id}/reject` | Tolak (Admin/Supervisor) |
 
-### 5.6 Perangkat, Peminjaman & Perpanjangan
+### 5.6 Mata Kuliah (Data Master)
+| Method | Endpoint | Keterangan |
+|---|---|---|
+| GET | `/api/mata-kuliah` | List mata kuliah (semua role — dipakai Dosen saat memilih saat membuka Kelas Lab) |
+| POST | `/api/mata-kuliah` | Tambah mata kuliah (Admin/Supervisor) |
+| PATCH | `/api/mata-kuliah/{id}` | Update data mata kuliah (Admin/Supervisor) |
+| DELETE | `/api/mata-kuliah/{id}` | Hapus mata kuliah (Admin/Supervisor) |
+
+### 5.7 Kelas Lab/Praktikum
+| Method | Endpoint | Keterangan |
+|---|---|---|
+| GET | `/api/kelas-lab` | List Kelas Lab/Praktikum (semua role, untuk melihat & mendaftar); dapat difilter per `mata_kuliah_id` untuk melihat semua sesi paralel suatu mata kuliah |
+| GET | `/api/kelas-lab/{id}` | Detail satu kelas/sesi, termasuk sisa kuota |
+| POST | `/api/kelas-lab` | Buka Kelas Lab/Praktikum baru — **Dosen** (untuk dirinya sendiri) atau **Supervisor** (atas permintaan, wajib isi `dosen_id` terkait). Wajib pilih `mata_kuliah_id` dari data master yang sudah ada. Admin tidak memiliki akses ke endpoint ini |
+| PATCH | `/api/kelas-lab/{id}` | Update jadwal/kuota — pemilik (`dosen_id`) atau Supervisor |
+| DELETE | `/api/kelas-lab/{id}` | Hapus/batalkan kelas — pemilik (`dosen_id`) atau Supervisor |
+| POST | `/api/kelas-lab/{id}/daftar` | Mahasiswa mendaftar sebagai peserta — ditolak jika kuota penuh atau sudah terdaftar |
+| DELETE | `/api/kelas-lab/{id}/daftar` | Mahasiswa membatalkan pendaftaran dirinya sendiri |
+| GET | `/api/kelas-lab/{id}/peserta` | List peserta terdaftar (pemilik kelas, Supervisor, Admin) |
+
+### 5.8 Perangkat, Peminjaman & Perpanjangan
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | GET | `/api/perangkat` | List perangkat + status |
@@ -338,7 +413,7 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | PATCH | `/api/perpanjangan/{id}/approve` | Setujui perpanjangan (Admin/Supervisor) |
 | PATCH | `/api/perpanjangan/{id}/reject` | Tolak perpanjangan (Admin/Supervisor) |
 
-### 5.7 Presensi
+### 5.9 Presensi
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | POST | `/api/presensi/check-in` | Check-in (Mahasiswa) |
@@ -347,7 +422,7 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | PATCH | `/api/presensi/{id}` | Koreksi entri (Dosen, untuk mahasiswa bimbingan) |
 | DELETE | `/api/presensi/{id}` | Hapus entri (Dosen) |
 
-### 5.8 Sertifikasi (Katalog)
+### 5.10 Sertifikasi (Katalog)
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | GET | `/api/sertifikasi` | List katalog sertifikasi |
@@ -355,7 +430,7 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | PATCH | `/api/sertifikasi/{id}` | Update entri |
 | DELETE | `/api/sertifikasi/{id}` | Hapus entri |
 
-### 5.9 Portofolio
+### 5.11 Portofolio
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | GET | `/api/portofolio` | List (semua, atau filter `user_id`) |
@@ -363,13 +438,13 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | PATCH | `/api/portofolio/{id}` | Update milik sendiri |
 | DELETE | `/api/portofolio/{id}` | Hapus milik sendiri |
 
-### 5.10 Informasi Lab
+### 5.12 Informasi Lab
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | GET | `/api/info-lab/{tipe}` | Ambil konten (beranda/visi_misi/kepala_lab/roadmap_kk) |
 | PATCH | `/api/info-lab/{tipe}` | Update konten (Admin) |
 
-### 5.11 Laporan
+### 5.13 Laporan
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | GET | `/api/report?from=&to=` | Data rekap (Admin/Supervisor) |
