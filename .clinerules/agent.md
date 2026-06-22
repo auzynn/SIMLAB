@@ -1,15 +1,24 @@
 # agent.md — Aturan Inti AI Agent
 
-> File ini dibaca otomatis oleh **Hermes** (AI Agent eksekusi) dan **"Mandor"**
-> (Roo Code / Kilo / Copilot di VS Code). Tujuannya: memastikan SEMUA AI tool
-> bekerja dengan konteks, batasan, dan standar kerja yang SAMA sepanjang
-> proyek magang ini — tidak ada AI yang menebak-nebak sendiri.
+> File ini dibaca oleh **Hermes** dan **Antigravity** sebagai AI Agent Eksekusi
+> utama proyek ini, serta **Kilo Code** dan **Roo Code** sebagai **Asisten Pengawas**
+> yang bertugas melakukan review kode, debugging, dan refactor jika terjadi
+> kesalahan atau error. Tidak tertutup kemungkinan AI Agent lainnya turut membaca
+> file ini sesuai kebutuhan proyek.
+>
+> Tujuannya: memastikan semua AI tool bekerja dalam konteks, batasan, dan
+> standar kerja yang **sama** — tidak ada AI yang menebak-nebak sendiri atau
+> bekerja di luar koridor yang sudah disepakati bersama.
+
+> ⚠️ **SKILL WAJIB**: Skill **ponytail** (`.agents/skills/ponytail/SKILL.md`) HARUS
+> dibaca dan dijalankan di setiap sesi. Prinsip YAGNI adalah hukum di proyek ini.
+> AI dilarang membangun sesuatu yang tidak diminta, berlebihan, atau spekulatif.
 
 ---
 
 ## 1. IDENTITAS PROYEK
 
-- **Nama Proyek**: Nama-Proyek-Magang
+- **Nama Proyek**: SIM Lab. Riset Prodi Informatika
 - **Jenis**: Aplikasi web — REST API (backend) + SPA terpisah (frontend)
 - **Arsitektur**: Backend dan frontend terpisah penuh, berkomunikasi lewat HTTP/JSON (bukan Inertia, bukan SSR)
 
@@ -32,10 +41,11 @@
 
 Sebelum mengerjakan task apapun, AI **WAJIB** membaca dokumen berikut secara berurutan:
 
-1. `docs/1_PRD.md` — visi produk, user persona, user flow
-2. `docs/2_SRS.md` — aturan validasi bisnis & hak akses (RBAC)
-3. `docs/3_SDD.md` — skema database (ERD), struktur API, arsitektur
-4. `docs/4_TASK_BREAKDOWN.md` — task/backlog yang sedang dieksekusi
+1. `.agents/skills/ponytail/SKILL.md` — **SKILL WAJIB**: prinsip minimalisme & YAGNI, baca pertama kali sebelum menulis satu baris kode pun
+2. `docs/1_PRD.md` — visi produk, user persona, user flow
+3. `docs/2_SRS.md` — aturan validasi bisnis & hak akses (RBAC)
+4. `docs/3_SDD.md` — skema database (ERD), struktur API, arsitektur
+5. `docs/4_TASK_BREAKDOWN.md` — task/backlog yang sedang dieksekusi
 
 AI **DILARANG** mengasumsikan struktur data, alur bisnis, kontrak API (request/response shape), atau hak akses yang tidak tercantum di dokumen-dokumen ini. Jika informasi tidak tersedia atau ambigu, AI **WAJIB bertanya ke user**, bukan menebak atau mengarang.
 
@@ -106,9 +116,74 @@ AI **DILARANG** mengasumsikan struktur data, alur bisnis, kontrak API (request/r
 
 ## 9. WORKFLOW KERJA STANDAR
 
-1. Baca task aktif dari `docs/4_TASK_BREAKDOWN.md`
-2. Cek aturan bisnis terkait di `docs/2_SRS.md` dan struktur data/API di `docs/3_SDD.md`
-3. Implementasi kode (backend dan/atau frontend sesuai scope task)
-4. Tulis/jalankan test yang relevan
-5. Update status task di `4_TASK_BREAKDOWN.md`
-6. Laporkan ringkasan perubahan ke user (file yang diubah, alasan, hal yang perlu direview)
+1. **Baca skill ponytail** (`.agents/skills/ponytail/SKILL.md`) — aktifkan mode lazy senior dev sebelum mulai
+2. Baca task aktif dari `docs/4_TASK_BREAKDOWN.md`
+3. Cek aturan bisnis terkait di `docs/2_SRS.md` dan struktur data/API di `docs/3_SDD.md`
+4. **Terapkan The Ladder** (ponytail): tanya dulu apakah fitur ini perlu ada; gunakan yang sudah ada sebelum membuat baru
+5. Implementasi kode (backend dan/atau frontend sesuai scope task)
+6. Tulis/jalankan test yang relevan — cukup satu test minimal per logic non-trivial
+7. Update status task di `4_TASK_BREAKDOWN.md`
+8. Laporkan ringkasan perubahan ke user (file yang diubah, alasan, hal yang perlu direview)
+
+---
+
+## 10. SKILL WAJIB: PONYTAIL
+
+**Referensi**: `.agents/skills/ponytail/SKILL.md`
+
+Skill ini **WAJIB** aktif di setiap sesi dan setiap respons. Ringkasan hukum yang berlaku:
+
+| Prinsip | Aturan |
+|---|---|
+| **YAGNI** | Jangan buat sesuatu yang belum diminta. Spekulasi = tidak dikerjakan. |
+| **The Ladder** | Cek apakah stdlib/native/dependency-existing sudah cukup sebelum menulis kode baru. |
+| **Shortest diff wins** | File sesedikit mungkin, perubahan sesedikit mungkin, penjelasan sesingkat mungkin. |
+| **No abstraction for one** | Tidak ada interface/factory/config yang hanya punya satu implementasi. |
+| **Deletion over addition** | Hapus dulu, tambah belakangan. Boring over clever. |
+| **Ponytail comment** | Tandai penyederhanaan dengan `// ponytail: alasan` agar terbaca sebagai keputusan sadar. |
+
+**Level default**: `full` — The Ladder ditegakkan, stdlib & native first, diff terpendek.
+
+**Pengecualian**: Validasi input di trust boundary, error handling yang mencegah data loss, keamanan, aksesibilitas dasar, dan hal yang diminta eksplisit oleh user **TIDAK boleh disederhanakan**.
+
+**Cara menonaktifkan sementara**: Ketik `stop ponytail` atau `normal mode` (berlaku hingga akhir sesi).
+
+---
+
+## 11. PANDUAN PENAMBAHAN SKILL BARU
+
+Jika di masa depan proyek ini membutuhkan skill baru (di luar ponytail), ikuti prosedur berikut agar skill tersebut terdaftar sebagai sumber kebenaran dan dikenali oleh semua AI Agent:
+
+### Langkah Wajib
+
+1. **Buat folder skill** di `.agents/skills/<nama-skill>/`
+2. **Buat file `SKILL.md`** di dalam folder tersebut dengan format:
+   ```
+   ---
+   name: <nama-skill>
+   description: > <deskripsi singkat>
+   argument-hint: "[opsi]"
+   license: MIT
+   ---
+   # <Nama Skill>
+   ... isi instruksi skill ...
+   ```
+3. **Daftarkan di `agent.md` ini** (file yang sedang Anda baca) pada dua tempat:
+   - **Bagian 2 (Sumber Kebenaran)**: tambahkan sebagai item baru di urutan bacaan, dengan keterangan apakah `WAJIB` atau `opsional`
+   - **Bagian 9 (Workflow)**: tambahkan langkah kapan skill tersebut diaktifkan
+   - **Tambahkan section baru** (§12, §13, dst.) berisi ringkasan prinsip skill — sama seperti §10 untuk ponytail
+4. **Konfirmasi ke user** sebelum skill baru dianggap aktif — AI Agent tidak boleh menambah skill secara sepihak
+
+### Jenis Skill
+
+| Jenis | Kapan Dipakai |
+|---|---|
+| `mandatory` | Aktif otomatis setiap sesi, tidak bisa dimatikan kecuali oleh user |
+| `contextual` | Diaktifkan hanya saat mengerjakan konteks tertentu (mis. hanya untuk testing, hanya untuk frontend) |
+| `on-demand` | Diaktifkan atas permintaan eksplisit user per sesi |
+
+### Skill yang Aktif Saat Ini
+
+| Nama | Path | Jenis | Status |
+|---|---|---|---|
+| ponytail | `.agents/skills/ponytail/SKILL.md` | mandatory | ✅ Aktif |
