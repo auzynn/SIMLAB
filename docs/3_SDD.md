@@ -1,11 +1,11 @@
 # 3. System Design Document (SDD)
 
 **Nama Produk**: Sistem Informasi Manajemen Laboratorium Riset (SIM Lab. Riset)
-**Unit Terkait**: Laboratorium Riset Kelompok Keahlian (KK) Jaringan, Komputer, dan Forensik (JKF)
+**Unit Terkait**: Laboratorium Riset Kelompok Keahlian (KK) Jaringan, Komputer, dan Forensik (JKF) — Prodi Informatika
 **Versi Dokumen**: 1.0
 **Dokumen Acuan**: `1_PRD.md`, `2_SRS.md`
 
-> Dokumen ini adalah **sumber kebenaran** untuk skema database, struktur API, dan arsitektur sistem. AI Agent **wajib** merujuk dokumen ini sebelum membuat migration, model, atau route — lihat `.clinerules/agent.md`. AI Agent **dilarang** mengasumsikan struktur data di luar yang didefinisikan di sini.
+> Dokumen ini adalah **sumber kebenaran** untuk skema database, struktur API, dan arsitektur sistem. Semua AI Agent **wajib** merujuk dokumen ini sebelum membuat migration, model, atau route — lihat `.clinerules/agent.md`. AI Agent **dilarang** mengasumsikan struktur data di luar yang didefinisikan di sini.
 
 ---
 
@@ -106,7 +106,7 @@ Profil publik dosen (ditampilkan di halaman Daftar Dosen). Dibuat otomatis bersa
 | Kolom | Tipe | Keterangan |
 |---|---|---|
 | `id` | bigint, PK | |
-| `user_id` | bigint, FK → `users.id`, unique | Selalu terisi (dibuat otomatis saat registrasi Dosen) |
+| `user_id` | bigint, FK → `users.id`, unique | Selalu terisi (dibuat otomatis saat registrasi Dosen), `on delete cascade` |
 | `nidn` | varchar, nullable | Diisi manual menyusul oleh dosen/admin |
 | `bidang_riset` | varchar, nullable | |
 | `roadmap_riset` | text, nullable | Peta jalan riset pribadi dosen (PRD 3.7) |
@@ -114,7 +114,7 @@ Profil publik dosen (ditampilkan di halaman Daftar Dosen). Dibuat otomatis bersa
 | `foto` | varchar, nullable | |
 | `created_at`, `updated_at` | timestamp | |
 
-**Catatan**: `user_id` wajib (`not null`) karena keputusan final menyatakan entri `dosen` **selalu** lahir bersamaan dengan akun `users`, tidak ada lagi dosen "profil saja tanpa akun". Kolom `name`, `email`, dan `avatar` **tidak diduplikasi** di tabel ini — selalu diambil lewat relasi ke `users` (`dosen->user->name`). Endpoint `GET /api/dosen` dan `GET /api/dosen/{id}` **wajib** memuat (eager load) relasi `user` agar nama dan foto profil ikut tampil di response.
+**Catatan**: `user_id` wajib (`not null`) karena keputusan final menyatakan entri `dosen` **selalu** lahir bersamaan dengan akun `users`, tidak ada lagi dosen "profil saja tanpa akun". Kolom `name`, `email`, dan `avatar` **tidak diduplikasi** di tabel ini — selalu diambil lewat relasi ke `users` (`dosen->user->name`). Endpoint `GET /api/dosen` and `GET /api/dosen/{id}` **wajib** memuat (eager load) relasi `user` agar nama dan foto profil ikut tampil di response.
 
 ### 3.3 `mahasiswa`
 Profil mahasiswa, dibuat otomatis bersamaan saat user dengan email `@student.unsil.ac.id` registrasi pertama kali — simetris dengan pola tabel `dosen`.
@@ -122,14 +122,15 @@ Profil mahasiswa, dibuat otomatis bersamaan saat user dengan email `@student.uns
 | Kolom | Tipe | Keterangan |
 |---|---|---|
 | `id` | bigint, PK | |
-| `user_id` | bigint, FK → `users.id`, unique | Selalu terisi (dibuat otomatis saat registrasi Mahasiswa) |
+| `user_id` | bigint, FK → `users.id`, unique | Selalu terisi (dibuat otomatis saat registrasi Mahasiswa), `on delete cascade` |
+| `dosen_pembimbing_id` | bigint, FK → `dosen.id`, nullable | Dosen pembimbing riset/akademik untuk validasi bimbingan, `on delete set null` |
 | `nim` | varchar, unique | **Diisi otomatis** dari local-part email saat registrasi (mis. `197006028@student.unsil.ac.id` → `197006028`). **Immutable** — tidak dapat diubah lewat endpoint update profil, hanya bisa dikoreksi langsung di database oleh Admin jika terjadi kesalahan data dari pihak kampus |
 | `prodi` | varchar, nullable | Diisi menyusul oleh mahasiswa/admin (tidak bisa diekstrak otomatis dari email) |
 | `angkatan` | varchar(4) | **Diisi otomatis** dari 2 digit awal `nim` saat registrasi, digabung dengan prefix `"20"` (format NPM UNSIL: 2 digit pertama = tahun angkatan). Mis. `nim = "197006028"` → 2 digit awal `"19"` → `angkatan = "20" . "19"` = `"2019"`. **Wajib digabung sebagai string** (concatenation), bukan operasi penjumlahan angka |
 | `foto` | varchar, nullable | |
 | `created_at`, `updated_at` | timestamp | |
 
-**Aturan implementasi penting**: Form Request untuk endpoint update profil mahasiswa (`PATCH /api/mahasiswa/{id}`) **wajib** mengabaikan/menolak perubahan pada field `nim` dan `angkatan` meskipun dikirim di request body — keduanya diturunkan otomatis saat registrasi, validasi ini di level backend, bukan hanya disembunyikan di frontend. Kolom `name`, `email`, dan `avatar` **tidak diduplikasi** di tabel ini — selalu diambil lewat relasi ke `users` (`mahasiswa->user->name`), sama seperti pola tabel `dosen`.
+**Aturan implementasi penting**: Form Request untuk endpoint update profil mahasiswa (`PATCH /api/mahasiswa/{id}`) **wajib** mengabaikan/menolak perubahan pada field `nim` dan `angkatan` meskipun dikirim di request body — keduanya diturunkan otomatis saat registrasi, validasi ini di level backend, bukan hanya disembunyikan di frontend. Kolom `name`, `email`, dan `avatar` **tidak diduplikasi** di tabel ini — selalu diambil lewat relasi ke `users` (`mahasiswa->user->name`), sama seperti pola tabel `dosen`. Kolom `dosen_pembimbing_id` digunakan oleh backend Policy untuk otorisasi akses bimbingan.
 
 ### 3.4 `ruangan`
 Data master ruangan lab.
@@ -148,17 +149,17 @@ Pengajuan peminjaman ruangan oleh Mahasiswa/Dosen.
 | Kolom | Tipe | Keterangan |
 |---|---|---|
 | `id` | bigint, PK | |
-| `ruangan_id` | bigint, FK → `ruangan.id` | |
-| `user_id` | bigint, FK → `users.id` | Pengaju (Mahasiswa atau Dosen) |
+| `ruangan_id` | bigint, FK → `ruangan.id` | `on delete cascade` |
+| `user_id` | bigint, FK → `users.id` | Pengaju (Mahasiswa atau Dosen), `on delete cascade` |
 | `tanggal` | date | |
 | `jam_mulai` | time | |
 | `jam_selesai` | time | |
 | `keperluan` | text | |
 | `status` | enum(`menunggu`,`disetujui`,`ditolak`) | Default `menunggu` |
-| `disetujui_oleh` | bigint, FK → `users.id`, nullable | Supervisor/Admin yang memproses |
+| `disetujui_oleh` | bigint, FK → `users.id`, nullable | Supervisor/Admin yang memproses, `on delete set null` |
 | `created_at`, `updated_at` | timestamp | |
 
-**Constraint penting (SRS UC-02)**: kombinasi `ruangan_id` + `tanggal` + rentang `jam_mulai`–`jam_selesai` dengan status `disetujui` **tidak boleh tumpang tindih** dengan pengajuan lain berstatus `disetujui`, **maupun** dengan jadwal `kelas_lab` (3.6) yang aktif pada ruangan, hari, dan jam yang sama. Divalidasi di Form Request backend, bukan hanya constraint database.
+**Constraint penting (SRS UC-02)**: kombinasi `ruangan_id` + `tanggal` + rentang `jam_mulai`–`jam_selesai` dengan status `disetujui` **tidak boleh tumpang tindih** dengan pengajuan lain berstatus `disetujui`, **maupun** dengan jadwal `kelas_lab` (3.6) yang aktif pada ruangan, hari, dan jam yang sama. Peminjaman hanya diizinkan jika `ruangan.status = 'tersedia'`. Validasi ini dilakukan di Form Request backend, bukan hanya constraint database.
 
 ### 3.6 `mata_kuliah`
 Data master mata kuliah/praktikum — induk yang mengelompokkan sesi-sesi Kelas Lab (Kelas A/B/C) yang merupakan sesi paralel dari mata kuliah yang sama.
@@ -179,10 +180,10 @@ Jadwal Kelas Lab/Praktikum — satu sesi terjadwal tetap (umumnya mingguan) sela
 | Kolom | Tipe | Keterangan |
 |---|---|---|
 | `id` | bigint, PK | |
-| `mata_kuliah_id` | bigint, FK → `mata_kuliah.id` | Mata kuliah/praktikum induk |
-| `dosen_id` | bigint, FK → `dosen.id` | Pemilik/pengampu kelas |
-| `ruangan_id` | bigint, FK → `ruangan.id` | |
-| `dibuat_oleh` | bigint, FK → `users.id` | User yang membuat entri — Dosen sendiri, atau Supervisor (atas permintaan Dosen). **Bukan** berarti pengampu kelas; pengampu selalu mengacu ke `dosen_id` |
+| `mata_kuliah_id` | bigint, FK → `mata_kuliah.id` | Mata kuliah/praktikum induk, `on delete cascade` |
+| `dosen_id` | bigint, FK → `dosen.id` | Pemilik/pengampu kelas, `on delete cascade` |
+| `ruangan_id` | bigint, FK → `ruangan.id` | `on delete cascade` |
+| `dibuat_oleh` | bigint, FK → `users.id` | User yang membuat entri — Dosen sendiri, atau Supervisor (atas permintaan Dosen), `on delete cascade` |
 | `nama_sesi` | varchar | Label pembeda sesi paralel, mis. "Kelas A", "Kelas B" — digabung dengan `mata_kuliah.nama_mk` saat ditampilkan (mis. "Praktikum Jaringan Komputer — Kelas A") |
 | `hari` | enum(`senin`,`selasa`,`rabu`,`kamis`,`jumat`,`sabtu`) | Pola berulang mingguan |
 | `jam_mulai` | time | |
@@ -195,7 +196,7 @@ Jadwal Kelas Lab/Praktikum — satu sesi terjadwal tetap (umumnya mingguan) sela
 **Catatan implementasi**:
 - Beberapa sesi paralel (Kelas A, B, C) dari mata kuliah yang sama disimpan sebagai **baris terpisah** di tabel ini, semuanya merujuk `mata_kuliah_id` yang sama, masing-masing dengan `kuota` independen — pengelompokan formal kini tersedia lewat relasi ini (mis. untuk menampilkan "semua sesi Praktikum Jaringan Komputer" atau laporan rekap per mata kuliah)
 - Backend **wajib** memvalidasi `dosen_id` yang dimasukkan benar merujuk dosen yang sah, terlepas dari apakah yang membuat entri adalah Dosen itu sendiri (`dibuat_oleh = dosen_id`'s `user_id`) atau Supervisor atas permintaannya
-- Constraint bentrok jadwal terhadap `peminjaman_ruangan` dan sesama `kelas_lab` lain divalidasi di Form Request, mengecek ruangan + hari + rentang jam yang overlap, dalam rentang `tanggal_mulai_semester`–`tanggal_selesai_semester`
+- Constraint bentrok jadwal terhadap `peminjaman_ruangan` dan sesama `kelas_lab` lain divalidasi di Form Request, mengecek ruangan + hari + rentang jam yang overlap, dalam rentang `tanggal_mulai_semester`–`tanggal_selesai_semester`. Pembukaan kelas hanya diizinkan jika `ruangan.status = 'tersedia'`.
 
 ### 3.8 `kelas_lab_peserta`
 Pendaftaran mahasiswa sebagai peserta suatu sesi Kelas Lab/Praktikum.
@@ -203,8 +204,8 @@ Pendaftaran mahasiswa sebagai peserta suatu sesi Kelas Lab/Praktikum.
 | Kolom | Tipe | Keterangan |
 |---|---|---|
 | `id` | bigint, PK | |
-| `kelas_lab_id` | bigint, FK → `kelas_lab.id` | |
-| `mahasiswa_id` | bigint, FK → `mahasiswa.id` | |
+| `kelas_lab_id` | bigint, FK → `kelas_lab.id` | `on delete cascade` |
+| `mahasiswa_id` | bigint, FK → `mahasiswa.id` | `on delete cascade` |
 | `created_at`, `updated_at` | timestamp | |
 
 **Constraint penting (SRS UC-02a)**: jumlah baris dengan `kelas_lab_id` yang sama **tidak boleh melebihi** nilai `kuota` pada `kelas_lab` terkait — divalidasi di Form Request sebelum insert. Kombinasi `kelas_lab_id` + `mahasiswa_id` harus unique (satu mahasiswa tidak bisa mendaftar dua kali ke sesi yang sama).
@@ -227,13 +228,13 @@ Pengajuan peminjaman perangkat oleh Mahasiswa.
 | Kolom | Tipe | Keterangan |
 |---|---|---|
 | `id` | bigint, PK | |
-| `perangkat_id` | bigint, FK → `perangkat.id` | |
-| `user_id` | bigint, FK → `users.id` | Selalu Mahasiswa (SRS Bagian 1) |
+| `perangkat_id` | bigint, FK → `perangkat.id` | `on delete cascade` |
+| `user_id` | bigint, FK → `users.id` | Selalu Mahasiswa (SRS Bagian 1), `on delete cascade` |
 | `tanggal_pinjam` | date | |
 | `tanggal_kembali_rencana` | date | |
 | `tanggal_kembali_aktual` | date, nullable | Diisi saat pengembalian dikonfirmasi |
 | `status` | enum(`menunggu`,`disetujui`,`ditolak`,`dikembalikan`) | |
-| `disetujui_oleh` | bigint, FK → `users.id`, nullable | |
+| `disetujui_oleh` | bigint, FK → `users.id`, nullable | `on delete set null` |
 | `created_at`, `updated_at` | timestamp | |
 
 ### 3.11 `perpanjangan_peminjaman`
@@ -242,13 +243,15 @@ Pengajuan perpanjangan waktu pinjam perangkat (SRS UC-03).
 | Kolom | Tipe | Keterangan |
 |---|---|---|
 | `id` | bigint, PK | |
-| `peminjaman_perangkat_id` | bigint, FK → `peminjaman_perangkat.id` | |
+| `peminjaman_perangkat_id` | bigint, FK → `peminjaman_perangkat.id` | `on delete cascade` |
 | `tanggal_kembali_baru` | date | Usulan tanggal kembali yang baru |
 | `status` | enum(`menunggu`,`disetujui`,`ditolak`) | |
-| `disetujui_oleh` | bigint, FK → `users.id`, nullable | |
+| `disetujui_oleh` | bigint, FK → `users.id`, nullable | `on delete set null` |
 | `created_at`, `updated_at` | timestamp | |
 
-**Aturan (SRS UC-03)**: backend menolak insert baru di tabel ini jika `tanggal_kembali_rencana` pada `peminjaman_perangkat` terkait sudah lewat dari tanggal hari ini.
+**Aturan (SRS UC-03)**:
+- Backend menolak insert baru di tabel ini jika `tanggal_kembali_rencana` pada `peminjaman_perangkat` terkait sudah lewat dari tanggal hari ini.
+- Ketika status perpanjangan diperbarui menjadi `disetujui`, backend wajib secara otomatis (lewat DB Transaction) memperbarui kolom `tanggal_kembali_rencana` pada tabel `peminjaman_perangkat` induk menjadi nilai dari `tanggal_kembali_baru`.
 
 ### 3.12 `presensi`
 Log kehadiran mahasiswa di lab.
@@ -256,11 +259,11 @@ Log kehadiran mahasiswa di lab.
 | Kolom | Tipe | Keterangan |
 |---|---|---|
 | `id` | bigint, PK | |
-| `user_id` | bigint, FK → `users.id` | Mahasiswa yang presensi |
+| `user_id` | bigint, FK → `users.id` | Mahasiswa yang presensi, `on delete cascade` |
 | `keperluan` | varchar | Dipilih saat check-in |
 | `check_in` | datetime | Disimpan dalam waktu lokal WIB |
 | `check_out` | datetime, nullable | Null selama sesi masih berlangsung |
-| `dicatat_oleh` | bigint, FK → `users.id`, nullable | Diisi jika entri dikoreksi Dosen/Admin |
+| `dicatat_oleh` | bigint, FK → `users.id`, nullable | Diisi jika entri dikoreksi Dosen/Admin, `on delete set null` |
 | `created_at`, `updated_at` | timestamp | |
 
 **Aturan (SRS UC-04)**: backend menolak `check_in` baru dari user yang sama jika masih ada entri miliknya dengan `check_out IS NULL`.
@@ -284,7 +287,7 @@ Hasil riset/proyek/publikasi milik mahasiswa.
 | Kolom | Tipe | Keterangan |
 |---|---|---|
 | `id` | bigint, PK | |
-| `user_id` | bigint, FK → `users.id` | Pemilik (Mahasiswa) |
+| `user_id` | bigint, FK → `users.id` | Pemilik (Mahasiswa), `on delete cascade` |
 | `judul` | varchar | |
 | `deskripsi` | text, nullable | |
 | `tautan` | varchar, nullable | Link ke repo/dokumen/demo |
@@ -316,6 +319,7 @@ users (1) ──── (M) peminjaman_perangkat
 users (1) ──── (M) presensi
 users (1) ──── (M) portofolio
 
+dosen (1) ──── (M) mahasiswa     → mahasiswa bimbingan (via dosen_pembimbing_id)
 ruangan (1) ──── (M) peminjaman_ruangan
 ruangan (1) ──── (M) kelas_lab
 mata_kuliah (1) ──── (M) kelas_lab
@@ -343,7 +347,7 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | GET | `/api/auth/google/callback` | **(publik)** Callback Google, proses registrasi/login otomatis (lihat Bagian 2) |
 | POST | `/api/auth/login` | **(publik)** Login manual (email + password). Ditolak jika `password` user masih NULL (lihat Bagian 2.1) |
 | POST | `/api/auth/logout` | Hapus token Sanctum aktif |
-| GET | `/api/auth/me` | Ambil data user yang sedang login |
+| GET | `/api/auth/me` | Ambil data user yang sedang login; response menyertakan field `unread_notifications_count` (integer) untuk keperluan badge navbar |
 | POST | `/api/auth/set-password` | Atur password pertama kali (hanya `password` baru + konfirmasi, untuk user yang `password`-nya masih NULL) |
 | PATCH | `/api/auth/change-password` | Ubah password yang sudah ada (wajib sertakan password lama) |
 
@@ -351,6 +355,7 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | GET | `/api/users` | List semua user (filter by role) |
+| POST | `/api/users` | Pendaftaran/pembuatan user manual (Dosen/Supervisor/Admin) dengan credential awal |
 | PATCH | `/api/users/{id}` | Update data/role user |
 | DELETE | `/api/users/{id}` | Hapus user |
 
@@ -364,6 +369,7 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 ### 5.4 Mahasiswa
 | Method | Endpoint | Keterangan |
 |---|---|---|
+| GET | `/api/mahasiswa` | List semua mahasiswa — Admin & Supervisor (operasional penuh); Dosen (read-only, untuk kebutuhan rekap presensi mahasiswa) |
 | GET | `/api/mahasiswa/{id}` | Detail profil satu mahasiswa (milik sendiri, atau Admin/Dosen pembimbing) |
 | PATCH | `/api/mahasiswa/{id}` | Update profil milik sendiri — field `nim` diabaikan/ditolak meski dikirim di body (lihat SDD 3.3) |
 
@@ -373,6 +379,7 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | GET | `/api/ruangan` | List ruangan + status |
 | POST | `/api/ruangan` | Tambah ruangan (Admin/Supervisor) |
 | PATCH | `/api/ruangan/{id}` | Update status/data ruangan |
+| DELETE | `/api/ruangan/{id}` | Hapus ruangan (Admin/Supervisor) — ditolak jika masih ada `peminjaman_ruangan` atau `kelas_lab` aktif yang merujuk ruangan ini |
 | GET | `/api/peminjaman-ruangan` | List pengajuan (milik sendiri, atau semua untuk Admin/Supervisor) |
 | GET | `/api/peminjaman-ruangan/kalender` | Data kalender ketersediaan |
 | POST | `/api/peminjaman-ruangan` | Ajukan peminjaman (Mahasiswa/Dosen) |
@@ -405,12 +412,13 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | GET | `/api/perangkat` | List perangkat + status |
 | POST | `/api/perangkat` | Tambah perangkat (Admin/Supervisor) |
 | PATCH | `/api/perangkat/{id}` | Update data/status perangkat |
+| DELETE | `/api/perangkat/{id}` | Hapus perangkat (Admin/Supervisor) — ditolak jika status bukan `tersedia` atau masih ada `peminjaman_perangkat` aktif |
 | GET | `/api/peminjaman-perangkat` | List pengajuan (milik sendiri / semua untuk Admin/Supervisor) |
 | POST | `/api/peminjaman-perangkat` | Ajukan peminjaman (Mahasiswa) |
 | PATCH | `/api/peminjaman-perangkat/{id}/approve` | Setujui (Admin/Supervisor) |
 | PATCH | `/api/peminjaman-perangkat/{id}/reject` | Tolak (Admin/Supervisor) |
 | POST | `/api/peminjaman-perangkat/{id}/perpanjangan` | Ajukan perpanjangan (Mahasiswa) |
-| PATCH | `/api/perpanjangan/{id}/approve` | Setujui perpanjangan (Admin/Supervisor) |
+| PATCH | `/api/perpanjangan/{id}/approve` | Setujui perpanjangan (Admin/Supervisor) — otomatis memperbarui tanggal_kembali_rencana di peminjaman_perangkat induk |
 | PATCH | `/api/perpanjangan/{id}/reject` | Tolak perpanjangan (Admin/Supervisor) |
 
 ### 5.9 Presensi
@@ -447,8 +455,24 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 ### 5.13 Laporan
 | Method | Endpoint | Keterangan |
 |---|---|---|
-| GET | `/api/report?from=&to=` | Data rekap (Admin/Supervisor) |
-| GET | `/api/report/pdf?from=&to=` | Unduh PDF rekap |
+| GET | `/api/report?from=&to=` | Data rekap (Admin/Supervisor); parameter `from` & `to` format `YYYY-MM-DD`, default 30 hari terakhir |
+| GET | `/api/report/pdf?from=&to=` | Unduh file PDF rekap (Admin/Supervisor) |
+
+**Struktur response `GET /api/report`** (field `data`):
+- `periode` — `{ dari, sampai }` tanggal yang direkap
+- `peminjaman_ruangan` — `{ total_pengajuan, total_disetujui, total_ditolak, total_menunggu }`
+- `peminjaman_perangkat` — `{ total_pengajuan, total_disetujui, total_ditolak, total_dikembalikan }`
+- `presensi` — `{ total_sesi, total_mahasiswa_unik, rata_rata_durasi_menit }`
+
+### 5.14 Notifikasi In-App
+| Method | Endpoint | Keterangan |
+|---|---|---|
+| GET | `/api/notifikasi` | List semua notifikasi milik user yang login, urut dari terbaru; response menyertakan `unread_count` |
+| PATCH | `/api/notifikasi/{id}/read` | Tandai satu notifikasi sebagai sudah dibaca |
+| PATCH | `/api/notifikasi/read-all` | Tandai semua notifikasi milik user sebagai sudah dibaca |
+| DELETE | `/api/notifikasi/{id}` | Hapus satu notifikasi milik sendiri |
+
+**Aturan akses**: semua role mengakses notifikasi milik sendiri saja. Pembuatan notifikasi dilakukan internal oleh backend (bukan endpoint publik), dipanggil via Service/Observer dalam transaksi DB yang sama dengan aksi pemicunya.
 
 ---
 

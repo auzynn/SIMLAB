@@ -1,11 +1,11 @@
 # 2. Software Requirements Specification (SRS)
 
 **Nama Produk**: Sistem Informasi Manajemen Laboratorium Riset (SIM Lab. Riset)
-**Unit Terkait**: Laboratorium Riset Kelompok Keahlian (KK) Jaringan, Komputer, dan Forensik (JKF)
+**Unit Terkait**: Laboratorium Riset Kelompok Keahlian (KK) Jaringan, Komputer, dan Forensik (JKF) — Prodi Informatika
 **Versi Dokumen**: 1.0
 **Dokumen Acuan**: `1_PRD.md`
 
-> Dokumen ini adalah **sumber kebenaran** untuk aturan validasi bisnis dan hak akses (RBAC). AI Agent membaca dokumen ini untuk memastikan setiap endpoint dan fitur yang diimplementasikan mematuhi aturan otorisasi dan validasi yang didefinisikan di sini — lihat `.clinerules/agent.md`.
+> Dokumen ini adalah **sumber kebenaran** untuk aturan validasi bisnis dan hak akses (RBAC). Semua AI Agent membaca dokumen ini untuk memastikan setiap endpoint dan fitur yang diimplementasikan mematuhi aturan otorisasi dan validasi yang didefinisikan di sini — lihat `.clinerules/agent.md`.
 
 ---
 
@@ -29,11 +29,13 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | Laporan/Report (unduh) | C, R | C, R | – | – |
 | Halaman Informasi Lab (Beranda, Visi-Misi, Daftar Dosen, Roadmap Lab, Profil Kepala Lab) | CRUD (kelola konten) | R | R | R |
 | Edit Profil Akun Pribadi | U (milik sendiri) | U (milik sendiri) | U (milik sendiri) | U (milik sendiri) |
+| Notifikasi In-App | U (tandai baca), D (milik sendiri) | U (tandai baca), D (milik sendiri) | U (tandai baca), D (milik sendiri) | U (tandai baca), D (milik sendiri) |
 
 **Aturan implementasi**:
 - Setiap endpoint API **wajib** diproteksi middleware `auth:sanctum` kecuali endpoint publik yang eksplisit didefinisikan di Bagian 4
 - Pengecekan role **wajib** dilakukan lewat Laravel Policy/Gate, bukan pengecekan manual `if ($user->role === ...)` yang tersebar di Controller
 - "Milik sendiri" berarti sistem **wajib** memvalidasi `user_id`/`dosen_id`/`mahasiswa_id` pemilik data cocok dengan user yang sedang login, sebelum mengizinkan operasi Update/Delete
+- Hubungan "mahasiswa bimbingan" (untuk validasi akses Dosen ke profil/presensi mahasiswa bimbingan) didefinisikan melalui foreign key `dosen_pembimbing_id` pada entri mahasiswa yang merujuk ke id dosen.
 
 ---
 
@@ -51,6 +53,7 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | F-AD-07 | Kelola jadwal peminjaman lab | Tambah, ubah, hapus jadwal & ruangan |
 | F-AD-08 | Approve/reject peminjaman ruangan & perangkat | Sama seperti Supervisor |
 | F-AD-09 | Kelola data perangkat & sertifikasi | CRUD penuh |
+| F-AD-10 | Terima & kelola notifikasi in-app | Tandai baca (satu/semua), hapus; notifikasi masuk otomatis saat ada pengajuan baru yang menunggu persetujuan |
 
 ### 2.2 Supervisor (Asisten Lab)
 | ID | Fungsi | Keterangan |
@@ -64,6 +67,7 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | F-SV-07 | Kelola katalog informasi sertifikasi | Tambah/ubah/hapus info sertifikasi eksternal (penyelenggara, jadwal, syarat, link/kontak pendaftaran) yang ditampilkan ke mahasiswa |
 | F-SV-08 | Unduh laporan (report) | Filter berdasarkan rentang tanggal, ekspor PDF |
 | F-SV-09 | Membuka Kelas Lab/Praktikum atas permintaan Dosen | Supervisor dapat membuat jadwal kelas atas nama Dosen terkait; Admin tidak memiliki kewenangan ini |
+| F-SV-10 | Terima & kelola notifikasi in-app | Tandai baca (satu/semua), hapus; notifikasi masuk otomatis saat ada pengajuan baru yang menunggu persetujuan |
 
 ### 2.3 Dosen
 | ID | Fungsi | Keterangan |
@@ -75,6 +79,7 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | F-DS-05 | Lihat & mengajukan jadwal peminjaman lab | R untuk jadwal umum, C untuk pengajuan pribadi |
 | F-DS-06 | Membuka & mengelola Kelas Lab/Praktikum | Tentukan mata kuliah (dari daftar yang sudah ada), ruangan, jadwal berulang (mingguan) selama satu semester, kuota peserta (30-40), bisa multi-sesi paralel (lihat UC-02a) |
 | F-DS-07 | Lihat daftar mata kuliah | Read-only, untuk dipilih saat membuka Kelas Lab |
+| F-DS-08 | Terima & kelola notifikasi in-app | Tandai baca (satu/semua), hapus |
 
 ### 2.4 Mahasiswa
 | ID | Fungsi | Keterangan |
@@ -90,6 +95,7 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | F-MH-08 | Presensi (check-in/check-out) | Pilih keperluan riset saat check-in |
 | F-MH-09 | Lihat katalog informasi sertifikasi | Melihat daftar sertifikasi eksternal yang tersedia (penyelenggara, jadwal, syarat, cara mendaftar) — SIM Lab. Riset hanya menampilkan info, pendaftaran dilakukan langsung ke pihak penyelenggara |
 | F-MH-10 | Kelola portofolio pribadi | CRUD hasil riset/proyek/publikasi milik sendiri |
+| F-MH-11 | Terima & kelola notifikasi in-app | Tandai baca (satu/semua), hapus; menerima notifikasi status pengajuan dan konfirmasi pendaftaran Kelas Lab |
 
 ---
 
@@ -141,16 +147,16 @@ Bagian ini merinci skenario normal dan alternatif untuk use case yang punya pote
 
 > **Catatan**: Terpisah dari UC-02a (Kelas Lab/Praktikum). Slot yang sudah terisi jadwal Kelas Lab/Praktikum diperlakukan sama seperti pengajuan berstatus "Disetujui" — ikut dicek dalam validasi bentrok di langkah 3.
 
-| Skenario Normal | Skenario Alternatif (Bentrok Jadwal) |
+| Skenario Normal | Skenario Alternatif (Bentrok Jadwal / Ruangan Tidak Tersedia) |
 |---|---|
 | 1. Pengaju membuka kalender ketersediaan ruangan | 1. Pengaju membuka kalender ketersediaan ruangan |
-| 2. Pengaju memilih ruangan, mengisi tanggal/waktu/keperluan | 2. Pengaju memilih ruangan & waktu yang **sudah dipesan/disetujui pengguna lain, atau sudah terisi jadwal Kelas Lab/Praktikum** |
-| 3. Sistem memvalidasi tidak ada bentrok jadwal pada ruangan & waktu yang sama (termasuk terhadap jadwal Kelas Lab/Praktikum) | 3. Sistem mendeteksi bentrok → menolak pengajuan dengan pesan error yang jelas |
+| 2. Pengaju memilih ruangan, mengisi tanggal/waktu/keperluan | 2. Pengaju memilih ruangan & waktu yang **sudah dipesan/disetujui pengguna lain, sudah terisi jadwal Kelas Lab/Praktikum, atau ruangan berstatus tidak 'tersedia' ('perbaikan' / 'dipakai')** |
+| 3. Sistem memvalidasi tidak ada bentrok jadwal pada ruangan & waktu yang sama (termasuk terhadap jadwal Kelas Lab/Praktikum) serta memastikan status ruangan adalah 'tersedia' | 3. Sistem mendeteksi bentrok atau ruangan tidak tersedia → menolak pengajuan dengan pesan error yang jelas |
 | 4. Pengajuan tersimpan dengan status "Menunggu Persetujuan" | 4. Pengaju diarahkan memilih ulang waktu/ruangan lain |
 | 5. Supervisor/Admin meninjau → Approve/Reject | |
 | 6. Status pengajuan terupdate, pengaju menerima notifikasi | |
 
-**Aturan validasi kunci**: Sistem **wajib** mencegah dua pengajuan dengan status "Disetujui" pada ruangan dan rentang waktu yang sama, **dan** mencegah pengajuan pada slot yang sudah terisi jadwal Kelas Lab/Praktikum (UC-02a). Validasi dilakukan di level backend (bukan hanya di frontend) menggunakan Form Request.
+**Aturan validasi kunci**: Sistem **wajib** mencegah dua pengajuan dengan status "Disetujui" pada ruangan dan rentang waktu yang sama, mencegah pengajuan pada slot yang sudah terisi jadwal Kelas Lab/Praktikum (UC-02a), dan mencegah peminjaman pada ruangan yang statusnya bukan "tersedia" (misal: "perbaikan" atau "dipakai"). Validasi dilakukan di level backend (bukan hanya di frontend) menggunakan Form Request.
 
 ### UC-02a: Membuka & Mendaftar Kelas Lab/Praktikum
 **Aktor**: Dosen/Supervisor (pembuka kelas), Mahasiswa (pendaftar peserta)
@@ -162,12 +168,12 @@ Bagian ini merinci skenario normal dan alternatif untuk use case yang punya pote
 | 1. Dosen (atau Supervisor atas permintaan Dosen) membuka menu Kelas Lab/Praktikum | 1. Mahasiswa membuka menu Kelas Lab/Praktikum |
 | 2. Mengisi data: nama kelas/mata kuliah, ruangan, hari & jam (pola berulang mingguan), tanggal mulai-selesai semester, kuota peserta (maks. 30-40) | 2. Mahasiswa melihat daftar sesi yang tersedia (mis. Kelas A 08.00, Kelas B 10.00) beserta sisa kuota |
 | 3. Dapat menambahkan beberapa sesi paralel untuk kelas/mata kuliah yang sama, masing-masing dengan kuota independen | 3. Mahasiswa memilih satu sesi dan mendaftar |
-| 4. Sistem memvalidasi tidak ada bentrok dengan jadwal ruangan lain yang sudah ada (sesuai UC-02 aturan validasi kunci) | 4. Sistem memvalidasi kuota sesi belum penuh sebelum menerima pendaftaran |
+| 4. Sistem memvalidasi tidak ada bentrok dengan jadwal ruangan lain yang sudah ada (sesuai UC-02 aturan validasi kunci) serta memastikan status ruangan adalah 'tersedia' | 4. Sistem memvalidasi kuota sesi belum penuh sebelum menerima pendaftaran |
 | 5. Jadwal Kelas Lab/Praktikum tersimpan dan langsung "mengisi" kalender ruangan untuk seluruh rentang semester | 5. Pendaftaran tersimpan; jika kuota penuh, sistem menolak dengan pesan jelas dan mahasiswa dapat memilih sesi paralel lain |
 
 **Aturan validasi kunci**:
 - Sistem **wajib** menolak pendaftaran peserta baru jika kuota sesi sudah penuh
-- Sistem **wajib** mencegah pembukaan Kelas Lab/Praktikum baru yang bentrok dengan jadwal ruangan yang sudah terisi (baik dari Kelas Lab lain maupun peminjaman ruangan biasa yang sudah disetujui)
+- Sistem **wajib** mencegah pembukaan Kelas Lab/Praktikum baru yang bentrok dengan jadwal ruangan yang sudah terisi (baik dari Kelas Lab lain maupun peminjaman ruangan biasa yang sudah disetujui) atau jika status ruangan tidak 'tersedia' (misal: 'perbaikan' / 'dipakai')
 
 ### UC-03: Peminjaman & Perpanjangan Perangkat
 **Aktor**: Mahasiswa
@@ -187,7 +193,7 @@ Bagian ini merinci skenario normal dan alternatif untuk use case yang punya pote
 1. Mahasiswa melakukan *Check-in* saat masuk lab, memilih keperluan riset
 2. Mahasiswa melakukan *Check-out* saat selesai
 3. Sistem mencatat timestamp **sesuai waktu lokal WIB**
-4. Admin/Dosen dapat merekap data kehadiran bulanan
+4. Admin/Supervisor/Dosen dapat merekap data kehadiran untuk laporan utilisasi lab
 
 **Aturan validasi kunci**: Mahasiswa tidak dapat melakukan *check-in* kedua sebelum melakukan *check-out* dari sesi sebelumnya.
 
@@ -212,6 +218,35 @@ Bagian ini merinci skenario normal dan alternatif untuk use case yang punya pote
 4. Sistem menampilkan hasil rekap sesuai rentang yang dipilih
 5. Supervisor memilih *Download PDF*
 6. Sistem menghasilkan dan mengunduh file laporan
+
+### UC-07: Notifikasi In-App
+**Aktor**: Semua role (penerima); sistem (pembuat — otomatis, bukan aksi pengguna)
+
+> **Sifat modul**: Notifikasi dibuat **otomatis oleh sistem** sebagai efek samping dari aksi lain. Pengguna tidak membuat notifikasi secara langsung.
+
+**Pemicu dan penerima**:
+| Pemicu | Penerima |
+|---|---|
+| Pengajuan peminjaman ruangan disetujui/ditolak | Pengaju (Mahasiswa/Dosen) |
+| Pengajuan peminjaman perangkat disetujui/ditolak | Pengaju (Mahasiswa) |
+| Pengajuan perpanjangan perangkat disetujui/ditolak | Pengaju (Mahasiswa) |
+| Ada pengajuan peminjaman ruangan baru (status `menunggu`) | Semua Supervisor & Admin |
+| Ada pengajuan peminjaman perangkat baru (status `menunggu`) | Semua Supervisor & Admin |
+| Ada pengajuan perpanjangan baru (status `menunggu`) | Semua Supervisor & Admin |
+| Pendaftaran Kelas Lab berhasil | Mahasiswa yang mendaftar |
+
+**Alur pengguna**:
+| Skenario Normal | Skenario Tandai Baca / Hapus |
+|---|---|
+| 1. Sistem membuat entri `notifikasi` otomatis saat pemicu terjadi (dalam transaksi yang sama) | 1. Pengguna mengklik ikon lonceng di navbar |
+| 2. Badge angka merah pada ikon lonceng bertambah untuk penerima | 2. Pengguna memilih notifikasi → status berubah jadi "sudah dibaca", badge berkurang |
+| 3. Pengguna melihat badge → klik ikon lonceng → daftar notifikasi tampil | 3. Atau: pengguna menekan "Tandai Semua Sudah Dibaca" |
+| 4. Notifikasi belum dibaca ditandai secara visual | 4. Pengguna menghapus notifikasi satu per satu; notifikasi tidak hilang otomatis |
+
+**Aturan validasi kunci**:
+- Insert `notifikasi` dilakukan dalam **DB transaction yang sama** dengan aksi pemicunya — jika salah satu gagal, keduanya rollback
+- Jumlah notifikasi belum dibaca (`is_read = false`) **wajib** disertakan di response `GET /api/auth/me` sebagai field `unread_notifications_count` — agar badge navbar tidak membutuhkan request terpisah saat pertama kali halaman dimuat
+- Tidak ada auto-delete atau TTL — notifikasi hanya hilang jika pengguna eksplisit menghapusnya
 
 ---
 

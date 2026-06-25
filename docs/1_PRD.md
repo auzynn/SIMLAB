@@ -1,10 +1,10 @@
 # 1. Product Requirement Document (PRD)
 
 **Nama Produk**: Sistem Informasi Manajemen Laboratorium Riset (SIM Lab. Riset)
-**Unit Terkait**: Laboratorium Riset Kelompok Keahlian (KK) Jaringan, Komputer, dan Forensik (JKF)
+**Unit Terkait**: Laboratorium Riset Kelompok Keahlian (KK) Jaringan, Komputer, dan Forensik (JKF) — Prodi Informatika
 **Versi Dokumen**: 1.0
 
-> Dokumen ini adalah **sumber kebenaran utama** untuk visi produk, siapa penggunanya, dan bagaimana alur penggunaannya. AI Agent (Hermes, Roo Code, dll) membaca dokumen ini lebih dulu sebelum mengerjakan task apa pun — lihat `.clinerules/agent.md`.
+> Dokumen ini adalah **sumber kebenaran utama** untuk visi produk, siapa penggunanya, dan bagaimana alur penggunaannya. Semua AI Agent (Hermes, Roo Code, Kilo Code, Copilot, dll) membaca dokumen ini lebih dulu sebelum mengerjakan task apa pun — lihat `.clinerules/agent.md`.
 
 ---
 
@@ -27,7 +27,7 @@ Sistem memiliki 4 peran pengguna dengan hak akses berbeda:
 
 ### 2.1 Mahasiswa (User)
 - **Siapa**: Mahasiswa yang aktif melakukan riset/praktikum di lab
-- **Bisa melakukan**: registrasi akun, login, kelola profil pribadi, presensi (check-in/check-out), melihat jadwal ketersediaan lab, mengajukan peminjaman ruangan, mengajukan peminjaman perangkat (+ pengajuan perpanjangan), melihat informasi katalog sertifikasi eksternal, mengunggah portofolio riset
+- **Bisa melakukan**: registrasi akun, login, kelola profil pribadi, presensi (check-in/check-out), melihat jadwal ketersediaan lab, mengajukan peminjaman ruangan, mengajukan peminjaman perangkat (+ pengajuan perpanjangan), **mendaftar sesi Kelas Lab/Praktikum**, melihat informasi katalog sertifikasi eksternal, mengunggah portofolio riset
 - **Hak akses data**: Create, Read, Update (tidak bisa Delete data milik pengguna lain)
 
 ### 2.2 Dosen
@@ -37,13 +37,14 @@ Sistem memiliki 4 peran pengguna dengan hak akses berbeda:
 
 ### 2.3 Supervisor (Asisten Lab / Aslab)
 - **Siapa**: Asisten laboratorium yang mengelola operasional harian lab
-- **Bisa melakukan**: login, menyetujui/menolak pengajuan peminjaman ruangan & perangkat, mengelola jadwal peminjaman lab, mengelola data perangkat lab, mengelola katalog informasi sertifikasi eksternal, mengunduh laporan (presensi, peminjaman, aktivitas lab) dalam rentang tanggal tertentu
+- **Bisa melakukan**: login, menyetujui/menolak pengajuan peminjaman ruangan & perangkat, mengelola jadwal peminjaman lab, **membuka Kelas Lab/Praktikum atas permintaan Dosen**, mengelola data perangkat lab, mengelola katalog informasi sertifikasi eksternal, mengunduh laporan (presensi, peminjaman, aktivitas lab) dalam rentang tanggal tertentu
 - **Hak akses data**: CRUD penuh untuk modul operasional lab (ruangan, perangkat, jadwal, katalog sertifikasi, report)
 
 ### 2.4 Admin (Kepala Lab)
 - **Siapa**: Pemegang kendali penuh atas sistem
 - **Bisa melakukan**: semua yang bisa dilakukan Supervisor, ditambah kelola data user (semua role), kelola data master sistem secara keseluruhan, kelola konten informasi/profil publik lab (lihat 2.5)
-- **Hak akses data**: CRUD penuh ke seluruh modul, termasuk manajemen user dan role
+- **Pengecualian**: Admin **tidak dapat** membuka atau mengelola Kelas Lab/Praktikum. Kewenangan ini hanya dimiliki Dosen (untuk kelasnya sendiri) dan Supervisor (atas permintaan Dosen) — agar setiap sesi kelas selalu terhubung ke Dosen pengampu yang bertanggung jawab.
+- **Hak akses data**: CRUD penuh ke seluruh modul termasuk manajemen user dan role, kecuali Kelas Lab/Praktikum (lihat pengecualian di atas)
 
 ### 2.5 Halaman Informasi Lab (Dapat Diakses Semua Role)
 Selain modul transaksional (peminjaman, presensi, sertifikasi), sistem juga menyediakan **halaman informasi/profil lab** yang dapat dilihat oleh semua role setelah login:
@@ -53,7 +54,7 @@ Selain modul transaksional (peminjaman, presensi, sertifikasi), sistem juga meny
 - **Daftar Dosen**: daftar dosen di KK JKF beserta halaman detail profil masing-masing
 - **Roadmap Laboratorium**: peta jalan riset KK JKF (terhubung dengan roadmap riset pribadi Dosen di 3.7)
 
-Admin bertanggung jawab mengelola (tambah/ubah/hapus) konten daftar dosen; konten lain (visi-misi, roadmap, profil kepala lab) dikelola Admin sebagai bagian dari data master sistem.
+Admin bertanggung jawab mengelola (tambah/ubah/hapus) konten daftar dosen, baik dengan mendaftarkan akun dosen secara manual terlebih dahulu melalui manajemen user maupun memperbarui data profilnya; konten lain (visi-misi, roadmap, profil kepala lab) dikelola Admin sebagai bagian dari data master sistem.
 
 > Detail aturan bisnis, validasi, dan batasan akses per endpoint akan dirinci di `2_SRS.md`.
 
@@ -78,12 +79,31 @@ Berikut alur utama yang harus didukung sistem, dikelompokkan per kebutuhan inti.
 3. Pengajuan masuk ke antrian persetujuan Supervisor/Admin
 4. Supervisor/Admin meninjau pengajuan → **Approve** atau **Reject**
 5. Status peminjaman terupdate dan terlihat oleh mahasiswa pengaju
+6. Mahasiswa menerima **notifikasi in-app** (lihat 3.10) bahwa pengajuannya disetujui atau ditolak
+
+### 3.3a Kelas Lab/Praktikum
+
+**Pembukaan Kelas (Dosen, atau Supervisor atas permintaan Dosen)**:
+1. Dosen (atau Supervisor atas permintaan Dosen) membuka menu **Kelas Lab/Praktikum**
+2. Mengisi data: mata kuliah (dipilih dari daftar yang sudah ada), ruangan, hari & jam (pola berulang mingguan), tanggal mulai–selesai semester, kuota peserta (maks. 30–40), nama sesi (mis. "Kelas A")
+3. Dosen dapat menambahkan beberapa sesi paralel (Kelas A, B, C) dari mata kuliah yang sama, masing-masing dengan kuota independen
+4. Sistem memvalidasi tidak ada bentrok jadwal ruangan sebelum menyimpan
+5. Jadwal Kelas Lab tersimpan dan secara otomatis "mengisi" slot kalender ruangan untuk seluruh rentang semester
+
+**Pendaftaran Mahasiswa**:
+1. Mahasiswa membuka menu **Kelas Lab/Praktikum** → melihat daftar mata kuliah beserta sesi-sesi paralel yang tersedia, termasuk sisa kuota tiap sesi
+2. Mahasiswa memilih satu sesi dan mendaftar sebagai peserta
+3. Sistem memvalidasi kuota belum penuh sebelum menerima pendaftaran; jika penuh, mahasiswa dapat memilih sesi paralel lain
+4. Mahasiswa menerima **notifikasi in-app** (lihat 3.10) konfirmasi pendaftaran berhasil
+
+> **Catatan penting**: Slot yang sudah terisi jadwal Kelas Lab diperlakukan sama seperti peminjaman yang sudah disetujui — tidak tersedia untuk dipilih saat mengajukan peminjaman ruangan biasa (lihat 3.3). Admin **tidak** memiliki kewenangan membuka Kelas Lab (lihat 2.4).
 
 ### 3.4 Peminjaman & Perpanjangan Perangkat
 1. Mahasiswa membuka menu **Peminjaman Perangkat** → melihat daftar perangkat berstatus "Tersedia"
 2. Mahasiswa memilih perangkat yang dibutuhkan → mengajukan peminjaman
 3. Jika butuh waktu lebih lama, mahasiswa mengajukan **Perpanjangan** sebelum batas waktu pinjam habis
 4. Admin/Supervisor melakukan CRUD data perangkat (termasuk nomor seri dan status: Tersedia/Dipinjam/Perbaikan)
+5. Mahasiswa menerima **notifikasi in-app** (lihat 3.10) saat pengajuan peminjaman atau perpanjangan disetujui/ditolak
 
 ### 3.5 Presensi Laboratorium
 1. Mahasiswa melakukan **Check-in** saat masuk lab, memilih keperluan riset yang dikerjakan
@@ -104,13 +124,25 @@ Berikut alur utama yang harus didukung sistem, dikelompokkan per kebutuhan inti.
 ### 3.8 Halaman Informasi Lab
 1. Pengguna (role apa pun) yang sudah login dapat membuka menu **Beranda**, **Kepala Laboratorium**, **Visi & Misi**, **Daftar Dosen**, atau **Roadmap Laboratorium** dari navigasi utama
 2. Pada menu **Daftar Dosen**, pengguna dapat memilih satu dosen untuk melihat halaman detail profilnya
-3. Admin membuka panel kelola data dosen untuk menambah, mengubah, atau menghapus entri dosen yang ditampilkan di Daftar Dosen
+3. Admin membuka panel kelola user/dosen untuk menambah (pendaftaran manual), mengubah, atau menghapus entri dosen yang ditampilkan di Daftar Dosen
 4. Admin memperbarui konten Visi-Misi, Roadmap Lab, dan Profil Kepala Lab melalui panel data master
 
 ### 3.9 Laporan (Khusus Supervisor)
 1. Supervisor membuka menu **Report** → memilih rentang tanggal
 2. Sistem menampilkan rekap peminjaman, presensi, dan aktivitas lab pada rentang tersebut
 3. Supervisor dapat mengunduh laporan dalam format PDF
+
+### 3.10 Notifikasi In-App
+1. Setiap kali ada perubahan status yang relevan (pengajuan disetujui/ditolak, pengajuan baru masuk), sistem secara otomatis menyimpan notifikasi ke database untuk pengguna yang bersangkutan
+2. Pengguna melihat ikon **lonceng** di navbar; muncul **angka merah** (badge) jika ada notifikasi yang belum dibaca
+3. Pengguna mengklik ikon lonceng → muncul daftar pesan notifikasi, mis. *"Pengajuan peminjaman ruangan kamu pada 20 Juni 2026 telah disetujui"*
+4. Notifikasi **tidak hilang otomatis** — tetap tersimpan sampai pengguna menandai sudah dibaca atau menghapusnya
+5. Pengguna dapat menandai satu notifikasi sebagai sudah dibaca, atau menandai semua sekaligus, atau menghapus satu per satu
+
+**Pemicu notifikasi**:
+- Mahasiswa/Dosen: pengajuan peminjaman ruangan atau perangkat disetujui/ditolak
+- Mahasiswa: pengajuan perpanjangan perangkat disetujui/ditolak; berhasil mendaftar ke sesi Kelas Lab
+- Supervisor/Admin: ada pengajuan peminjaman baru (ruangan/perangkat/perpanjangan) yang menunggu persetujuan
 
 ---
 
@@ -122,6 +154,7 @@ Produk dianggap berhasil mencapai MVP jika:
 3. Data presensi tercatat akurat sesuai waktu lokal (WIB)
 4. Supervisor dapat menghasilkan laporan rekap yang dapat diunduh
 5. Setiap role hanya dapat mengakses fitur dan data sesuai hak aksesnya (tidak ada kebocoran akses lintas role)
+6. Notifikasi in-app terkirim secara akurat dan tepat waktu setiap kali ada perubahan status pengajuan yang relevan bagi pengguna terkait
 
 ---
 

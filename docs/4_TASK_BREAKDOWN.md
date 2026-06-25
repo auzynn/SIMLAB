@@ -4,7 +4,7 @@
 **Versi Dokumen**: 1.0
 **Dokumen Acuan**: `1_PRD.md`, `2_SRS.md`, `3_SDD.md`
 
-> Dokumen ini adalah **rencana kerja/backlog** yang dieksekusi AI Agent (Hermes/Roo Code). Setiap task mencantumkan rujukan ke dokumen sumber (PRD/SRS/SDD) agar AI Agent membaca konteks yang tepat sebelum mengerjakan — lihat `.clinerules/agent.md` Bagian 9 (Workflow Kerja Standar).
+> Dokumen ini adalah **rencana kerja/backlog** yang dieksekusi semua AI Agent (Hermes, Roo Code, Kilo Code, dll). Setiap task mencantumkan rujukan ke dokumen sumber (PRD/SRS/SDD) agar AI Agent membaca konteks yang tepat sebelum mengerjakan — lihat `.clinerules/agent.md` Bagian 9 (Workflow Kerja Standar).
 >
 > **Cara update status**: ubah `[ ]` menjadi `[x]` setelah task selesai **dan** test relevan lulus. AI Agent dilarang menandai selesai sebelum keduanya terpenuhi (lihat `agent.md` Bagian 6).
 
@@ -34,15 +34,15 @@ Fondasi yang harus selesai sebelum modul lain bisa diuji end-to-end (hampir semu
 ### Backend
 - [ ] **T1.1** — Migration tabel `users` sesuai SDD 3.1 (kolom `google_id`, `avatar`, `role` enum, `password` nullable)
 - [ ] **T1.2** — Migration tabel `dosen` sesuai SDD 3.2 (relasi `user_id` wajib unique)
-- [ ] **T1.3** — Migration tabel `mahasiswa` sesuai SDD 3.3 (kolom `nim`, `angkatan` — lihat aturan auto-extract & immutable)
-- [ ] **T1.4** — Model `User`, `Dosen`, `Mahasiswa` + relasi Eloquent (`User::dosen()`, `User::mahasiswa()`, dst.)
+- [ ] **T1.3** — Migration tabel `mahasiswa` sesuai SDD 3.3 (kolom `nim`, `angkatan`, `dosen_pembimbing_id` FK -> dosen.id — lihat aturan auto-extract & bimbingan)
+- [ ] **T1.4** — Model `User`, `Dosen`, `Mahasiswa` + relasi Eloquent (`User::dosen()`, `User::mahasiswa()`, `Mahasiswa::dosenPembimbing()`, dst.)
 - [ ] **T1.5** — Endpoint `GET /api/auth/google/redirect` & `GET /api/auth/google/callback` — implementasi alur SDD Bagian 2 lengkap: validasi domain email, auto-create `users` + `dosen`/`mahasiswa`, ekstraksi NIM & angkatan (format `"20" . dua_digit_awal`)
 - [ ] **T1.6** — Endpoint `POST /api/auth/login` (login manual) — tolak jika `password` NULL, dengan pesan sesuai SRS UC-01 skenario 1b
 - [ ] **T1.7** — Endpoint `POST /api/auth/set-password` & `PATCH /api/auth/change-password` (SRS UC-01b)
 - [ ] **T1.8** — Endpoint `POST /api/auth/logout` & `GET /api/auth/me`
 - [ ] **T1.9** — Seeder `UserSeeder` untuk membuat akun Admin & Supervisor manual (SDD Bagian 2, catatan implementasi)
 - [ ] **T1.10** — Policy dasar untuk role-based access control mengacu matriks RBAC SRS Bagian 1
-- [ ] **T1.11** — Endpoint `GET /api/users`, `PATCH /api/users/{id}`, `DELETE /api/users/{id}` (Admin only)
+- [ ] **T1.11** — Endpoint `GET /api/users`, `POST /api/users`, `PATCH /api/users/{id}`, `DELETE /api/users/{id}` (Admin only)
 - [ ] **T1.12** — Form Request validasi untuk seluruh endpoint di atas
 
 ### Frontend
@@ -103,8 +103,8 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.12).
 - [ ] **T3.6** — Model `Ruangan`, `PeminjamanRuangan` + relasi
 - [ ] **T3.7** — Endpoint CRUD `/api/ruangan` (Admin/Supervisor)
 - [ ] **T3.8** — Endpoint `GET /api/peminjaman-ruangan/kalender` — data ketersediaan gabungan: peminjaman disetujui + jadwal `kelas_lab` aktif, untuk tampilan kalender frontend
-- [ ] **T3.9** — Endpoint `POST /api/peminjaman-ruangan` — Form Request **wajib** validasi bentrok terhadap dua sumber sekaligus: (1) `peminjaman_ruangan` berstatus `disetujui`, dan (2) `kelas_lab` aktif pada ruangan + tanggal + rentang jam yang sama (SRS UC-02 aturan validasi kunci)
-- [ ] **T3.10** — Endpoint `PATCH /api/peminjaman-ruangan/{id}/approve` & `/reject` — saat approve, backend **wajib** menjalankan ulang validasi bentrok (kondisi bisa berubah antara saat pengaju submit dan saat Supervisor approve)
+- [ ] **T3.9** — Endpoint `POST /api/peminjaman-ruangan` — Form Request **wajib** validasi: status ruangan adalah 'tersedia', dan validasi bentrok terhadap dua sumber sekaligus: (1) `peminjaman_ruangan` berstatus `disetujui`, dan (2) `kelas_lab` aktif pada ruangan + tanggal + rentang jam yang sama (SRS UC-02 aturan validasi kunci)
+- [ ] **T3.10** — Endpoint `PATCH /api/peminjaman-ruangan/{id}/approve` & `/reject` — saat approve, backend **wajib** menjalankan ulang validasi bentrok (kondisi bisa berubah antara saat pengaju submit dan saat Supervisor approve) serta memastikan status ruangan masih 'tersedia'
 - [ ] **T3.11** — Endpoint `GET /api/peminjaman-ruangan` — filter milik sendiri vs semua (sesuai role)
 
 ### Backend — Kelas Lab/Praktikum
@@ -159,7 +159,7 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.12).
 - [ ] **T4.6** — Endpoint `POST /api/peminjaman-perangkat` (Mahasiswa saja — SRS Bagian 1)
 - [ ] **T4.7** — Endpoint `PATCH /api/peminjaman-perangkat/{id}/approve` & `/reject`
 - [ ] **T4.8** — Endpoint `POST /api/peminjaman-perangkat/{id}/perpanjangan` — **wajib** validasi tanggal kembali rencana belum lewat (SRS UC-03 aturan validasi kunci)
-- [ ] **T4.9** — Endpoint `PATCH /api/perpanjangan/{id}/approve` & `/reject`
+- [ ] **T4.9** — Endpoint `PATCH /api/perpanjangan/{id}/approve` & `/reject` — saat approve, backend wajib memperbarui `tanggal_kembali_rencana` pada `peminjaman_perangkat` induk secara otomatis
 
 ### Frontend
 - [ ] **T4.10** — Halaman Daftar Perangkat (status Tersedia/Dipinjam/Perbaikan)
