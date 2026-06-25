@@ -1,0 +1,767 @@
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,600;1,400;1,600&display=swap');
+
+:root {
+    --bs-black: #141E27;
+    --bs-navy: #183861;
+    --bs-yellow: #FFB057;
+    --bs-grey1: #FAFAFA;
+    --bs-grey2: #EDEDED;
+    --bs-grey3: #f1f1f1;
+}
+
+* {
+    box-sizing: border-box;
+    text-decoration: none;
+    list-style-type: none;
+    scroll-behavior: smooth;
+    padding: 0;
+    margin: 0;
+}
+
+body {
+    font-family: 'Source Sans Pro', sans-serif;
+    color: var(--bs-black);
+}
+
+header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+h1, h2, h3 {
+    font-family: 'Poppins', sans-serif;
+}
+
+a {
+    display: block;
+    color: var(--bs-black);
+}
+
+.main-container {
+    padding: 50px 100px;
+}
+
+.flex-h {
+    display: flex;
+    flex-direction: row;
+}
+
+.flex-v {
+    display: flex;
+    flex-direction: column;
+}
+
+.between {
+    justify-content: space-between !important;
+}
+
+.around {
+    justify-content: space-around !important;
+}
+
+.evenly {
+    justify-content: space-evenly !important;
+}
+
+.center {
+    justify-content: center;
+}
+
+/* ---------- SCROLL BAR CONTROL ---------- */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #EFF5F5;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #D6E4E5;
+    border-radius: 10px;
+}
+/* ---------- SCROLL BAR CONTROL END ---------- */
+
+/* ---------- MARGIN ---------- */
+.mt-30 {
+    margin-top: 30px;
+}
+
+.mt-50 {
+    margin-top: 50px;
+}
+
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+.mb-30 {
+    margin-bottom: 30px;
+}
+
+.mb-50 {
+    margin-bottom: 50px;
+}
+
+.mr-30 {
+    margin-left: 30px;
+}
+
+.mr-50 {
+    margin-right: 50px;
+}
+
+.ml-10 {
+    margin-left: 10px;
+}
+
+.ml-30 {
+    margin-left: 30px;
+}
+
+.ml-50 {
+    margin-left: 50px;
+}
+/* ---------- MARGIN END ---------- */
+
+/* ---------- WIDTH HEIGHT ---------- */
+.w-50 {
+    width: 50px;
+}
+
+.w-100 {
+    width: 100px;
+}
+
+.w-150 {
+    width: 150px;
+}
+
+.h-20 {
+    height: 20px;
+}
+
+.h-30 {
+    height: 30px;
+}
+
+.h-40 {
+    height: 40px;
+}
+
+.h-50 {
+    height: 50px;
+}
+/* ---------- WIDTH HEIGHT END ---------- */
+
+/* ---------- BACKGROUND COLOR ---------- */
+.bg-white {
+    background-color: white;
+}
+
+.bg-grey {
+    background-color: var(--bs-grey1);
+}
+
+.bg-navy {
+    background-color: var(--bs-navy);
+}
+/* ---------- BACKGROUND COLOR END ---------- */
+
+/* ---------- BUTTON CONTROL ---------- */
+.btn {
+    display: block;
+    width: 100px;
+    text-align: center;
+    padding: 5px 0;
+    border-radius: 5px;
+}
+
+.btn-width-30 {
+    width: 30px;
+}
+
+.btn-width-50 {
+    width: 50px;
+}
+
+.btn-width-80 {
+    width: 80px;
+}
+
+.btn-width-100 {
+    width: 100px;
+}
+
+.btn-navy-solid {
+    color: white;
+    background-color: var(--bs-navy);
+    border: 2px solid var(--bs-navy);
+}
+
+.btn-navy-solid:hover {
+    color: var(--bs-navy);
+    background-color: transparent;
+    transition: 0.2s ease-in;
+}
+
+.btn-navy-border {
+    color: var(--bs-navy);
+    border: 2px solid var(--bs-navy);
+}
+
+.btn-navy-border:hover {
+    color: white;
+    background-color: var(--bs-navy);
+    transition: 0.2s ease-in;
+}
+
+.btn-yellow-solid {
+    color: white;
+    background-color: var(--bs-yellow);
+}
+
+.btn-yellow-border {
+    color: var(--bs-navy);
+    border: 2px solid var(--bs-yellow);
+}
+
+.btn-yellow-border:hover {
+    color: white !important;
+    background-color: var(--bs-yellow);
+    transition: 0.2s ease-in;
+}
+
+.border-b {
+    text-align: left;
+    border-bottom: 3px solid var(--bs-yellow);
+    border-radius: 0;
+}
+/* ---------- BUTTON CONTROL END ---------- */
+
+/* ---------- INPUT FORM CONTROL ---------- */
+.form-ctrl {
+    display: block;
+    background-clip: padding-box;
+    appearance: none;
+    padding: 12px;
+    border: none;
+}
+
+.input-solid {
+    background-color: var(--bs-grey2);
+    border-radius: 5px;
+}
+
+.input-border {
+    background-color: transparent;
+    border: 1px solid var(--bs-grey2);
+    border-radius: 5px;
+}
+
+.input-border-b {
+    background-color: transparent;
+    border-bottom: 2px solid var(--bs-grey2);
+}
+
+textarea {
+    display: block;
+    font-family: 'Source Sans Pro', sans-serif;
+    width: 100%;
+    height: 100px;
+    padding: 5px;
+    background-color: transparent;
+    border: 2px solid var(--bs-grey2);
+    border-radius: 5px;
+}
+/* ---------- INPUT FORM CONTROL END ---------- */
+
+/* ---------- NAVBAR ---------- */
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: white;
+    /*box-shadow: 0 4px 5px 0 rgba(0, 0, 0, 0.1);*/
+    padding: 20px 40px;
+    box-shadow: 5px 5px 8px 0px rgba(0,0,0,0.1);
+}
+
+nav .logo {
+    cursor: default;
+    display: flex;
+}
+
+nav .logo h1 {
+    font-family: 'Source Sans Pro', sans-serif;
+    font-size: 2em;
+    color: var(--bs-navy);
+    margin-left: 5px;
+}
+
+nav ul {
+    display: flex;
+    justify-content: space-between;
+    width: 30%;
+}
+
+nav ul li {
+    padding: 3px 0;
+}
+
+.nav-hover:hover {
+    border-bottom: 3px solid var(--bs-yellow);
+    transition: 0.2s ease-in;
+}
+
+nav ul li a {
+    display: block;
+    padding-top: 7px;
+    color: var(--bs-navy);
+}
+
+.activenav {
+    border-bottom: 3px solid var(--bs-yellow);
+}
+
+/*.nav-login-btn:hover {*/
+/*    color: white;*/
+/*    background-color: var(--bs-navy);*/
+/*    transition: 0.2s ease-in;*/
+/*}*/
+
+/*nav ul li a:hover {*/
+/*    font-weight: bold;*/
+/*    color: var(--bs-yellow);*/
+/*    transition: 0.2s ease-in;*/
+/*}*/
+/* ---------- NAVBAR END ---------- */
+
+/* ---------- JUMBOTRON ---------- */
+.jumbotron {
+    width: 100%;
+    height: 80vh;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-image: url('../bg-pic.jpg');
+    background-size: cover;
+    background-position: center;
+}
+
+.jumbotron h1 {
+    text-align: center;
+    color: white;
+    font-size: 4em;
+    line-height: 1em;
+    /*font-weight: normal;*/
+}
+
+.jumbotron p {
+    text-align: center;
+    color: white;
+    font-weight: normal;
+    padding: 0 30%;
+}
+
+.jumbotron-login {
+    width: 65%;
+    max-height: 100vh;
+    background-image: url('../bg-pic.jpg');
+    background-size: cover;
+    background-position: center;
+}
+
+.jumbotron-small {
+    width: 100%;
+    height: 15vh;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    background-image: url('../bg-pic.jpg');
+    background-size: cover;
+    background-position: center;
+    padding: 20px 40px;
+}
+
+.jumbotron-small h1 {
+    color: white;
+    font-size: 2em;
+    line-height: 1.2em;
+}
+
+.jumbotron-small a {
+    display: inline-block;
+    color: white;
+    font-size: 0.9em;
+}
+
+.jumbotron-small span {
+    color: white;
+    font-size: 0.9em;
+}
+/* ---------- JUMBOTRON END ---------- */
+
+/* ---------- LP ROADMAP ---------- */
+.lp-roadmap {
+    width: 50%;
+}
+
+.lp-roadmap h1 {
+    font-size: 2.2em;
+    line-height: 1;
+}
+
+.roadmap-img {
+    width: 100%;
+    height: 300px;
+    background-color: var(--bs-grey2);
+    box-shadow: 5px 5px 8px 0px rgba(0,0,0,0.1);
+}
+/* ---------- LP ROADMAP END ---------- */
+
+/* ---------- LOKASI ---------- */
+#lokasi h2 {
+    text-align: center !important;
+}
+
+.map-container {
+    width: 100%;
+    height: 500px;
+    background-color: var(--bs-grey2);
+}
+/* ---------- LOKASI END ---------- */
+
+/* ---------- PARTNER ---------- */
+#partner h2 {
+    text-align: center !important;
+    width: 150px;
+}
+/* ---------- PARTNER END ---------- */
+
+/* ---------- FOOTER ---------- */
+footer {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background-color: var(--bs-navy);
+    width: 100%;
+    height: 40vh;
+    color: white;
+    padding: 30px 100px 10px 100px;
+}
+
+.ft-about {
+    width: 30%;
+    /*margin-right: 100px;*/
+}
+
+.ft-about h1 {
+    font-size: 2em;
+    /*line-height: 1.5em;*/
+    /*border-bottom: 3px solid var(--bs-yellow);*/
+}
+
+.ft-about p {
+    line-height: 1.5em;
+}
+
+.ft-partner {
+    width: 20%;
+    /*margin-right: 100px;*/
+}
+
+.ft-partner h3 {
+    line-height: 2em;
+}
+
+.ft-partner a {
+    color: white;
+    line-height: 1.5em;
+}
+
+.ft-partner a:hover {
+    font-weight: bold;
+    transition: 0.2s ease-in;
+}
+
+.ft-socmed {
+    width: 20%;
+    /*margin-left: 100px;*/
+}
+
+.ft-socmed h3 {
+    line-height: 2em;
+}
+
+.ft-socmed li {
+    line-height: 1.5em;
+}
+
+.ft-socmed a {
+    color: white;
+    line-height: 1.5em;
+}
+
+.copyright {
+    border-top: 2px solid rgba(237, 237, 237, 0.3);
+}
+
+.copyright p {
+    font-size: 0.8em;
+    text-align: center;
+    cursor: default;
+}
+/* ---------- FOOTER END ---------- */
+
+/* ---------- LOGIN PAGE ---------- */
+#login-page {
+    width: 100%;
+    height: 88vh;
+}
+
+.jumbotron-login article {
+    padding: 50px;
+    text-align: center;
+    color: white;
+}
+
+.jumbotron-login article h1 {
+    font-size: 3em;
+    line-height: 1em;
+}
+
+.login-container {
+    width: 35%;
+    height: 100%;
+    align-items: center;
+}
+
+.login-title {
+    /*padding: 40px 0;*/
+    padding-bottom: 40px;
+}
+
+.login-form {
+    height: 35%;
+    /*border-bottom: 2px solid var(--bs-grey2);*/
+}
+
+.login-input {
+    width: 350px;
+}
+
+.btn-login {
+    width: 100%;
+    border-radius: 50px;
+    padding: 10px 0;
+}
+
+.login-unsil {
+    margin-top: 20px;
+    width: 350px;
+    padding-top: 10px;
+    border-top: 2px solid var(--bs-grey2);
+}
+
+.btn-log-unsil {
+    width: 40%;
+    border-radius: 50px;
+    padding: 5px 0;
+    margin: 0 auto;
+}
+/* ---------- LOGIN PAGE END ---------- */
+
+/* ---------- SIDE MENU ---------- */
+.side-menu-container {
+    width: 25%;
+}
+
+.menu-group {
+    margin-bottom: 10px;
+}
+
+.menu {
+    width: 100%;
+    padding: 20px 20px;
+    border-radius: 5px;
+    background-color: var(--bs-grey2);
+}
+
+.menu:hover {
+    font-weight: bold;
+    border-left: 10px solid var(--bs-yellow);
+    transition: 0.2s ease-in;
+}
+
+.activemenu {
+    font-weight: bold;
+    border-left: 10px solid var(--bs-yellow);
+}
+
+/* ---------- SIDE MENU END ---------- */
+
+.profil-container {
+    width: 70%;
+}
+
+.dosen-photo-250 {
+    width: 250px;
+    height: 250px;
+}
+
+.dosen-photo-250 img {
+    width: 250px;
+    height: 250px;
+    object-fit: cover;
+    object-position: top;
+}
+
+.dosen-photo-120 {
+    width: 120px;
+    height: 120px;
+}
+
+.dosen-photo-120 img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    object-position: top;
+}
+
+.profil-title {
+    width: 100px;
+    border-bottom: 3px solid var(--bs-yellow);
+}
+
+.list-misi li {
+    list-style-type: decimal;
+}
+
+.profil-dosen {
+    display: flex;
+    padding: 15px;
+    margin-bottom: 20px;
+    /*border-radius: 5px;*/
+    border-bottom: 2px solid var(--bs-grey2);
+    /*background-color: var(--bs-grey1);*/
+    /*box-shadow: 5px 5px 8px 0px rgba(0,0,0,0.1);*/
+}
+
+.profil-desc {
+    width: 100%;
+}
+
+.publish-icon {
+    max-width: 200px;
+    height: 20px;
+}
+
+.publish-icon img {
+    height: 20px;
+    margin-right: 10px;
+}
+
+/*.detail a {*/
+/*    border-bottom: 2px solid var(--bs-yellow);*/
+/*}*/
+
+.detail a:hover {
+    font-weight: bold;
+    color: var(--bs-navy);
+    transition: 0.2s ease-in;
+}
+
+.card-bio {
+    width: 100%;
+    padding: 20px;
+    background-color: white;
+    box-shadow: 5px 5px 8px 0px rgba(0,0,0,0.1);
+}
+
+.side-table {
+    width: 75%;
+}
+
+.roadmap-container {
+    width: 100%;
+    height: 400px;
+    background-color: var(--bs-grey2);
+    box-shadow: 5px 5px 8px 0px rgba(0,0,0,0.1);
+}
+
+/* ---------- JADWAL LAB ---------- */
+.schedule-container {
+    width: 70%;
+    height: 800px;
+    /*padding: 20px;*/
+    /*border-radius: 10px;*/
+    /*box-shadow: 5px 5px 8px 0px rgba(0,0,0,0.1);*/
+}
+
+/* ---------- TABEL JADWAL ---------- */
+.schedule-table-head {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.schedule-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 30px;
+}
+
+.table-container {
+    width: 100%;
+    height: 90%;
+    box-shadow: 5px 5px 8px 0px rgba(0,0,0,0.1);
+    overflow-y: auto;
+}
+
+.date-time {
+    width: 20%;
+    border-right: 5px solid var(--bs-yellow) !important;
+    padding-left: 20px !important;
+}
+
+.date-time h3 {
+    line-height: 1em;
+}
+
+.nama-npm {
+    width: 40%;
+}
+
+.desc {
+    width: 40%;
+    border-left: 3px solid var(--bs-grey2);
+}
+/* ----- HEAD ----- */
+.schedule-table-head thead tr th {
+    /*border-bottom: 2px solid var(--bs-grey2);*/
+    /*box-shadow: 0px 5px 5px 0px rgba(0,0,0,0.1);*/
+    padding: 0 10px 10px 10px;
+    border: none !important;
+    border-bottom: 5px solid var(--bs-grey2) !important;
+}
+/* ----- BODY ----- */
+.schedule-table tbody tr td {
+    padding: 10px 10px 10px 30px;
+    /*border: 1px solid var(--bs-black);*/
+}
+/* ---------- TABEL JADWAL END ---------- */
+
+/* ---------- FORM PEMINJAMAN ---------- */
+.form-container{
+    width: 25%;
+}
+
+.form-pinjam {
+    width: 100%;
+}
+/* ---------- FORM PEMINJAMAN END ---------- */
+/* ---------- JADWAL LAB END ---------- */
