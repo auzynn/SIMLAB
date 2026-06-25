@@ -10,14 +10,28 @@
 
 ---
 
-## Catatan Progres Frontend (per 2026-06-25)
+## Catatan Progres (per 2026-06-26)
 
-Status konfigurasi & implementasi frontend SPA (`src/frontend/app-labriset`) saat ini:
+**Backend (`src/backend`)**:
+- Sanctum token auth fungsional: `POST /api/auth/login` (cek NULL password, pesan eksplisit sesuai SRS UC-01), `GET /api/auth/me`, `POST /api/auth/logout` — sudah sesuai SDD 5.1.
+- Migration `users` lengkap sesuai SDD 3.1 (kolom `google_id`, `avatar`, `role` enum, `password` nullable).
+- Migration `dosen` (SDD 3.2) & `mahasiswa` (SDD 3.3) sudah ada: `user_id` unique, `mahasiswa.npm` unique, `angkatan` char(4), `dosen_pembimbing_id` FK `nullOnDelete`.
+- Model `User`, `Dosen`, `Mahasiswa` + relasi Eloquent lengkap (`User::dosen()/mahasiswa()`, `Dosen::mahasiswaBimbingan()`, `Mahasiswa::dosenPembimbing()`).
+- `laravel/socialite ^5.28` terpasang, `config/services.php` punya blok `google` (client id/secret/redirect) & `frontend.url`.
+- Google OAuth: `GET /api/auth/google/redirect` & `/callback` jalan — validasi domain (`@student.unsil.ac.id`→mahasiswa, `@unsil.ac.id`→dosen), find-or-create `users`, terbitkan Sanctum token, redirect ke frontend. **Auto-create profil `dosen`/`mahasiswa` + ekstraksi NPM/angkatan masih di-comment** (`createRoleProfile()` belum dipanggil — menunggu `php artisan migrate` tabel dosen/mahasiswa).
+- `DatabaseSeeder` membuat akun Admin & Supervisor sesuai SDD Bagian 2.
+- `laravel/sanctum` terpasang, `config/cors.php` dikonfigurasi (`supports_credentials: true`, origin dari env `FRONTEND_URL`).
+- **Belum ada**: aktivasi auto-create profil (T1.5), Policy RBAC, Form Request, endpoint set/change-password, endpoint user CRUD, seluruh modul FASE 2–9.
 
-- **Fondasi**: Vue 3 + Vite, Vue Router, Pinia, dan Axios instance (`services/api.js`, base URL dari `.env`) sudah terpasang. Interceptor melampirkan `Authorization: Bearer <token>` otomatis sesuai kontrak token SDD. Build (`npm run build`) lulus.
-- **Autentikasi**: alur login frontend fungsional — `services/auth.js` memakai endpoint `/api/auth/login`, `/api/auth/me`, `/api/auth/logout`; store `auth` menyimpan token di localStorage; route guard RBAC (`requiresAuth`/`roles`) aktif. _Menunggu backend agar bisa diuji end-to-end._
-- **Halaman informasi (FASE 2)**: berkas view sudah ada sebagai **UI statis/mockup** (beranda, visi-misi, kepala lab, daftar & detail dosen, roadmap lab, dll.) — **belum tersambung API** karena backend belum dibuat. Belum ditandai selesai.
-- **Belum dikerjakan**: integrasi data dari API, halaman Profil (set/ubah password), halaman Kelola User, serta seluruh modul FASE 2–8.
+**Frontend (`src/frontend/app-labriset`)**:
+- Vue 3 + Vite, Vue Router 4, Pinia, Axios — semua terpasang. Struktur folder lengkap (`components/`, `views/`, `stores/`, `services/`, `router/`, `composables/`).
+- `services/api.js`: Axios instance + interceptor Bearer token otomatis dari localStorage, base URL dari `VITE_API_BASE_URL`.
+- `stores/auth.js`: login, loginWithToken (menerima token jadi dari callback Google), logout, fetchUser — token disimpan di localStorage, state `user`/`isAuthenticated`.
+- `router/index.js`: navigation guard RBAC (`requiresAuth`/`roles`), restore sesi saat refresh halaman, redirect sudah-login ke beranda; route `/auth/callback` terdaftar.
+- `views/login-page.vue`: form login email+password terhubung ke `authStore.login()`; tombol "Login dengan UNSIL Mail" redirect ke `/api/auth/google/redirect`, plus penanganan & tampilan pesan error OAuth dari query string.
+- `views/auth-callback.vue`: penerima redirect Google OAuth — ambil token dari query, simpan via `authStore.loginWithToken()`, muat data user, lalu arahkan ke tujuan semula (atau balik ke login dengan pesan error bila gagal).
+- View FASE 2 (beranda, visi-misi, kepala-lab, list-dosen, detail-dosen, roadmap-lab) sudah ada sebagai **UI statis** — **belum tersambung API** karena backend belum dibuat. Belum ditandai selesai.
+- **Belum ada**: halaman Profil (set/ubah password), halaman Kelola User, seluruh modul FASE 3–9.
 
 ---
 
@@ -25,16 +39,16 @@ Status konfigurasi & implementasi frontend SPA (`src/frontend/app-labriset`) saa
 
 Task persiapan sebelum modul fitur apapun bisa dikerjakan.
 
-- [ ] **T0.1** — Inisialisasi project Laravel 13.16 di `src/backend` (`composer create-project laravel/laravel`), set PHP 8.5.7 di `composer.json`
+- [x] **T0.1** — Inisialisasi project Laravel 13.16 di `src/backend` (`composer create-project laravel/laravel`), set PHP 8.5.7 di `composer.json`
 - [x] **T0.2** — Inisialisasi project Vue 3 + Vite di `src/frontend` (`npm create vite@latest -- --template vue`)
-- [ ] **T0.3** — Konfigurasi koneksi MySQL di `src/backend/.env`
-- [ ] **T0.4** — Install & konfigurasi Laravel Sanctum untuk SPA authentication (SDD Bagian 1)
-- [ ] **T0.5** — Konfigurasi CORS (`config/cors.php`) agar backend menerima request dari origin frontend, `supports_credentials` aktif (SDD Bagian 1)
-- [ ] **T0.6** — Install & konfigurasi Laravel Socialite untuk Google OAuth (SDD Bagian 2)
+- [x] **T0.3** — Konfigurasi koneksi MySQL di `src/backend/.env`
+- [x] **T0.4** — Install & konfigurasi Laravel Sanctum untuk SPA authentication (SDD Bagian 1)
+- [x] **T0.5** — Konfigurasi CORS (`config/cors.php`) agar backend menerima request dari origin frontend, `supports_credentials` aktif (SDD Bagian 1)
+- [x] **T0.6** — Install & konfigurasi Laravel Socialite untuk Google OAuth (SDD Bagian 2)
 - [x] **T0.7** — Install Vue Router & Pinia di frontend; setup struktur folder `components/`, `views/`, `stores/`, `services/`, `router/` (`agent.md` Bagian 5)
 - [x] **T0.8** — Setup Axios instance di `src/frontend/src/services` dengan base URL dari `.env` (`VITE_API_BASE_URL`)
-- [ ] **T0.9** — Install Laravel Pint (backend) & Prettier/ESLint (frontend), verifikasi `format on save` di `.vscode/settings.json` berjalan
-- [ ] **T0.10** — Setup PHPUnit/Pest config dasar di `tests/Backend`
+- [x] **T0.9** — Install Laravel Pint (backend) & Prettier/ESLint (frontend), verifikasi `format on save` di `.vscode/settings.json` berjalan
+- [x] **T0.10** — Setup PHPUnit/Pest config dasar di `src/backend/tests`
 
 ---
 
@@ -43,41 +57,41 @@ Task persiapan sebelum modul fitur apapun bisa dikerjakan.
 Fondasi yang harus selesai sebelum modul lain bisa diuji end-to-end (hampir semua modul butuh user yang sudah login).
 
 ### Backend
-- [ ] **T1.1** — Migration tabel `users` sesuai SDD 3.1 (kolom `google_id`, `avatar`, `role` enum, `password` nullable)
-- [ ] **T1.2** — Migration tabel `dosen` sesuai SDD 3.2 (relasi `user_id` wajib unique)
-- [ ] **T1.3** — Migration tabel `mahasiswa` sesuai SDD 3.3 (kolom `nim`, `angkatan`, `dosen_pembimbing_id` FK -> dosen.id — lihat aturan auto-extract & bimbingan)
-- [ ] **T1.4** — Model `User`, `Dosen`, `Mahasiswa` + relasi Eloquent (`User::dosen()`, `User::mahasiswa()`, `Mahasiswa::dosenPembimbing()`, dst.)
-- [ ] **T1.5** — Endpoint `GET /api/auth/google/redirect` & `GET /api/auth/google/callback` — implementasi alur SDD Bagian 2 lengkap: validasi domain email, auto-create `users` + `dosen`/`mahasiswa`, ekstraksi NIM & angkatan (format `"20" . dua_digit_awal`)
-- [ ] **T1.6** — Endpoint `POST /api/auth/login` (login manual) — tolak jika `password` NULL, dengan pesan sesuai SRS UC-01 skenario 1b
+- [x] **T1.1** — Migration tabel `users` sesuai SDD 3.1 (kolom `google_id`, `avatar`, `role` enum, `password` nullable)
+- [x] **T1.2** — Migration tabel `dosen` sesuai SDD 3.2 (relasi `user_id` wajib unique)
+- [x] **T1.3** — Migration tabel `mahasiswa` sesuai SDD 3.3 (kolom `npm`, `angkatan`, `dosen_pembimbing_id` FK -> dosen.id — lihat aturan auto-extract & bimbingan)
+- [x] **T1.4** — Model `User`, `Dosen`, `Mahasiswa` + relasi Eloquent (`User::dosen()`, `User::mahasiswa()`, `Mahasiswa::dosenPembimbing()`, dst.)
+- [ ] **T1.5** — Endpoint `GET /api/auth/google/redirect` & `GET /api/auth/google/callback` — implementasi alur SDD Bagian 2 lengkap: validasi domain email, auto-create `users` + `dosen`/`mahasiswa`, ekstraksi NPM & angkatan (format `"20" . dua_digit_awal`). _Catatan: redirect/callback + validasi domain + terbit token sudah jalan; `createRoleProfile()` (auto-create profil + ekstraksi NPM/angkatan) sudah ditulis tapi **masih di-comment** — aktifkan setelah `php artisan migrate` tabel dosen/mahasiswa._
+- [x] **T1.6** — Endpoint `POST /api/auth/login` (login manual) — tolak jika `password` NULL, dengan pesan sesuai SRS UC-01 skenario 1b
 - [ ] **T1.7** — Endpoint `POST /api/auth/set-password` & `PATCH /api/auth/change-password` (SRS UC-01b)
-- [ ] **T1.8** — Endpoint `POST /api/auth/logout` & `GET /api/auth/me`
-- [ ] **T1.9** — Seeder `UserSeeder` untuk membuat akun Admin & Supervisor manual (SDD Bagian 2, catatan implementasi)
+- [x] **T1.8** — Endpoint `POST /api/auth/logout` & `GET /api/auth/me`
+- [x] **T1.9** — Seeder `UserSeeder` untuk membuat akun Admin & Supervisor manual (SDD Bagian 2, catatan implementasi)
 - [ ] **T1.10** — Policy dasar untuk role-based access control mengacu matriks RBAC SRS Bagian 1
 - [ ] **T1.11** — Endpoint `GET /api/users`, `POST /api/users`, `PATCH /api/users/{id}`, `DELETE /api/users/{id}` (Admin only)
 - [ ] **T1.12** — Form Request validasi untuk seluruh endpoint di atas
 
 ### Frontend
-- [x] **T1.13** — Halaman Login: tombol "Login dengan Google" + form "Login dengan Email & Password" (form fungsional, terhubung ke `authStore.login()`; tombol Google redirect ke `/api/auth/google/redirect`)
+- [x] **T1.13** — Halaman Login: tombol "Login dengan Google" + form "Login dengan Email & Password" (form fungsional, terhubung ke `authStore.login()`; tombol Google redirect ke `/api/auth/google/redirect`, callback ditangani `views/auth-callback.vue`)
 - [ ] **T1.14** — Halaman Profil: form "Atur Password" (jika belum ada) / "Ubah Password" (jika sudah ada), kondisional sesuai state user
 - [x] **T1.15** — Pinia store `auth` — menyimpan token (localStorage), data user, role; dipakai global untuk proteksi route
-- [x] **T1.16** — Vue Router navigation guard — `beforeEach` dengan meta `requiresAuth`/`roles`, restore sesi saat refresh, redirect pasca-login. _Catatan: redirect ke dashboard per role menunggu halaman dashboard dibuat._
+- [x] **T1.16** — Vue Router navigation guard — `beforeEach` dengan meta `requiresAuth`/`roles`, restore sesi saat refresh, redirect pasca-login. _Catatan: redirect ke dashboard per role menunggu halaman dashboard masing-masing role dibuat._
 - [ ] **T1.17** — Halaman Kelola User (Admin only) — list, edit role, hapus user
 
 ### Testing
 - [ ] **T1.18** — Test: domain email non-UNSIL ditolak saat login Google
 - [ ] **T1.19** — Test: login Google pertama kali membuat `users` + entri `dosen`/`mahasiswa` otomatis sesuai role
-- [ ] **T1.20** — Test: ekstraksi NIM dan angkatan dari email mahasiswa menghasilkan nilai yang benar
+- [ ] **T1.20** — Test: ekstraksi NPM dan angkatan dari email mahasiswa menghasilkan nilai yang benar
 - [ ] **T1.21** — Test: login manual ditolak jika `password` masih NULL
-- [ ] **T1.22** — Test: field `nim` dan `angkatan` tidak bisa diubah lewat endpoint update profil mahasiswa
+- [ ] **T1.22** — Test: field `npm` dan `angkatan` tidak bisa diubah lewat endpoint update profil mahasiswa
 
 ---
 
 ## FASE 2: Halaman Informasi Lab
 
-Modul tampilan informasi publik (PRD 2.5, SDD 3.12).
+Modul tampilan informasi publik (PRD 2.5, SDD 3.15).
 
 ### Backend
-- [ ] **T2.1** — Migration tabel `info_lab` (SDD 3.12)
+- [ ] **T2.1** — Migration tabel `info_lab` (SDD 3.15)
 - [ ] **T2.2** — Model `InfoLab`
 - [ ] **T2.3** — Endpoint `GET /api/info-lab/{tipe}` & `PATCH /api/info-lab/{tipe}` (Admin only untuk update)
 - [ ] **T2.4** — Seeder data awal untuk tipe `beranda`, `visi_misi`, `kepala_lab`, `roadmap_kk`
@@ -85,11 +99,11 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.12).
 - [ ] **T2.6** — Endpoint `PATCH /api/dosen/{id}` — izinkan update oleh pemilik (Dosen) atau Admin/Supervisor
 
 ### Frontend
-- [ ] **T2.7** — Halaman Beranda
-- [ ] **T2.8** — Halaman Visi & Misi
-- [ ] **T2.9** — Halaman Profil Kepala Lab
-- [ ] **T2.10** — Halaman Daftar Dosen (list) + halaman Detail Profil Dosen
-- [ ] **T2.11** — Halaman Roadmap Laboratorium
+- [ ] **T2.7** — Halaman Beranda (tersambung `GET /api/info-lab/beranda`)
+- [ ] **T2.8** — Halaman Visi & Misi (tersambung `GET /api/info-lab/visi_misi`)
+- [ ] **T2.9** — Halaman Profil Kepala Lab (tersambung `GET /api/info-lab/kepala_lab`)
+- [ ] **T2.10** — Halaman Daftar Dosen (list dari `GET /api/dosen`) + halaman Detail Profil Dosen (`GET /api/dosen/{id}`)
+- [ ] **T2.11** — Halaman Roadmap Laboratorium (tersambung `GET /api/info-lab/roadmap_kk`)
 - [ ] **T2.12** — Panel kelola konten info lab (Admin only)
 
 ### Testing
@@ -159,12 +173,12 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.12).
 
 ## FASE 4: Inventaris & Peminjaman Perangkat
 
-(PRD 3.4, SRS UC-03, SDD 3.6, 3.7, 3.8)
+(PRD 3.4, SRS UC-03, SDD 3.9, 3.10, 3.11)
 
 ### Backend
-- [ ] **T4.1** — Migration tabel `perangkat` (SDD 3.6)
-- [ ] **T4.2** — Migration tabel `peminjaman_perangkat` (SDD 3.7)
-- [ ] **T4.3** — Migration tabel `perpanjangan_peminjaman` (SDD 3.8)
+- [ ] **T4.1** — Migration tabel `perangkat` (SDD 3.9)
+- [ ] **T4.2** — Migration tabel `peminjaman_perangkat` (SDD 3.10)
+- [ ] **T4.3** — Migration tabel `perpanjangan_peminjaman` (SDD 3.11)
 - [ ] **T4.4** — Model `Perangkat`, `PeminjamanPerangkat`, `PerpanjanganPeminjaman` + relasi
 - [ ] **T4.5** — Endpoint CRUD `/api/perangkat` (Admin/Supervisor)
 - [ ] **T4.6** — Endpoint `POST /api/peminjaman-perangkat` (Mahasiswa saja — SRS Bagian 1)
@@ -187,10 +201,10 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.12).
 
 ## FASE 5: Presensi Laboratorium
 
-(PRD 3.5, SRS UC-04, SDD 3.9)
+(PRD 3.5, SRS UC-04, SDD 3.12)
 
 ### Backend
-- [ ] **T5.1** — Migration tabel `presensi` (SDD 3.9)
+- [ ] **T5.1** — Migration tabel `presensi` (SDD 3.12)
 - [ ] **T5.2** — Model `Presensi` + relasi
 - [ ] **T5.3** — Endpoint `POST /api/presensi/check-in` — **wajib** validasi tidak ada sesi `check_out IS NULL` aktif milik user yang sama (SRS UC-04 aturan validasi kunci)
 - [ ] **T5.4** — Endpoint `PATCH /api/presensi/{id}/check-out` — set timestamp WIB
@@ -209,10 +223,10 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.12).
 
 ## FASE 6: Katalog Sertifikasi (Informasional)
 
-(PRD 3.6, SRS UC-05, SDD 3.10)
+(PRD 3.6, SRS UC-05, SDD 3.13)
 
 ### Backend
-- [ ] **T6.1** — Migration tabel `sertifikasi` (SDD 3.10 — murni katalog, tanpa relasi ke `users`)
+- [ ] **T6.1** — Migration tabel `sertifikasi` (SDD 3.13 — murni katalog, tanpa relasi ke `users`)
 - [ ] **T6.2** — Model `Sertifikasi`
 - [ ] **T6.3** — Endpoint CRUD `/api/sertifikasi` (Create/Update/Delete: Admin/Supervisor; Read: semua role)
 
@@ -227,10 +241,10 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.12).
 
 ## FASE 7: Portofolio Mahasiswa
 
-(PRD 3.7, SDD 3.11)
+(PRD 3.7, SDD 3.14)
 
 ### Backend
-- [ ] **T7.1** — Migration tabel `portofolio` (SDD 3.11)
+- [ ] **T7.1** — Migration tabel `portofolio` (SDD 3.14)
 - [ ] **T7.2** — Model `Portofolio` + relasi ke `User`
 - [ ] **T7.3** — Endpoint CRUD `/api/portofolio` — Create/Update/Delete hanya pemilik (Mahasiswa); Read semua role
 
@@ -259,8 +273,43 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.12).
 
 ---
 
+## FASE 9: Notifikasi In-App
+
+(PRD 3.10, SRS UC-07, SDD 3.16, 5.14)
+
+> Fase ini **tidak berdiri sendiri** — notifikasi adalah efek samping dari aksi di Fase 3, 4, dan 5. Migration dan Model dikerjakan di sini, tapi integrasi insert notifikasi ke transaksi masing-masing modul dikerjakan bersamaan saat fase tersebut dieksekusi (atau sebagai pass kedua setelah fase terkait selesai).
+
+### Backend
+- [ ] **T9.1** — Migration tabel `notifikasi` (SDD 3.16): kolom `user_id`, `judul`, `pesan`, `tipe` (enum), `referensi_id`, `is_read`; composite index `(user_id, is_read)`
+- [ ] **T9.2** — Model `Notifikasi` + relasi `belongsTo User`
+- [ ] **T9.3** — `NotifikasiService` — class reusable dengan method `kirim(userId, judul, pesan, tipe, referensiId)` yang melakukan insert dalam transaksi yang sudah berjalan; dipanggil dari dalam transaksi modul lain
+- [ ] **T9.4** — Integrasi di modul Peminjaman Ruangan: panggil `NotifikasiService::kirim()` di dalam transaksi approve/reject `peminjaman_ruangan` — kirim ke pengaju; dan di dalam transaksi `POST /api/peminjaman-ruangan` — kirim ke semua Supervisor & Admin (tipe: `pengajuan_masuk`)
+- [ ] **T9.5** — Integrasi di modul Peminjaman Perangkat: panggil `NotifikasiService::kirim()` di dalam transaksi approve/reject `peminjaman_perangkat` — kirim ke pengaju; dan saat pengajuan baru masuk — kirim ke semua Supervisor & Admin
+- [ ] **T9.6** — Integrasi di modul Perpanjangan: panggil `NotifikasiService::kirim()` di dalam transaksi approve/reject `perpanjangan_peminjaman` — kirim ke pengaju; dan saat pengajuan baru masuk — kirim ke semua Supervisor & Admin
+- [ ] **T9.7** — Integrasi di modul Kelas Lab: panggil `NotifikasiService::kirim()` di dalam transaksi `POST /api/kelas-lab/{id}/daftar` (konfirmasi pendaftaran berhasil — kirim ke Mahasiswa yang mendaftar)
+- [ ] **T9.8** — Endpoint `GET /api/notifikasi` — list notifikasi milik sendiri, urut terbaru, response sertakan `unread_count` (SDD 5.14)
+- [ ] **T9.9** — Endpoint `PATCH /api/notifikasi/{id}/read` — tandai satu notifikasi sebagai sudah dibaca (validasi: hanya milik sendiri)
+- [ ] **T9.10** — Endpoint `PATCH /api/notifikasi/read-all` — tandai semua notifikasi milik sendiri sebagai sudah dibaca
+- [ ] **T9.11** — Endpoint `DELETE /api/notifikasi/{id}` — hapus satu notifikasi milik sendiri
+- [ ] **T9.12** — Update `GET /api/auth/me`: tambahkan field `unread_notifications_count` (COUNT `notifikasi` milik user dengan `is_read = 0`) ke response — dipakai badge navbar tanpa request tambahan (SRS UC-07 aturan validasi kunci, SDD 5.1)
+
+### Frontend
+- [ ] **T9.13** — Komponen `NotificationBell` di navbar: ikon lonceng + badge angka merah jika `unread_notifications_count > 0`; nilai badge diambil dari response `GET /api/auth/me` saat pertama load
+- [ ] **T9.14** — Dropdown/panel notifikasi: muncul saat lonceng diklik, list notifikasi dari `GET /api/notifikasi`; notifikasi belum dibaca ditandai secara visual (mis. background berbeda)
+- [ ] **T9.15** — Tombol "Tandai Sudah Dibaca" per item + "Tandai Semua" + tombol hapus per item
+- [ ] **T9.16** — Pinia store `notifikasi` — menyimpan list & `unread_count`; diupdate setelah aksi tandai baca/hapus
+
+### Testing
+- [ ] **T9.17** — Test: approve `peminjaman_ruangan` membuat entri `notifikasi` untuk pengaju dan tidak untuk user lain
+- [ ] **T9.18** — Test: pengajuan baru `peminjaman_ruangan` membuat notifikasi untuk semua Supervisor & Admin (bukan untuk pengaju itu sendiri)
+- [ ] **T9.19** — Test: `GET /api/auth/me` mengembalikan `unread_notifications_count` yang akurat
+- [ ] **T9.20** — Test: `PATCH /api/notifikasi/{id}/read` ditolak (403) jika notifikasi bukan milik sendiri
+- [ ] **T9.21** — Test: jika transaksi approve rollback, insert notifikasi ikut rollback (tidak ada notifikasi orphan)
+
+---
+
 ## Catatan Pengerjaan untuk AI Agent
 
-1. **Urutan fase bersifat dependency, bukan kaku** — Fase 0 dan Fase 1 harus selesai duluan karena hampir semua modul butuh user & auth. Fase 2–8 secara teknis bisa dikerjakan paralel/diloncat sesuai prioritas, tapi disarankan urut karena beberapa relasi data saling bergantung (mis. Fase 4 & 5 sama-sama butuh data `users`/`mahasiswa` dari Fase 1).
+1. **Urutan fase bersifat dependency, bukan kaku** — Fase 0 dan Fase 1 harus selesai duluan karena hampir semua modul butuh user & auth. Fase 2–9 secara teknis bisa dikerjakan paralel/diloncat sesuai prioritas, tapi disarankan urut karena beberapa relasi data saling bergantung (mis. Fase 4 & 5 sama-sama butuh data `users`/`mahasiswa` dari Fase 1).
 2. **Setiap task backend yang menyentuh data sensitif (approve/reject, kelola user) wajib dicek ulang ke matriks RBAC di `2_SRS.md` Bagian 1** sebelum dianggap selesai.
 3. Checklist test di tiap fase adalah **minimum**, bukan daftar lengkap — AI Agent boleh menambah test lain yang relevan selama tidak mengurangi yang sudah ada di sini.

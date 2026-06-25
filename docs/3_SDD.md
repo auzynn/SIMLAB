@@ -47,7 +47,7 @@ Ini bagian paling kritis karena menentukan bagaimana role ditentukan secara otom
    - **Belum ada** → buat baru:
      - Insert ke `users` dengan role sesuai domain
      - **Jika role Dosen** → sekaligus insert entri baru ke tabel `dosen`, di-link via `user_id` (lihat Bagian 3.2)
-     - **Jika role Mahasiswa** → sekaligus insert entri baru ke tabel `mahasiswa`, di-link via `user_id`. Kolom `nim` diisi otomatis dengan mengekstrak local-part dari email (bagian sebelum `@`), mis. email `197006028@student.unsil.ac.id` → `nim = "197006028"` (lihat Bagian 3.3)
+     - **Jika role Mahasiswa** → sekaligus insert entri baru ke tabel `mahasiswa`, di-link via `user_id`. Kolom `npm` diisi otomatis dengan mengekstrak local-part dari email (bagian sebelum `@`), mis. email `197006028@student.unsil.ac.id` → `npm = "197006028"` (lihat Bagian 3.3)
    - **Sudah ada** → lanjut ke langkah 7 (login biasa)
 7. Backend membuat Sanctum token, mengembalikan token + data user (termasuk role) ke frontend
 8. Frontend menyimpan token, menyertakan di header `Authorization: Bearer ...` untuk semua request API berikutnya, dan mengarahkan user ke dashboard sesuai role
@@ -124,13 +124,13 @@ Profil mahasiswa, dibuat otomatis bersamaan saat user dengan email `@student.uns
 | `id` | bigint, PK | |
 | `user_id` | bigint, FK → `users.id`, unique | Selalu terisi (dibuat otomatis saat registrasi Mahasiswa), `on delete cascade` |
 | `dosen_pembimbing_id` | bigint, FK → `dosen.id`, nullable | Dosen pembimbing riset/akademik untuk validasi bimbingan, `on delete set null` |
-| `nim` | varchar, unique | **Diisi otomatis** dari local-part email saat registrasi (mis. `197006028@student.unsil.ac.id` → `197006028`). **Immutable** — tidak dapat diubah lewat endpoint update profil, hanya bisa dikoreksi langsung di database oleh Admin jika terjadi kesalahan data dari pihak kampus |
+| `npm` | varchar, unique | **Diisi otomatis** dari local-part email saat registrasi (mis. `197006028@student.unsil.ac.id` → `197006028`). **Immutable** — tidak dapat diubah lewat endpoint update profil, hanya bisa dikoreksi langsung di database oleh Admin jika terjadi kesalahan data dari pihak kampus |
 | `prodi` | varchar, nullable | Diisi menyusul oleh mahasiswa/admin (tidak bisa diekstrak otomatis dari email) |
-| `angkatan` | varchar(4) | **Diisi otomatis** dari 2 digit awal `nim` saat registrasi, digabung dengan prefix `"20"` (format NPM UNSIL: 2 digit pertama = tahun angkatan). Mis. `nim = "197006028"` → 2 digit awal `"19"` → `angkatan = "20" . "19"` = `"2019"`. **Wajib digabung sebagai string** (concatenation), bukan operasi penjumlahan angka |
+| `angkatan` | varchar(4) | **Diisi otomatis** dari 2 digit awal `npm` saat registrasi, digabung dengan prefix `"20"` (format NPM UNSIL: 2 digit pertama = tahun angkatan). Mis. `npm = "197006028"` → 2 digit awal `"19"` → `angkatan = "20" . "19"` = `"2019"`. **Wajib digabung sebagai string** (concatenation), bukan operasi penjumlahan angka |
 | `foto` | varchar, nullable | |
 | `created_at`, `updated_at` | timestamp | |
 
-**Aturan implementasi penting**: Form Request untuk endpoint update profil mahasiswa (`PATCH /api/mahasiswa/{id}`) **wajib** mengabaikan/menolak perubahan pada field `nim` dan `angkatan` meskipun dikirim di request body — keduanya diturunkan otomatis saat registrasi, validasi ini di level backend, bukan hanya disembunyikan di frontend. Kolom `name`, `email`, dan `avatar` **tidak diduplikasi** di tabel ini — selalu diambil lewat relasi ke `users` (`mahasiswa->user->name`), sama seperti pola tabel `dosen`. Kolom `dosen_pembimbing_id` digunakan oleh backend Policy untuk otorisasi akses bimbingan.
+**Aturan implementasi penting**: Form Request untuk endpoint update profil mahasiswa (`PATCH /api/mahasiswa/{id}`) **wajib** mengabaikan/menolak perubahan pada field `npm` dan `angkatan` meskipun dikirim di request body — keduanya diturunkan otomatis saat registrasi, validasi ini di level backend, bukan hanya disembunyikan di frontend. Kolom `name`, `email`, dan `avatar` **tidak diduplikasi** di tabel ini — selalu diambil lewat relasi ke `users` (`mahasiswa->user->name`), sama seperti pola tabel `dosen`. Kolom `dosen_pembimbing_id` digunakan oleh backend Policy untuk otorisasi akses bimbingan.
 
 ### 3.4 `ruangan`
 Data master ruangan lab.
@@ -371,7 +371,7 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 |---|---|---|
 | GET | `/api/mahasiswa` | List semua mahasiswa — Admin & Supervisor (operasional penuh); Dosen (read-only, untuk kebutuhan rekap presensi mahasiswa) |
 | GET | `/api/mahasiswa/{id}` | Detail profil satu mahasiswa (milik sendiri, atau Admin/Dosen pembimbing) |
-| PATCH | `/api/mahasiswa/{id}` | Update profil milik sendiri — field `nim` diabaikan/ditolak meski dikirim di body (lihat SDD 3.3) |
+| PATCH | `/api/mahasiswa/{id}` | Update profil milik sendiri — field `npm` diabaikan/ditolak meski dikirim di body (lihat SDD 3.3) |
 
 ### 5.5 Ruangan & Peminjaman Ruangan
 | Method | Endpoint | Keterangan |

@@ -23,8 +23,10 @@
           <p align="center">Atau login dengan</p>
         </div>
         <div class="flex-h center" style="margin-top: 15px">
-          <img src="../assets/google.png" style="width: 20px; height: 20px; margin-right: 5px" />
-          <button @click="loginUnsil">UNSIL Mail</button>
+          <button type="button" class="btn-google" @click="loginUnsil">
+            <img src="../assets/google.png" class="btn-google__icon" alt="" />
+            <span>Login dengan UNSIL Mail</span>
+          </button>
         </div>
       </div>
     </div>
@@ -34,7 +36,7 @@
 
 <script setup>
 // Halaman login pengguna
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 
@@ -46,6 +48,21 @@ const email = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
+
+// Pesan ramah untuk kode error yang dikirim backend/callback Google OAuth
+const oauthErrors = {
+  invalid_domain: 'Gunakan email institusi UNSIL (@unsil.ac.id atau @student.unsil.ac.id).',
+  oauth_failed: 'Login Google gagal. Silakan coba lagi.',
+  session_failed: 'Gagal menyiapkan sesi. Silakan coba lagi.'
+}
+
+// Tampilkan error dari query string saat datang dari redirect OAuth
+onMounted(() => {
+  const code = route.query.error
+  if (code) {
+    error.value = oauthErrors[code] || 'Terjadi kesalahan saat login.'
+  }
+})
 
 // Login manual: minta token ke backend lalu arahkan ke beranda
 async function handleLogin() {
@@ -67,3 +84,37 @@ function loginUnsil() {
   window.location.href = `${baseUrl}/api/auth/google/redirect`
 }
 </script>
+
+<style scoped>
+.btn-google {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #3c4043;
+  background-color: #fff;
+  border: 1px solid #dadce0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.btn-google:hover {
+  background-color: #f7f8f8;
+  border-color: #d2d3d4;
+  box-shadow: 0 1px 3px rgba(60, 64, 67, 0.15);
+}
+
+.btn-google:active {
+  background-color: #eef0f1;
+}
+
+.btn-google__icon {
+  width: 18px;
+  height: 18px;
+}
+</style>

@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    // Google OAuth (Laravel Socialite) — login institusi UNSIL (lihat 3_SDD.md Bagian 2)
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        'redirect' => env('GOOGLE_REDIRECT_URI', 'http://localhost:8000/api/auth/google/callback'),
+    ],
+
+    // URL frontend untuk redirect balik setelah OAuth (cache-safe via config)
+    'frontend' => [
+        'url' => env('FRONTEND_URL', 'http://localhost:5173'),
+    ],
+
 ];

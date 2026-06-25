@@ -25,7 +25,7 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | Sertifikasi (katalog informasi) | CRUD | CRUD | – | R |
 | Portofolio Mahasiswa | R | R | R | CRUD (milik sendiri) |
 | Profil & Roadmap Dosen | R | R | CRUD (milik sendiri) | R |
-| Profil Mahasiswa (data diri, kecuali NIM) | R | R | R (mahasiswa bimbingan) | U (milik sendiri) |
+| Profil Mahasiswa (data diri, kecuali NPM) | R | R | R (mahasiswa bimbingan) | U (milik sendiri) |
 | Laporan/Report (unduh) | C, R | C, R | – | – |
 | Halaman Informasi Lab (Beranda, Visi-Misi, Daftar Dosen, Roadmap Lab, Profil Kepala Lab) | CRUD (kelola konten) | R | R | R |
 | Edit Profil Akun Pribadi | U (milik sendiri) | U (milik sendiri) | U (milik sendiri) | U (milik sendiri) |

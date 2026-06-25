@@ -14,6 +14,12 @@ const routes = [
     component: () => import('../views/login-page.vue')
   },
   {
+    path: '/auth/callback',
+    name: 'auth-callback',
+    // Penerima token redirect Google OAuth dari backend (lihat GoogleAuthController@callback)
+    component: () => import('../views/auth-callback.vue')
+  },
+  {
     path: '/kepalalab',
     name: 'kepalalab',
     component: () => import('../views/kepala-lab.vue')

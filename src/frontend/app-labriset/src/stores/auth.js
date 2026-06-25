@@ -15,6 +15,13 @@ export const useAuthStore = defineStore('auth', () => {
     await fetchUser()
   }
 
+  // Login via token jadi (mis. hasil callback Google OAuth): simpan token lalu ambil data user
+  async function loginWithToken(token) {
+    localStorage.setItem('token', token)
+    isAuthenticated.value = true
+    await fetchUser()
+  }
+
   // Ambil data user dari token yang aktif
   async function fetchUser() {
     try {
@@ -39,5 +46,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, isAuthenticated, login, fetchUser, logout }
+  return { user, isAuthenticated, login, loginWithToken, fetchUser, logout }
 })

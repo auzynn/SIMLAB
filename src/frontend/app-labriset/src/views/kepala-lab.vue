@@ -47,7 +47,7 @@
             </tr>
             <tr style="height: 23px">
               <td style="width: 21.8243%; height: 23px">&nbsp;Bidang Minat</td>
-              <td style="width: 68.1757%; height: 23px">&nbsp;: Digital Forensik, Network Engineering, System Engineering, Internet of Things, AI4IoT, Cloud Computing, Security Engineering</td>
+              <td style="width: 68.1757%; height: 23px">&nbsp;: Digital Forensik, Network Engineering, System Engineering, Internet of Things, AI, IoT, <br />&nbsp;&nbsp;&nbsp;Cloud Computing, Security Engineering</td>
             </tr>
           </tbody>
         </table>
@@ -66,3 +66,9 @@ import JumbotronSmall from '@/components/jumbotron-small.vue'
 import SidemenuProfile from '@/components/sidemenu-profile.vue'
 import FooterComponent from '@/components/footer-component.vue'
 </script>
+
+<style scoped>
+td {
+  vertical-align: top;
+}
+</style>
