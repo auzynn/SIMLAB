@@ -58,7 +58,7 @@
         </div>
 
         <div class="mt-30">
-          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Animi commodi cumque deleniti dignissimos et, facilis illo, impedit magnam maiores nisi, non qui vel. Architecto debitis nisi nobis numquam repellat sint?</p>
+          <p>Ir. Nur Widiyasono, S.Kom., M.Kom., merupakan dosen tetap Program Studi Informatika Universitas Siliwangi dengan jabatan fungsional Lektor. Beliau menekuni bidang Digital Forensik, Network Engineering, dan Keamanan Sistem, serta aktif membimbing riset mahasiswa di Laboratorium Riset KK JKF.</p>
         </div>
       </div>
     </div>

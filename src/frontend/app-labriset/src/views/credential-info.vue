@@ -58,7 +58,7 @@
         </div>
 
         <div class="mt-30">
-          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Animi commodi cumque deleniti dignissimos et, facilis illo, impedit magnam maiores nisi, non qui vel. Architecto debitis nisi nobis numquam repellat sint?</p>
+          <p>Sertifikasi dan kredensial profesional yang dimiliki dosen, antara lain CEH (Certified Ethical Hacker), CHFI (Computer Hacking Forensic Investigator), CITAP, dan MCE. Kredensial ini menunjang keahlian di bidang jaringan, keamanan, dan forensik digital.</p>
         </div>
       </div>
     </div>

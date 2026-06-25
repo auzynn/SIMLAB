@@ -15,8 +15,12 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('google_id')->nullable()->unique();
+            $table->string('avatar')->nullable();
+            $table->enum('role', ['admin', 'supervisor', 'dosen', 'mahasiswa']);
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
+            // Password nullable: akun lahir lewat Google OAuth, password di-set menyusul (SDD 3.1)
+            $table->string('password')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

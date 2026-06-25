@@ -58,7 +58,7 @@
         </div>
 
         <div class="mt-30">
-          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Animi commodi cumque deleniti dignissimos et, facilis illo, impedit magnam maiores nisi, non qui vel. Architecto debitis nisi nobis numquam repellat sint?</p>
+          <p>Hasil penelitian dan publikasi ilmiah dosen, meliputi artikel jurnal, prosiding konferensi, serta luaran riset di bidang jaringan, keamanan siber, dan forensik digital. Bagian ini dapat menjadi rujukan mahasiswa dalam menentukan topik tugas akhir.</p>
         </div>
       </div>
     </div>

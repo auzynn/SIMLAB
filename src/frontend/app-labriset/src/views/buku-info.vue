@@ -58,7 +58,7 @@
         </div>
 
         <div class="mt-30">
-          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Animi commodi cumque deleniti dignissimos et, facilis illo, impedit magnam maiores nisi, non qui vel. Architecto debitis nisi nobis numquam repellat sint?</p>
+          <p>Daftar karya buku yang ditulis dan diterbitkan oleh dosen, mencakup judul, tahun terbit, serta penerbit. Bagian ini menjadi rujukan publikasi akademik dosen di Laboratorium Riset KK JKF.</p>
         </div>
       </div>
     </div>

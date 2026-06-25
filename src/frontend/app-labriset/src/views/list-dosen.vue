@@ -24,7 +24,7 @@
             <div class="profil-desc flex-v between ml-30">
               <div>
                 <h2>Ir. Nur Widiyasono, S.Kom., M.Kom., CEH., CHFI., CITAP., MCE.</h2>
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit</p>
+                <p>Dosen Program Studi Informatika — bidang Jaringan, Keamanan, dan Forensik Digital.</p>
               </div>
               <div class="flex-h between">
                 <div class="publish-icon flex-h">
@@ -47,7 +47,7 @@
             <div class="profil-desc flex-v between ml-30">
               <div>
                 <h2>Ir. Nur Widiyasono, S.Kom., M.Kom., CEH., CHFI., CITAP., MCE.</h2>
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit</p>
+                <p>Dosen Program Studi Informatika — bidang Jaringan, Keamanan, dan Forensik Digital.</p>
               </div>
               <div class="flex-h between">
                 <div class="publish-icon flex-h">
@@ -70,7 +70,7 @@
             <div class="profil-desc flex-v between ml-30">
               <div>
                 <h2>Ir. Nur Widiyasono, S.Kom., M.Kom., CEH., CHFI., CITAP., MCE.</h2>
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit</p>
+                <p>Dosen Program Studi Informatika — bidang Jaringan, Keamanan, dan Forensik Digital.</p>
               </div>
               <div class="flex-h between">
                 <div class="publish-icon flex-h">
@@ -93,7 +93,7 @@
             <div class="profil-desc flex-v between ml-30">
               <div>
                 <h2>Ir. Nur Widiyasono, S.Kom., M.Kom., CEH., CHFI., CITAP., MCE.</h2>
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit</p>
+                <p>Dosen Program Studi Informatika — bidang Jaringan, Keamanan, dan Forensik Digital.</p>
               </div>
               <div class="flex-h between">
                 <div class="publish-icon flex-h">
@@ -116,7 +116,7 @@
             <div class="profil-desc flex-v between ml-30">
               <div>
                 <h2>Ir. Nur Widiyasono, S.Kom., M.Kom., CEH., CHFI., CITAP., MCE.</h2>
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit</p>
+                <p>Dosen Program Studi Informatika — bidang Jaringan, Keamanan, dan Forensik Digital.</p>
               </div>
               <div class="flex-h between">
                 <div class="publish-icon flex-h">

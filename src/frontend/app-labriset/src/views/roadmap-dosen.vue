@@ -58,7 +58,7 @@
         </div>
 
         <div class="mt-30">
-          <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Animi commodi cumque deleniti dignissimos et, facilis illo, impedit magnam maiores nisi, non qui vel. Architecto debitis nisi nobis numquam repellat sint?</p>
+          <p>Peta jalan penelitian dosen yang menggambarkan arah dan rencana riset jangka panjang, mulai dari topik yang sedang dikembangkan hingga target capaian di bidang keminatannya. Roadmap ini selaras dengan roadmap riset Laboratorium KK JKF.</p>
         </div>
       </div>
     </div>

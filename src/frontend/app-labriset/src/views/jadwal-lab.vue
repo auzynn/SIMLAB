@@ -65,7 +65,7 @@
                   <p>197006056</p>
                 </td>
                 <td class="desc">
-                  <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aut deleniti distinctio doloribus harum officiis pariatur</p>
+                  <p>Pengujian alat penelitian Tugas Akhir</p>
                 </td>
               </tr>
               <tr>
