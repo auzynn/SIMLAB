@@ -10,18 +10,29 @@
 
 ---
 
+## Catatan Progres Frontend (per 2026-06-25)
+
+Status konfigurasi & implementasi frontend SPA (`src/frontend/app-labriset`) saat ini:
+
+- **Fondasi**: Vue 3 + Vite, Vue Router, Pinia, dan Axios instance (`services/api.js`, base URL dari `.env`) sudah terpasang. Interceptor melampirkan `Authorization: Bearer <token>` otomatis sesuai kontrak token SDD. Build (`npm run build`) lulus.
+- **Autentikasi**: alur login frontend fungsional — `services/auth.js` memakai endpoint `/api/auth/login`, `/api/auth/me`, `/api/auth/logout`; store `auth` menyimpan token di localStorage; route guard RBAC (`requiresAuth`/`roles`) aktif. _Menunggu backend agar bisa diuji end-to-end._
+- **Halaman informasi (FASE 2)**: berkas view sudah ada sebagai **UI statis/mockup** (beranda, visi-misi, kepala lab, daftar & detail dosen, roadmap lab, dll.) — **belum tersambung API** karena backend belum dibuat. Belum ditandai selesai.
+- **Belum dikerjakan**: integrasi data dari API, halaman Profil (set/ubah password), halaman Kelola User, serta seluruh modul FASE 2–8.
+
+---
+
 ## FASE 0: Fondasi Proyek
 
 Task persiapan sebelum modul fitur apapun bisa dikerjakan.
 
 - [ ] **T0.1** — Inisialisasi project Laravel 13.16 di `src/backend` (`composer create-project laravel/laravel`), set PHP 8.5.7 di `composer.json`
-- [ ] **T0.2** — Inisialisasi project Vue 3 + Vite di `src/frontend` (`npm create vite@latest -- --template vue`)
+- [x] **T0.2** — Inisialisasi project Vue 3 + Vite di `src/frontend` (`npm create vite@latest -- --template vue`)
 - [ ] **T0.3** — Konfigurasi koneksi MySQL di `src/backend/.env`
 - [ ] **T0.4** — Install & konfigurasi Laravel Sanctum untuk SPA authentication (SDD Bagian 1)
 - [ ] **T0.5** — Konfigurasi CORS (`config/cors.php`) agar backend menerima request dari origin frontend, `supports_credentials` aktif (SDD Bagian 1)
 - [ ] **T0.6** — Install & konfigurasi Laravel Socialite untuk Google OAuth (SDD Bagian 2)
-- [ ] **T0.7** — Install Vue Router & Pinia di frontend; setup struktur folder `components/`, `views/`, `stores/`, `services/`, `router/` (`agent.md` Bagian 5)
-- [ ] **T0.8** — Setup Axios instance di `src/frontend/src/services` dengan base URL dari `.env` (`VITE_API_BASE_URL`)
+- [x] **T0.7** — Install Vue Router & Pinia di frontend; setup struktur folder `components/`, `views/`, `stores/`, `services/`, `router/` (`agent.md` Bagian 5)
+- [x] **T0.8** — Setup Axios instance di `src/frontend/src/services` dengan base URL dari `.env` (`VITE_API_BASE_URL`)
 - [ ] **T0.9** — Install Laravel Pint (backend) & Prettier/ESLint (frontend), verifikasi `format on save` di `.vscode/settings.json` berjalan
 - [ ] **T0.10** — Setup PHPUnit/Pest config dasar di `tests/Backend`
 
@@ -46,10 +57,10 @@ Fondasi yang harus selesai sebelum modul lain bisa diuji end-to-end (hampir semu
 - [ ] **T1.12** — Form Request validasi untuk seluruh endpoint di atas
 
 ### Frontend
-- [ ] **T1.13** — Halaman Login: tombol "Login dengan Google" + form "Login dengan Email & Password"
+- [x] **T1.13** — Halaman Login: tombol "Login dengan Google" + form "Login dengan Email & Password" (form fungsional, terhubung ke `authStore.login()`; tombol Google redirect ke `/api/auth/google/redirect`)
 - [ ] **T1.14** — Halaman Profil: form "Atur Password" (jika belum ada) / "Ubah Password" (jika sudah ada), kondisional sesuai state user
-- [ ] **T1.15** — Pinia store `auth` — menyimpan token, data user, role; dipakai global untuk proteksi route
-- [ ] **T1.16** — Vue Router navigation guard — redirect ke dashboard sesuai role, blokir akses halaman yang tidak sesuai hak akses
+- [x] **T1.15** — Pinia store `auth` — menyimpan token (localStorage), data user, role; dipakai global untuk proteksi route
+- [x] **T1.16** — Vue Router navigation guard — `beforeEach` dengan meta `requiresAuth`/`roles`, restore sesi saat refresh, redirect pasca-login. _Catatan: redirect ke dashboard per role menunggu halaman dashboard dibuat._
 - [ ] **T1.17** — Halaman Kelola User (Admin only) — list, edit role, hapus user
 
 ### Testing
