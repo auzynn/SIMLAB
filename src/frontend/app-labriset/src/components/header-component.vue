@@ -21,8 +21,11 @@
           <router-link to="/jadwallab">Jadwal Lab</router-link>
         </li>
 
-        <li>
+        <li v-if="!auth.isAuthenticated">
           <router-link to="/login" class="btn btn-navy-border btn-width-80" style="font-weight: bold">Login</router-link>
+        </li>
+        <li v-else>
+          <a class="btn btn-navy-border btn-width-80" style="font-weight: bold; cursor: pointer" @click="handleLogout">Logout</a>
         </li>
       </ul>
     </nav>
@@ -32,6 +35,16 @@
 <script setup>
 // Komponen header navigasi utama
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const menu = ref('home')
+const auth = useAuthStore()
+const router = useRouter()
+
+// Logout: hapus token & sesi, lalu kembali ke beranda
+async function handleLogout() {
+  await auth.logout()
+  router.push('/')
+}
 </script>
