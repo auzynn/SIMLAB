@@ -41,15 +41,17 @@
             </select>
           </div>
 
-          <div class="form-row">
-            <label>Password {{ editingId ? '(kosongkan jika tidak diubah)' : '' }}</label>
+          <!-- Password hanya saat BUAT user. Admin tak bisa ubah password user;
+               perubahan password lewat "Profil Saya" akun masing-masing. -->
+          <div v-if="!editingId" class="form-row">
+            <label>Password</label>
             <input
               type="password"
               class="form-ctrl input-border"
               v-model="form.password"
               autocomplete="new-password"
               minlength="8"
-              :required="!editingId"
+              required
             />
           </div>
 

@@ -99,6 +99,13 @@ const routes = [
     // Kelola konten halaman informasi lab — khusus role admin
     component: () => import('../views/admin-info-lab.vue'),
     meta: { requiresAuth: true, roles: ['admin'] }
+  },
+  {
+    path: '/admin/bidang-riset',
+    name: 'admin-bidang-riset',
+    // Kelola master Bidang Riset — Admin & Supervisor (Gate manage-bidang-riset)
+    component: () => import('../views/admin-bidang-riset.vue'),
+    meta: { requiresAuth: true, roles: ['admin', 'supervisor'] }
   }
 ]
 

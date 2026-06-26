@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\BidangRisetController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\InfoLabController;
 use App\Http\Controllers\UserController;
@@ -31,6 +32,17 @@ Route::middleware('auth:sanctum')->group(function () {
     // Atur/ubah password untuk mengaktifkan login manual (3_SDD.md 2.1, SRS UC-01b)
     Route::post('/auth/set-password', [AuthController::class, 'setPassword']);
     Route::patch('/auth/change-password', [AuthController::class, 'changePassword']);
+
+    // Unggah/ganti foto avatar akun sendiri (multipart) — Profil Saya
+    Route::post('/auth/avatar', [AuthController::class, 'updateAvatar']);
+
+    // Edit profil sendiri (name, no_telp; +nidn & bidang_riset_ids[] untuk dosen)
+    Route::patch('/auth/profile', [AuthController::class, 'updateProfile']);
+
+    // Master Bidang Riset: read terbuka untuk semua yang login (dipakai dropdown Edit Profil),
+    // CUD via Gate manage-bidang-riset (Admin/Supervisor) di controller.
+    Route::apiResource('bidang-riset', BidangRisetController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
 
     // Kelola user & role — khusus Admin (3_SDD.md 5.2, otorisasi via Gate manage-users)
     Route::apiResource('users', UserController::class)->only(['index', 'store', 'update', 'destroy']);

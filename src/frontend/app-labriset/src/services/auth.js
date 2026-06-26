@@ -32,5 +32,20 @@ export const authService = {
       password,
       password_confirmation: passwordConfirmation,
     })
-  }
+  },
+
+  // Edit profil sendiri (name, no_telp; +nidn & bidang_riset_ids[] khusus dosen).
+  // Email & status tidak boleh diubah (immutable di backend).
+  async updateProfile(payload) {
+    return api.patch('/api/auth/profile', payload)
+  },
+
+  // Unggah/ganti foto avatar akun sendiri (multipart). Backend balas URL baru.
+  async updateAvatar(file) {
+    const formData = new FormData()
+    formData.append('avatar', file)
+    return api.post('/api/auth/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 }

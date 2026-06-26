@@ -58,16 +58,19 @@ class GoogleAuthController extends Controller
                 // password sengaja NULL: login manual baru aktif setelah di-set di Profil
             ]);
 
-            // (BELUM DIAKTIFKAN) Auto-create profil dosen/mahasiswa sesuai SDD Bagian 2 langkah 6.
-            // Aktifkan dengan meng-uncomment baris di bawah SETELAH menjalankan
-            // `php artisan migrate` untuk tabel dosen & mahasiswa.
-            // $this->createRoleProfile($user, $email);
-        } elseif (is_null($user->google_id)) {
-            // Akun sudah ada (mis. dibuat manual) tapi belum tertaut Google → tautkan
-            $user->forceFill([
-                'google_id' => $googleUser->getId(),
-                'avatar' => $user->avatar ?: $googleUser->getAvatar(),
-            ])->save();
+            // Auto-create profil dosen/mahasiswa (SDD Bagian 2 langkah 6, 3.2 & 3.3).
+            $this->createRoleProfile($user, $email);
+        } else {
+            // Akun lama: pastikan konsisten — tautkan google_id bila kosong & backfill
+            // profil bila belum ada (mis. akun pra-aktivasi createRoleProfile).
+            if (is_null($user->google_id)) {
+                $user->forceFill([
+                    'google_id' => $googleUser->getId(),
+                    'avatar' => $user->avatar ?: $googleUser->getAvatar(),
+                ])->save();
+            }
+
+            $this->ensureRoleProfile($user, $email);
         }
 
         $token = $user->createToken('google-oauth')->plainTextToken;
@@ -92,16 +95,15 @@ class GoogleAuthController extends Controller
     }
 
     /**
-     * (BELUM DIAKTIFKAN) Buat profil dosen/mahasiswa otomatis saat registrasi pertama.
+     * Buat profil dosen/mahasiswa otomatis saat registrasi pertama.
+     * Idempotent (firstOrCreate): aman dipanggil ulang tanpa duplikat — lihat 3_SDD.md 3.2 & 3.3.
      *
-     * Sengaja belum dipanggil di callback() — tabel `dosen`/`mahasiswa` belum dimigrasi.
-     * Untuk mengaktifkan: jalankan migrasi lalu uncomment pemanggilan di callback().
-     * Lihat 3_SDD.md Bagian 2 (langkah 6) serta 3.2 & 3.3.
+     * Mahasiswa: NPM diekstrak dari local-part email; angkatan = "20" + dua digit awal NPM.
      */
     private function createRoleProfile(User $user, string $email): void
     {
         if ($user->role === 'dosen') {
-            Dosen::create(['user_id' => $user->id]);
+            Dosen::firstOrCreate(['user_id' => $user->id]);
 
             return;
         }
@@ -110,11 +112,23 @@ class GoogleAuthController extends Controller
             $npm = Str::before($email, '@');        // local-part email, mis. "197006028"
             $angkatan = '20'.substr($npm, 0, 2);    // string concat: "19" -> "2019" (bukan penjumlahan)
 
-            Mahasiswa::create([
-                'user_id' => $user->id,
-                'npm' => $npm,
-                'angkatan' => $angkatan,
-            ]);
+            Mahasiswa::firstOrCreate(
+                ['user_id' => $user->id],
+                ['npm' => $npm, 'angkatan' => $angkatan],
+            );
+        }
+    }
+
+    /**
+     * Backfill profil dosen/mahasiswa untuk akun lama yang belum punya
+     * (mis. dibuat sebelum auto-create diaktifkan). Aman karena firstOrCreate.
+     */
+    private function ensureRoleProfile(User $user, string $email): void
+    {
+        if (($user->role === 'dosen' && ! $user->dosen)
+            || ($user->role === 'mahasiswa' && ! $user->mahasiswa)
+        ) {
+            $this->createRoleProfile($user, $email);
         }
     }
 

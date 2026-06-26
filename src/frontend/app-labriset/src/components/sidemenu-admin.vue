@@ -9,6 +9,9 @@
     <div class="menu-group">
       <router-link to="/admin/info-lab" class="menu" style="display: block" active-class="activemenu">Konten Informasi Lab</router-link>
     </div>
+    <div class="menu-group">
+      <router-link to="/admin/bidang-riset" class="menu" style="display: block" active-class="activemenu">Bidang Riset</router-link>
+    </div>
 
     <!-- Area kelola lain menyusul per fase — modul backend-nya belum dibuat -->
     <div v-for="item in segeraHadir" :key="item" class="menu-group">

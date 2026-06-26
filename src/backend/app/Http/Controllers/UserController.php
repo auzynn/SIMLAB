@@ -62,16 +62,11 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
-        $data = $request->validated();
-
-        // Field password kosong = tidak diubah; jangan timpa hash lama dengan null
-        if (empty($data['password'])) {
-            unset($data['password']);
-        }
-
+        // Password sengaja tak termasuk (lihat UpdateUserRequest): Admin tak mengganti
+        // password user — itu hanya lewat "Profil Saya" akun masing-masing.
         // ponytail: sinkronisasi profil saat role berubah ke/dari dosen belum ditangani —
         // tambahkan jika modul dosen sudah aktif dan kasus ubah-role lintas profil muncul.
-        $user->update($data);
+        $user->update($request->validated());
 
         return response()->json([
             'data' => $user,

@@ -9,6 +9,8 @@ use Illuminate\Validation\Rule;
 /**
  * Validasi update data/role user oleh Admin (3_SDD.md 5.2).
  * Semua field opsional (`sometimes`) agar bisa update sebagian.
+ * Password sengaja TIDAK ada di sini: Admin tak boleh mengganti password user —
+ * perubahan password hanya lewat "Profil Saya" akun masing-masing (UC-01b).
  */
 class UpdateUserRequest extends FormRequest
 {
@@ -26,8 +28,6 @@ class UpdateUserRequest extends FormRequest
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'email' => ['sometimes', 'required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($this->route('user'))],
             'role' => ['sometimes', 'required', 'in:admin,supervisor,dosen,mahasiswa'],
-            // Password opsional saat update; kosong = tidak diubah (ditangani controller)
-            'password' => ['sometimes', 'nullable', 'string', 'min:8'],
         ];
     }
 }

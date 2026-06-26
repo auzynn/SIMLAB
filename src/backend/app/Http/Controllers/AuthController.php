@@ -6,6 +6,8 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -58,7 +60,10 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         // Muat profil sesuai role agar halaman Profil bisa menampilkan data diri.
-        return response()->json($request->user()->load(['dosen', 'mahasiswa']));
+        // Dosen: ikut sertakan relasi bidangRiset agar Edit Profil bisa pre-fill pilihan.
+        return response()->json(
+            $request->user()->load(['dosen.bidangRiset', 'mahasiswa']),
+        );
     }
 
     /**
@@ -127,5 +132,114 @@ class AuthController extends Controller
         $user->update(['password' => $validated['password']]);
 
         return response()->json(['message' => 'Password berhasil diubah.']);
+    }
+
+    /**
+     * Unggah/ganti foto avatar milik akun sendiri. Disimpan di disk publik
+     * (storage/app/public/avatars), kolom `avatar` menyimpan URL absolut.
+     */
+    public function updateAvatar(Request $request): JsonResponse
+    {
+        $request->validate([
+            // maks 2MB, tipe gambar umum
+            'avatar' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:2048'],
+        ]);
+
+        $user = $request->user();
+
+        // Hapus avatar lama HANYA jika file lokal kita (avatar Google berupa URL eksternal).
+        $this->deleteLocalAvatar($user->avatar);
+
+        // Nama file acak agar tak bentrok & tak bocorkan info
+        $ext = $request->file('avatar')->extension();
+        $path = $request->file('avatar')->storeAs('avatars', Str::uuid().'.'.$ext, 'public');
+
+        // Simpan URL absolut (disk publik sudah mengembalikan APP_URL/storage/...),
+        // mengikuti pola avatar Google yang juga berupa URL penuh.
+        $user->update(['avatar' => Storage::disk('public')->url($path)]);
+
+        return response()->json([
+            'avatar' => $user->avatar,
+            'message' => 'Foto profil berhasil diperbarui.',
+        ]);
+    }
+
+    /**
+     * Edit profil akun sendiri. Email & role tidak boleh diubah (aturan SDD 3.1):
+     * - Email immutable (acuan identitas + alur Google OAuth)
+     * - Role hanya diubah Admin lewat Kelola User
+     *
+     * Field umum (semua role): name, no_telp.
+     * Khusus dosen: nidn, bidang_riset_ids[] (banyak-banyak via dosen_bidang_riset).
+     */
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $rules = [
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'no_telp' => ['sometimes', 'nullable', 'string', 'max:32'],
+        ];
+
+        if ($user->role === 'dosen') {
+            $rules['nidn'] = ['sometimes', 'nullable', 'string', 'max:32'];
+            $rules['bidang_riset_ids'] = ['sometimes', 'array'];
+            $rules['bidang_riset_ids.*'] = ['integer', 'exists:bidang_riset,id'];
+        }
+
+        if ($user->role === 'mahasiswa') {
+            // Prodi tunggal "Informatika" (whitelist) — NPM & angkatan immutable (SDD 3.3)
+            $rules['prodi'] = ['sometimes', 'nullable', 'in:Informatika'];
+        }
+
+        $data = $request->validate($rules);
+
+        // Update kolom users (name, no_telp)
+        $userFields = array_intersect_key($data, array_flip(['name', 'no_telp']));
+        if (! empty($userFields)) {
+            $user->update($userFields);
+        }
+
+        // Update kolom dosen + sinkronisasi relasi bidang_riset
+        if ($user->role === 'dosen') {
+            $dosen = $user->dosen()->firstOrCreate([]);
+
+            if (array_key_exists('nidn', $data)) {
+                $dosen->update(['nidn' => $data['nidn']]);
+            }
+            if (array_key_exists('bidang_riset_ids', $data)) {
+                $dosen->bidangRiset()->sync($data['bidang_riset_ids']);
+            }
+        }
+
+        // Update prodi mahasiswa (NPM & angkatan tetap immutable; tak diterima di rules).
+        if ($user->role === 'mahasiswa' && array_key_exists('prodi', $data) && $user->mahasiswa) {
+            $user->mahasiswa->update(['prodi' => $data['prodi']]);
+        }
+
+        return response()->json([
+            'data' => $user->fresh()->load(['dosen.bidangRiset', 'mahasiswa']),
+            'message' => 'Profil berhasil diperbarui.',
+        ]);
+    }
+
+    /**
+     * Hapus file avatar lama dari disk publik bila URL menunjuk ke storage kita.
+     * Avatar eksternal (mis. Google `lh3.googleusercontent.com`) dibiarkan.
+     */
+    private function deleteLocalAvatar(?string $avatarUrl): void
+    {
+        if (! $avatarUrl) {
+            return;
+        }
+
+        $marker = '/storage/avatars/';
+        $pos = strpos($avatarUrl, $marker);
+        if ($pos === false) {
+            return;
+        }
+
+        $relative = 'avatars/'.basename($avatarUrl);
+        Storage::disk('public')->delete($relative);
     }
 }
