@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GoogleAuthController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -25,4 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Atur/ubah password untuk mengaktifkan login manual (3_SDD.md 2.1, SRS UC-01b)
     Route::post('/auth/set-password', [AuthController::class, 'setPassword']);
     Route::patch('/auth/change-password', [AuthController::class, 'changePassword']);
+
+    // Kelola user & role — khusus Admin (3_SDD.md 5.2, otorisasi via Gate manage-users)
+    Route::apiResource('users', UserController::class)->only(['index', 'store', 'update', 'destroy']);
 });

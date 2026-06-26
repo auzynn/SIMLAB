@@ -78,6 +78,20 @@ const routes = [
     // Akun pribadi: data diri + atur/ubah password — semua role yang sudah login
     component: () => import('../views/profil-page.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin',
+    name: 'admin',
+    // Panel Admin: menu pusat kelola seluruh modul — khusus role admin (SRS Bagian 1)
+    component: () => import('../views/admin-page.vue'),
+    meta: { requiresAuth: true, roles: ['admin'] }
+  },
+  {
+    path: '/admin/users',
+    name: 'admin-users',
+    // Kelola User & Role — khusus role admin
+    component: () => import('../views/admin-users.vue'),
+    meta: { requiresAuth: true, roles: ['admin'] }
   }
 ]
 

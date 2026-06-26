@@ -34,6 +34,8 @@
             <span v-else>{{ initials }}</span>
           </router-link>
           <ul class="user-dropdown">
+            <!-- Akses Panel Admin hanya untuk role admin -->
+            <li v-if="auth.user?.role === 'admin'"><router-link to="/admin">Panel Admin</router-link></li>
             <li><router-link to="/profil">Profil Saya</router-link></li>
             <li><a class="logout-link" @click="handleLogout">Logout</a></li>
           </ul>

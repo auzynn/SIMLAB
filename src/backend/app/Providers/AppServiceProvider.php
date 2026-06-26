@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\User;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +21,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Hak kelola data user & role: khusus Admin (2_SRS.md Bagian 1 matriks RBAC)
+        Gate::define('manage-users', fn (User $user) => $user->role === 'admin');
     }
 }
