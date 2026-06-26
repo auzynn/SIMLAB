@@ -71,6 +71,13 @@ const routes = [
     // Jadwal peminjaman lab: semua role wajib login (minimal akses baca)
     component: () => import('../views/jadwal-lab.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/profil',
+    name: 'profil',
+    // Akun pribadi: data diri + atur/ubah password — semua role yang sudah login
+    component: () => import('../views/profil-page.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

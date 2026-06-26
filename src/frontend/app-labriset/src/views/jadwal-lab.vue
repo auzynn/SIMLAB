@@ -1,6 +1,6 @@
 <template>
   <div>
-    <JumbotronSmall />
+    <JumbotronSmall title="Jadwal Lab" />
 
     <div class="main-container flex-h between">
       <div class="form-container">

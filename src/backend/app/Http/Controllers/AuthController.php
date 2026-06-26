@@ -57,7 +57,8 @@ class AuthController extends Controller
      */
     public function me(Request $request): JsonResponse
     {
-        return response()->json($request->user());
+        // Muat profil sesuai role agar halaman Profil bisa menampilkan data diri.
+        return response()->json($request->user()->load(['dosen', 'mahasiswa']));
     }
 
     /**
@@ -68,5 +69,63 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logout berhasil.']);
+    }
+
+    /**
+     * Atur password pertama kali (akun lahir lewat Google OAuth, password masih NULL).
+     * Tidak butuh password lama. Lihat 3_SDD.md 2.1 (alur set password pertama kali).
+     */
+    public function setPassword(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Sudah punya password → arahkan ke ubah password, bukan set ulang
+        if (! is_null($user->password)) {
+            throw ValidationException::withMessages([
+                'password' => ['Password sudah pernah diatur. Gunakan menu Ubah Password.'],
+            ]);
+        }
+
+        $validated = $request->validate([
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        // Cast 'hashed' pada model meng-hash otomatis saat disimpan.
+        $user->update(['password' => $validated['password']]);
+
+        return response()->json([
+            'message' => 'Password berhasil diatur. Anda kini bisa login manual dengan email & password.',
+        ]);
+    }
+
+    /**
+     * Ubah password yang sudah ada — wajib menyertakan password lama yang cocok.
+     * Lihat 3_SDD.md 2.1 (alur ganti password).
+     */
+    public function changePassword(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Belum punya password → harus set dulu lewat set-password
+        if (is_null($user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Akun belum memiliki password. Gunakan menu Atur Password terlebih dahulu.'],
+            ]);
+        }
+
+        $validated = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed', 'different:current_password'],
+        ]);
+
+        if (! Hash::check($validated['current_password'], $user->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['Password lama tidak cocok.'],
+            ]);
+        }
+
+        $user->update(['password' => $validated['password']]);
+
+        return response()->json(['message' => 'Password berhasil diubah.']);
     }
 }

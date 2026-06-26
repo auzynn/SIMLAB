@@ -30,8 +30,10 @@
 - `router/index.js`: navigation guard RBAC (`requiresAuth`/`roles`), restore sesi saat refresh halaman, redirect sudah-login ke beranda; route `/auth/callback` terdaftar.
 - `views/login-page.vue`: form login email+password terhubung ke `authStore.login()`; tombol "Login dengan UNSIL Mail" redirect ke `/api/auth/google/redirect`, plus penanganan & tampilan pesan error OAuth dari query string.
 - `views/auth-callback.vue`: penerima redirect Google OAuth — ambil token dari query, simpan via `authStore.loginWithToken()`, muat data user, lalu arahkan ke tujuan semula (atau balik ke login dengan pesan error bila gagal).
+- `views/profil-page.vue` (route `/profil`, `requiresAuth`): kartu identitas (avatar Google/inisial, nama, email, peran; NPM/angkatan/prodi untuk mahasiswa, NIDN/bidang riset untuk dosen) + form password kondisional — "Atur Password Login" bila `has_password=false`, "Ubah Password" (wajib password lama) bila sudah ada. Terhubung ke `authService.setPassword()`/`changePassword()`, lalu `fetchUser()` untuk segarkan state. Link "Profil Saya" muncul di header saat login.
+- Backend pendukung: `me()` kini eager-load relasi `dosen`/`mahasiswa`; model `User` mengekspos flag `has_password` agar frontend memilih form yang tepat.
 - View FASE 2 (beranda, visi-misi, kepala-lab, list-dosen, detail-dosen, roadmap-lab) sudah ada sebagai **UI statis** — **belum tersambung API** karena backend belum dibuat. Belum ditandai selesai.
-- **Belum ada**: halaman Profil (set/ubah password), halaman Kelola User, seluruh modul FASE 3–9.
+- **Belum ada**: halaman Kelola User, seluruh modul FASE 3–9.
 
 ---
 
@@ -63,7 +65,7 @@ Fondasi yang harus selesai sebelum modul lain bisa diuji end-to-end (hampir semu
 - [x] **T1.4** — Model `User`, `Dosen`, `Mahasiswa` + relasi Eloquent (`User::dosen()`, `User::mahasiswa()`, `Mahasiswa::dosenPembimbing()`, dst.)
 - [ ] **T1.5** — Endpoint `GET /api/auth/google/redirect` & `GET /api/auth/google/callback` — implementasi alur SDD Bagian 2 lengkap: validasi domain email, auto-create `users` + `dosen`/`mahasiswa`, ekstraksi NPM & angkatan (format `"20" . dua_digit_awal`). _Catatan: redirect/callback + validasi domain + terbit token sudah jalan; `createRoleProfile()` (auto-create profil + ekstraksi NPM/angkatan) sudah ditulis tapi **masih di-comment** — aktifkan setelah `php artisan migrate` tabel dosen/mahasiswa._
 - [x] **T1.6** — Endpoint `POST /api/auth/login` (login manual) — tolak jika `password` NULL, dengan pesan sesuai SRS UC-01 skenario 1b
-- [ ] **T1.7** — Endpoint `POST /api/auth/set-password` & `PATCH /api/auth/change-password` (SRS UC-01b)
+- [x] **T1.7** — Endpoint `POST /api/auth/set-password` & `PATCH /api/auth/change-password` (SRS UC-01b). _set-password hanya untuk akun ber-password NULL (tanpa password lama); change-password wajib `current_password` cocok. Validasi `min:8` + `confirmed`; flag `has_password` diekspos via model `User` dan `me()` eager-load profil._
 - [x] **T1.8** — Endpoint `POST /api/auth/logout` & `GET /api/auth/me`
 - [x] **T1.9** — Seeder `UserSeeder` untuk membuat akun Admin & Supervisor manual (SDD Bagian 2, catatan implementasi)
 - [ ] **T1.10** — Policy dasar untuk role-based access control mengacu matriks RBAC SRS Bagian 1
@@ -72,7 +74,7 @@ Fondasi yang harus selesai sebelum modul lain bisa diuji end-to-end (hampir semu
 
 ### Frontend
 - [x] **T1.13** — Halaman Login: tombol "Login dengan Google" + form "Login dengan Email & Password" (form fungsional, terhubung ke `authStore.login()`; tombol Google redirect ke `/api/auth/google/redirect`, callback ditangani `views/auth-callback.vue`)
-- [ ] **T1.14** — Halaman Profil: form "Atur Password" (jika belum ada) / "Ubah Password" (jika sudah ada), kondisional sesuai state user
+- [x] **T1.14** — Halaman Profil (`views/profil-page.vue`, route `/profil`): kartu identitas + form "Atur Password" / "Ubah Password" kondisional sesuai flag `has_password`; link "Profil Saya" di header saat login
 - [x] **T1.15** — Pinia store `auth` — menyimpan token (localStorage), data user, role; dipakai global untuk proteksi route
 - [x] **T1.16** — Vue Router navigation guard — `beforeEach` dengan meta `requiresAuth`/`roles`, restore sesi saat refresh, redirect pasca-login. _Catatan: redirect ke dashboard per role menunggu halaman dashboard masing-masing role dibuat._
 - [ ] **T1.17** — Halaman Kelola User (Admin only) — list, edit role, hapus user

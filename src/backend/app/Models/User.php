@@ -6,6 +6,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -20,6 +21,13 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
+     * Atribut turunan yang ikut diserialisasi ke frontend.
+     *
+     * @var list<string>
+     */
+    protected $appends = ['has_password'];
+
+    /**
      * Get the attributes that should be cast.
      *
      * @return array<string, string>
@@ -30,6 +38,16 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Penanda apakah user sudah mengatur password (login manual aktif).
+     * Kolom `password` di-hidden dari response, jadi frontend memakai flag ini
+     * untuk memilih form "Atur Password" vs "Ubah Password" (3_SDD.md 2.1).
+     */
+    protected function hasPassword(): Attribute
+    {
+        return Attribute::make(get: fn () => ! is_null($this->password));
     }
 
     /**

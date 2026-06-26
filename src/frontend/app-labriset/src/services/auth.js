@@ -15,5 +15,22 @@ export const authService = {
   // Logout: batalkan token Sanctum aktif di backend
   async logout() {
     return api.post('/api/auth/logout')
+  },
+
+  // Atur password pertama kali (akun Google yang belum punya password manual)
+  async setPassword(password, passwordConfirmation) {
+    return api.post('/api/auth/set-password', {
+      password,
+      password_confirmation: passwordConfirmation,
+    })
+  },
+
+  // Ubah password yang sudah ada (wajib password lama)
+  async changePassword(currentPassword, password, passwordConfirmation) {
+    return api.patch('/api/auth/change-password', {
+      current_password: currentPassword,
+      password,
+      password_confirmation: passwordConfirmation,
+    })
   }
 }
