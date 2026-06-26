@@ -10,7 +10,7 @@
 
 ---
 
-## Catatan Progres (per 2026-06-26)
+## Catatan Progres (per 2026-06-27)
 
 **Backend (`src/backend`)**:
 - Sanctum token auth fungsional: `POST /api/auth/login` (cek NULL password, pesan eksplisit sesuai SRS UC-01), `GET /api/auth/me`, `POST /api/auth/logout` — sudah sesuai SDD 5.1.
@@ -21,7 +21,9 @@
 - Google OAuth: `GET /api/auth/google/redirect` & `/callback` jalan — validasi domain (`@student.unsil.ac.id`→mahasiswa, `@unsil.ac.id`→dosen), find-or-create `users`, terbitkan Sanctum token, redirect ke frontend. **Auto-create profil `dosen`/`mahasiswa` + ekstraksi NPM/angkatan masih di-comment** (`createRoleProfile()` belum dipanggil — menunggu `php artisan migrate` tabel dosen/mahasiswa).
 - `DatabaseSeeder` membuat akun Admin & Supervisor sesuai SDD Bagian 2.
 - `laravel/sanctum` terpasang, `config/cors.php` dikonfigurasi (`supports_credentials: true`, origin dari env `FRONTEND_URL`).
-- **Belum ada**: aktivasi auto-create profil (T1.5), Policy RBAC, Form Request, endpoint set/change-password, endpoint user CRUD, seluruh modul FASE 2–9.
+- **Kelola User (Admin)**: `UserController` CRUD (`/api/users`) + Form Request (`StoreUserRequest`/`UpdateUserRequest`) + Gate `manage-users`; create role `dosen` otomatis membuat profil `dosen`; `destroy` menolak hapus akun sendiri. Diuji `UserManagementTest` (5 test lulus).
+- **Info Lab (FASE 2)**: migration + model `InfoLab`, seeder 4 tipe (`InfoLabSeeder` di `DatabaseSeeder`), endpoint `GET` (publik) & `PATCH` (Admin via Gate `manage-info-lab`) dengan constraint enum `tipe`. Diuji `InfoLabTest`. _Seeder kini berisi konten nyata (bukan placeholder): `kepala_lab` (foto `frontend/public/nur-widiyasono.jpg` + tabel profil markdown), `visi_misi` (Visi + 8 poin Misi). Konten tetap dapat disunting Admin lewat panel._
+- **Belum ada**: aktivasi auto-create profil OAuth (T1.5), endpoint Dosen (T2.5/T2.6), Gate/Policy modul lain, seluruh modul FASE 3–9.
 
 **Frontend (`src/frontend/app-labriset`)**:
 - Vue 3 + Vite, Vue Router 4, Pinia, Axios — semua terpasang. Struktur folder lengkap (`components/`, `views/`, `stores/`, `services/`, `router/`, `composables/`).
@@ -32,8 +34,9 @@
 - `views/auth-callback.vue`: penerima redirect Google OAuth — ambil token dari query, simpan via `authStore.loginWithToken()`, muat data user, lalu arahkan ke tujuan semula (atau balik ke login dengan pesan error bila gagal).
 - `views/profil-page.vue` (route `/profil`, `requiresAuth`): kartu identitas (avatar Google/inisial, nama, email, peran; NPM/angkatan/prodi untuk mahasiswa, NIDN/bidang riset untuk dosen) + form password kondisional — "Atur Password Login" bila `has_password=false`, "Ubah Password" (wajib password lama) bila sudah ada. Terhubung ke `authService.setPassword()`/`changePassword()`, lalu `fetchUser()` untuk segarkan state. Link "Profil Saya" muncul di header saat login.
 - Backend pendukung: `me()` kini eager-load relasi `dosen`/`mahasiswa`; model `User` mengekspos flag `has_password` agar frontend memilih form yang tepat.
-- View FASE 2 (beranda, visi-misi, kepala-lab, list-dosen, detail-dosen, roadmap-lab) sudah ada sebagai **UI statis** — **belum tersambung API** karena backend belum dibuat. Belum ditandai selesai.
-- **Belum ada**: halaman Kelola User, seluruh modul FASE 3–9.
+- Halaman info lab **tersambung API** lewat `composables/use-info-lab.js` + `components/markdown-content.vue` (render Markdown, dep `marked`): Beranda, Visi-Misi, Profil Kepala Lab, Roadmap Lab membaca `GET /api/info-lab/{tipe}`. Daftar Dosen & Detail Dosen **masih UI statis** (menunggu endpoint Dosen T2.5/T2.6). _`markdown-content.vue` menata tabel profil (kepala lab) & daftar: penanda daftar berupa panah kanan dua warna (kuning atas, biru `--bs-navy` bawah) via `li::before` + `background-clip:text`, sejajar judul — menyamai tampilan halaman statis lama._
+- **Panel Admin**: hub `/admin` (`admin-page.vue`) + `components/sidemenu-admin.vue`; **Kelola User** (`admin-users.vue`) & **Konten Info Lab** (`admin-info-lab.vue`) fungsional; link "Panel Admin" di header untuk role admin.
+- **Belum ada**: modul admin lain (Data Master, Persetujuan Peminjaman, Sertifikasi, Presensi, Laporan), seluruh modul FASE 3–9.
 
 ---
 
@@ -68,16 +71,16 @@ Fondasi yang harus selesai sebelum modul lain bisa diuji end-to-end (hampir semu
 - [x] **T1.7** — Endpoint `POST /api/auth/set-password` & `PATCH /api/auth/change-password` (SRS UC-01b). _set-password hanya untuk akun ber-password NULL (tanpa password lama); change-password wajib `current_password` cocok. Validasi `min:8` + `confirmed`; flag `has_password` diekspos via model `User` dan `me()` eager-load profil._
 - [x] **T1.8** — Endpoint `POST /api/auth/logout` & `GET /api/auth/me`
 - [x] **T1.9** — Seeder `UserSeeder` untuk membuat akun Admin & Supervisor manual (SDD Bagian 2, catatan implementasi)
-- [ ] **T1.10** — Policy dasar untuk role-based access control mengacu matriks RBAC SRS Bagian 1
-- [ ] **T1.11** — Endpoint `GET /api/users`, `POST /api/users`, `PATCH /api/users/{id}`, `DELETE /api/users/{id}` (Admin only)
-- [ ] **T1.12** — Form Request validasi untuk seluruh endpoint di atas
+- [ ] **T1.10** — Policy dasar untuk role-based access control mengacu matriks RBAC SRS Bagian 1. _Catatan: fondasi via Gate sudah ada & diuji — `manage-users` & `manage-info-lab` (Admin only) di `AppServiceProvider`. Gate/Policy modul lain (ruangan/perangkat/dosen/dst.) menyusul saat fasenya dikerjakan._
+- [x] **T1.11** — Endpoint `GET /api/users`, `POST /api/users`, `PATCH /api/users/{id}`, `DELETE /api/users/{id}` (Admin only). _`UserController` (apiResource only index/store/update/destroy), otorisasi Gate `manage-users`; create user role `dosen` otomatis membuat profil `dosen` (invarian SDD 3.2); `destroy` menolak hapus akun sendiri. Diuji di `UserManagementTest`._
+- [x] **T1.12** — Form Request validasi untuk seluruh endpoint di atas (`StoreUserRequest`, `UpdateUserRequest`)
 
 ### Frontend
 - [x] **T1.13** — Halaman Login: tombol "Login dengan Google" + form "Login dengan Email & Password" (form fungsional, terhubung ke `authStore.login()`; tombol Google redirect ke `/api/auth/google/redirect`, callback ditangani `views/auth-callback.vue`)
 - [x] **T1.14** — Halaman Profil (`views/profil-page.vue`, route `/profil`): kartu identitas + form "Atur Password" / "Ubah Password" kondisional sesuai flag `has_password`; link "Profil Saya" di header saat login
 - [x] **T1.15** — Pinia store `auth` — menyimpan token (localStorage), data user, role; dipakai global untuk proteksi route
 - [x] **T1.16** — Vue Router navigation guard — `beforeEach` dengan meta `requiresAuth`/`roles`, restore sesi saat refresh, redirect pasca-login. _Catatan: redirect ke dashboard per role menunggu halaman dashboard masing-masing role dibuat._
-- [ ] **T1.17** — Halaman Kelola User (Admin only) — list, edit role, hapus user
+- [x] **T1.17** — Halaman Kelola User (Admin only) — list, edit role, hapus user. _`views/admin-users.vue` (route `/admin/users`, guard `roles: ['admin']`): tabel user + filter role + form tambah/edit + hapus (tombol hapus disembunyikan untuk akun sendiri). Plus halaman hub Panel Admin `views/admin-page.vue` (`/admin`) & `components/sidemenu-admin.vue`; link "Panel Admin" di header untuk role admin._
 
 ### Testing
 - [ ] **T1.18** — Test: domain email non-UNSIL ditolak saat login Google
@@ -93,23 +96,23 @@ Fondasi yang harus selesai sebelum modul lain bisa diuji end-to-end (hampir semu
 Modul tampilan informasi publik (PRD 2.5, SDD 3.15).
 
 ### Backend
-- [ ] **T2.1** — Migration tabel `info_lab` (SDD 3.15)
-- [ ] **T2.2** — Model `InfoLab`
-- [ ] **T2.3** — Endpoint `GET /api/info-lab/{tipe}` & `PATCH /api/info-lab/{tipe}` (Admin only untuk update)
-- [ ] **T2.4** — Seeder data awal untuk tipe `beranda`, `visi_misi`, `kepala_lab`, `roadmap_kk`
+- [x] **T2.1** — Migration tabel `info_lab` (SDD 3.15)
+- [x] **T2.2** — Model `InfoLab`
+- [x] **T2.3** — Endpoint `GET /api/info-lab/{tipe}` & `PATCH /api/info-lab/{tipe}` (Admin only untuk update). _`InfoLabController` (`show` publik, `update` via Gate `manage-info-lab`, upsert by `tipe`); constraint enum `tipe` di route; diuji `InfoLabTest`._
+- [x] **T2.4** — Seeder data awal untuk tipe `beranda`, `visi_misi`, `kepala_lab`, `roadmap_kk` (`InfoLabSeeder`, dipanggil di `DatabaseSeeder`). _`kepala_lab` & `visi_misi` berisi konten nyata (foto + tabel profil; Visi + 8 Misi) sebagai markdown; `beranda` & `roadmap_kk` masih placeholder satu kalimat._
 - [ ] **T2.5** — Endpoint `GET /api/dosen` & `GET /api/dosen/{id}` dengan eager load relasi `user` (SDD 3.2 catatan penting)
 - [ ] **T2.6** — Endpoint `PATCH /api/dosen/{id}` — izinkan update oleh pemilik (Dosen) atau Admin/Supervisor
 
 ### Frontend
-- [ ] **T2.7** — Halaman Beranda (tersambung `GET /api/info-lab/beranda`)
-- [ ] **T2.8** — Halaman Visi & Misi (tersambung `GET /api/info-lab/visi_misi`)
-- [ ] **T2.9** — Halaman Profil Kepala Lab (tersambung `GET /api/info-lab/kepala_lab`)
-- [ ] **T2.10** — Halaman Daftar Dosen (list dari `GET /api/dosen`) + halaman Detail Profil Dosen (`GET /api/dosen/{id}`)
-- [ ] **T2.11** — Halaman Roadmap Laboratorium (tersambung `GET /api/info-lab/roadmap_kk`)
-- [ ] **T2.12** — Panel kelola konten info lab (Admin only)
+- [x] **T2.7** — Halaman Beranda (tersambung `GET /api/info-lab/beranda`). _Konten dinamis (judul/gambar/markdown) di bawah jumbotron._
+- [x] **T2.8** — Halaman Visi & Misi (tersambung `GET /api/info-lab/visi_misi`)
+- [x] **T2.9** — Halaman Profil Kepala Lab (tersambung `GET /api/info-lab/kepala_lab`). _Foto (`info.gambar`) + judul (nama) + tabel profil markdown; data nyata di-seed, foto di `frontend/public/`._
+- [ ] **T2.10** — Halaman Daftar Dosen (list dari `GET /api/dosen`) + halaman Detail Profil Dosen (`GET /api/dosen/{id}`). _Masih UI statis — menunggu endpoint Dosen (T2.5/T2.6)._
+- [x] **T2.11** — Halaman Roadmap Laboratorium (tersambung `GET /api/info-lab/roadmap_kk`)
+- [x] **T2.12** — Panel kelola konten info lab (Admin only). _`views/admin-info-lab.vue`: tab 4 tipe + form judul/gambar/konten, terhubung `infoLabService`. Shared: `composables/use-info-lab.js` + `components/markdown-content.vue` (dep `marked`)._
 
 ### Testing
-- [ ] **T2.13** — Test: hanya Admin yang bisa update `info_lab` dan data dosen milik orang lain
+- [ ] **T2.13** — Test: hanya Admin yang bisa update `info_lab` dan data dosen milik orang lain. _Catatan: bagian `info_lab` sudah diuji (`InfoLabTest`: non-admin ditolak update, admin bisa). Bagian data dosen menunggu endpoint Dosen (T2.5/T2.6)._
 
 ---
 

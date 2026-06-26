@@ -92,6 +92,13 @@ const routes = [
     // Kelola User & Role — khusus role admin
     component: () => import('../views/admin-users.vue'),
     meta: { requiresAuth: true, roles: ['admin'] }
+  },
+  {
+    path: '/admin/info-lab',
+    name: 'admin-info-lab',
+    // Kelola konten halaman informasi lab — khusus role admin
+    component: () => import('../views/admin-info-lab.vue'),
+    meta: { requiresAuth: true, roles: ['admin'] }
   }
 ]
 

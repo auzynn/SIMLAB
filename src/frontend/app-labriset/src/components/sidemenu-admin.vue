@@ -6,6 +6,9 @@
     <div class="menu-group">
       <router-link to="/admin/users" class="menu" style="display: block" active-class="activemenu">Kelola User &amp; Role</router-link>
     </div>
+    <div class="menu-group">
+      <router-link to="/admin/info-lab" class="menu" style="display: block" active-class="activemenu">Konten Informasi Lab</router-link>
+    </div>
 
     <!-- Area kelola lain menyusul per fase — modul backend-nya belum dibuat -->
     <div v-for="item in segeraHadir" :key="item" class="menu-group">
@@ -18,7 +21,6 @@
 // Menu samping Panel Admin. Hanya "Kelola User" yang aktif;
 // area lain ditandai disabled (segera hadir) sesuai matriks RBAC Admin (2_SRS.md Bagian 1).
 const segeraHadir = [
-  'Konten Informasi Lab',
   'Data Master',
   'Persetujuan Peminjaman',
   'Katalog Sertifikasi',

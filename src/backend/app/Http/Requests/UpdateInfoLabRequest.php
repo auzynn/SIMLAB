@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
+
+/**
+ * Validasi update konten info lab oleh Admin (3_SDD.md 5.12, 2_SRS.md Bagian 1).
+ */
+class UpdateInfoLabRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return Gate::allows('manage-info-lab');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function rules(): array
+    {
+        return [
+            'judul' => ['nullable', 'string', 'max:255'],
+            'konten' => ['required', 'string'],
+            'gambar' => ['nullable', 'string', 'max:255'],
+        ];
+    }
+}

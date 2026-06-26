@@ -47,7 +47,7 @@ import FooterComponent from '@/components/footer-component.vue'
 
 const areas = [
   { title: 'Kelola User & Role', desc: 'Tambah, ubah role, dan hapus akun pengguna lintas role.', to: '/admin/users' },
-  { title: 'Konten Informasi Lab', desc: 'Beranda, Visi-Misi, Profil Kepala Lab, dan Roadmap KK.' },
+  { title: 'Konten Informasi Lab', desc: 'Beranda, Visi-Misi, Profil Kepala Lab, dan Roadmap KK.', to: '/admin/info-lab' },
   { title: 'Data Master', desc: 'Kelola ruangan, perangkat, dan mata kuliah.' },
   { title: 'Persetujuan Peminjaman', desc: 'Setujui atau tolak peminjaman ruangan & perangkat.' },
   { title: 'Katalog Sertifikasi', desc: 'Kelola katalog sertifikasi eksternal untuk mahasiswa.' },

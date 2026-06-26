@@ -38,5 +38,8 @@ class DatabaseSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
+
+        // Konten awal halaman informasi lab (3_SDD.md 3.15)
+        $this->call(InfoLabSeeder::class);
     }
 }
