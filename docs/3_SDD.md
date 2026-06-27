@@ -92,9 +92,10 @@ Akun login untuk semua role (Admin, Supervisor, Dosen, Mahasiswa dalam satu tabe
 |---|---|---|
 | `id` | bigint, PK | |
 | `name` | varchar | Diambil dari profil Google saat registrasi pertama |
-| `email` | varchar, unique | Email institusi (`@unsil.ac.id` / `@student.unsil.ac.id`) |
+| `email` | varchar, unique | Email institusi (`@unsil.ac.id` / `@student.unsil.ac.id`). **Immutable** — tidak dapat diubah lewat Edit Profil (acuan identitas + alur Google OAuth) |
+| `no_telp` | varchar(32), nullable | Nomor telepon/HP. Dipakai semua role, diisi sendiri oleh pemilik akun lewat Edit Profil (`PATCH /api/auth/profile`) |
 | `google_id` | varchar, nullable, unique | ID akun Google, untuk re-login |
-| `avatar` | varchar, nullable | URL foto profil dari Google |
+| `avatar` | varchar, nullable | URL foto profil. Awalnya diisi URL dari Google saat registrasi; pemilik akun dapat menggantinya dengan unggah file lewat `POST /api/auth/avatar` (disimpan di disk publik, kolom menyimpan URL absolut) |
 | `role` | enum(`admin`,`supervisor`,`dosen`,`mahasiswa`) | Ditentukan otomatis dari domain email saat registrasi (kecuali admin/supervisor: manual) |
 | `password` | varchar, nullable | Hash password untuk login manual. **NULL secara default** saat akun pertama dibuat (selalu lewat Google OAuth) — terisi hanya setelah user mengatur sendiri lewat halaman Profil. Selama NULL, login manual untuk akun tersebut ditolak |
 | `email_verified_at` | timestamp, nullable | |
@@ -350,6 +351,12 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | GET | `/api/auth/me` | Ambil data user yang sedang login; response menyertakan field `unread_notifications_count` (integer) untuk keperluan badge navbar |
 | POST | `/api/auth/set-password` | Atur password pertama kali (hanya `password` baru + konfirmasi, untuk user yang `password`-nya masih NULL) |
 | PATCH | `/api/auth/change-password` | Ubah password yang sudah ada (wajib sertakan password lama) |
+| POST | `/api/auth/avatar` | Unggah/ganti foto profil akun sendiri (multipart, field `avatar`: `jpeg/jpg/png/webp`, maks 2 MB). File disimpan di disk publik (`storage/app/public/avatars`, nama file UUID), kolom `avatar` diisi URL absolut. Avatar lama yang berupa file lokal dihapus; avatar Google eksternal dibiarkan |
+| PATCH | `/api/auth/profile` | Edit profil akun sendiri. Field umum semua role: `name`, `no_telp`. Dosen: `nidn` (pemilihan bidang riset dikelola terpisah — lihat catatan di bawah). Mahasiswa: `prodi` (whitelist `Informatika`). `email`, `role`, serta `npm`/`angkatan` (mahasiswa) **immutable** — diabaikan/ditolak meski dikirim di body |
+
+**Catatan**:
+- Penyimpanan avatar memerlukan disk publik Laravel aktif (`php artisan storage:link`) agar URL `…/storage/avatars/…` dapat diakses frontend.
+- Untuk Dosen, **pemilihan bidang riset** (relasi banyak-ke-banyak `dosen ↔ bidang_riset`) merupakan bagian dari **modul Master Bidang Riset** yang dokumentasinya **ditunda (pending)** — endpoint `PATCH /api/auth/profile` sudah menerima `bidang_riset_ids[]` di implementasi, namun skema tabel master & alurnya akan dirinci saat modul tersebut didokumentasikan resmi.
 
 ### 5.2 User & Role (Admin only)
 | Method | Endpoint | Keterangan |

@@ -70,6 +70,13 @@ Berikut alur utama yang harus didukung sistem, dikelompokkan per kebutuhan inti.
 3. Jika memilih login manual sebelum pernah mengatur password, sistem menolak dan mengarahkan pengguna untuk login lewat Google terlebih dahulu
 4. Jika kredensial salah saat login manual, sistem menampilkan notifikasi error dan meminta input ulang
 
+### 3.1a Kelola Profil Akun
+Berlaku untuk **semua role** terhadap akunnya masing-masing, lewat halaman **Profil Saya**:
+1. Pengguna membuka **Profil Saya** → melihat kartu identitas (foto, nama, email, peran; mahasiswa: NPM/angkatan/prodi, dosen: NIDN/bidang riset)
+2. Pengguna dapat **mengedit data diri**: nama dan nomor telepon (semua role); Dosen tambahan NIDN; Mahasiswa tambahan prodi. **Email dan peran tidak dapat diubah** sendiri (peran hanya diubah Admin lewat Kelola User); **NPM dan angkatan mahasiswa juga tidak dapat diubah** (diturunkan otomatis saat registrasi)
+3. Pengguna dapat **mengganti foto profil** dengan mengunggah gambar (menggantikan foto bawaan dari Google)
+4. Pengguna dapat **mengatur/mengubah password** untuk mengaktifkan login manual (lihat 3.1)
+
 ### 3.2 Dashboard
 - Setelah login, setiap role melihat dashboard yang relevan dengan tanggung jawabnya (mahasiswa: status peminjaman & jadwal; dosen: portofolio & presensi mahasiswa bimbingan; supervisor/admin: ringkasan operasional lab)
 

@@ -36,6 +36,7 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 - Pengecekan role **wajib** dilakukan lewat Laravel Policy/Gate, bukan pengecekan manual `if ($user->role === ...)` yang tersebar di Controller
 - "Milik sendiri" berarti sistem **wajib** memvalidasi `user_id`/`dosen_id`/`mahasiswa_id` pemilik data cocok dengan user yang sedang login, sebelum mengizinkan operasi Update/Delete
 - Hubungan "mahasiswa bimbingan" (untuk validasi akses Dosen ke profil/presensi mahasiswa bimbingan) didefinisikan melalui foreign key `dosen_pembimbing_id` pada entri mahasiswa yang merujuk ke id dosen.
+- Pada **Edit Profil Akun Pribadi** (`PATCH /api/auth/profile`), field `email` dan `role` **wajib immutable** (tidak dapat diubah pemilik akun — `role` hanya lewat Kelola User oleh Admin); untuk Mahasiswa, `npm` dan `angkatan` juga immutable. Validasi penolakan field ini dilakukan di backend (Form Request/Controller), bukan hanya disembunyikan di frontend.
 
 ---
 
@@ -54,6 +55,7 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | F-AD-08 | Approve/reject peminjaman ruangan & perangkat | Sama seperti Supervisor |
 | F-AD-09 | Kelola data perangkat & sertifikasi | CRUD penuh |
 | F-AD-10 | Terima & kelola notifikasi in-app | Tandai baca (satu/semua), hapus; notifikasi masuk otomatis saat ada pengajuan baru yang menunggu persetujuan |
+| F-AD-11 | Edit profil akun pribadi | Update nama & no. telepon, unggah foto profil, atur/ubah password (milik sendiri) |
 
 ### 2.2 Supervisor (Asisten Lab)
 | ID | Fungsi | Keterangan |
@@ -68,12 +70,13 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | F-SV-08 | Unduh laporan (report) | Filter berdasarkan rentang tanggal, ekspor PDF |
 | F-SV-09 | Membuka Kelas Lab/Praktikum atas permintaan Dosen | Supervisor dapat membuat jadwal kelas atas nama Dosen terkait; Admin tidak memiliki kewenangan ini |
 | F-SV-10 | Terima & kelola notifikasi in-app | Tandai baca (satu/semua), hapus; notifikasi masuk otomatis saat ada pengajuan baru yang menunggu persetujuan |
+| F-SV-11 | Edit profil akun pribadi | Update nama & no. telepon, unggah foto profil, atur/ubah password (milik sendiri) |
 
 ### 2.3 Dosen
 | ID | Fungsi | Keterangan |
 |---|---|---|
 | F-DS-01 | Login via Google OAuth UNSIL + login manual (setelah set password) | Sama seperti Admin |
-| F-DS-02 | Edit profil pribadi | Update data diri |
+| F-DS-02 | Edit profil pribadi | Update data diri (nama, no. telepon, NIDN), unggah foto profil; email & peran tidak dapat diubah sendiri |
 | F-DS-03 | Kelola portofolio & roadmap riset pribadi | CRUD konten riset pribadi |
 | F-DS-04 | Kelola presensi mahasiswa bimbingan | CRUD entri presensi terkait |
 | F-DS-05 | Lihat & mengajukan jadwal peminjaman lab | R untuk jadwal umum, C untuk pengajuan pribadi |
@@ -86,7 +89,7 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 |---|---|---|
 | F-MH-01 | Registrasi akun (otomatis) | Akun **tercipta otomatis** saat login Google pertama kali dengan email `@student.unsil.ac.id` — tidak ada form registrasi terpisah |
 | F-MH-02 | Login via Google OAuth UNSIL + login manual (setelah set password) | Sama seperti role lain |
-| F-MH-03 | Edit profil pribadi | Update data diri |
+| F-MH-03 | Edit profil pribadi | Update data diri (nama, no. telepon, prodi), unggah foto profil; email, peran, NPM & angkatan tidak dapat diubah |
 | F-MH-04 | Lihat jadwal ketersediaan lab | Read-only, tampilan kalender |
 | F-MH-05 | Ajukan peminjaman ruangan lab | Isi form (tanggal, waktu, keperluan); slot yang sudah dipakai Kelas Lab/Praktikum tidak tersedia |
 | F-MH-05a | Mendaftar sesi Kelas Lab/Praktikum | Pilih sesi (mis. Kelas A/B/C) selama kuota belum penuh |
