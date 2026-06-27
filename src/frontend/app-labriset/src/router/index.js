@@ -40,7 +40,7 @@ const routes = [
     component: () => import('../views/roadmap-lab.vue')
   },
   {
-    path: '/detaildosen',
+    path: '/detaildosen/:id',
     name: 'detaildosen',
     component: () => import('../views/detail-dosen.vue')
   },
@@ -101,10 +101,10 @@ const routes = [
     meta: { requiresAuth: true, roles: ['admin'] }
   },
   {
-    path: '/admin/bidang-riset',
-    name: 'admin-bidang-riset',
-    // Kelola master Bidang Riset — Admin & Supervisor (Gate manage-bidang-riset)
-    component: () => import('../views/admin-bidang-riset.vue'),
+    path: '/admin/bidang-minat',
+    name: 'admin-bidang-minat',
+    // Kelola master Bidang Minat — Admin & Supervisor (Gate manage-bidang-minat)
+    component: () => import('../views/admin-bidang-minat.vue'),
     meta: { requiresAuth: true, roles: ['admin', 'supervisor'] }
   }
 ]

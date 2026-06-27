@@ -65,7 +65,8 @@ const activeMenu = computed(() => {
   const path = route.path
   if (path === '/') return 'home'
   if (path === '/jadwallab') return 'jadwal'
-  if (profilPaths.includes(path)) return 'profil'
+  // startsWith agar path berparameter (mis. /detaildosen/2) tetap ter-highlight
+  if (profilPaths.some((p) => path === p || path.startsWith(p + '/'))) return 'profil'
   return '' // /profil (Profil Saya), /login, dll → tidak ada highlight di nav atas
 })
 

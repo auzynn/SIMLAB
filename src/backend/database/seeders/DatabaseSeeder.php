@@ -41,5 +41,8 @@ class DatabaseSeeder extends Seeder
 
         // Konten awal halaman informasi lab (3_SDD.md 3.15)
         $this->call(InfoLabSeeder::class);
+
+        // Data dosen awal (profil dari situs lama) — 3_SDD.md 3.2
+        $this->call(DosenSeeder::class);
     }
 }

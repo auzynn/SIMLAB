@@ -13,7 +13,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->unique()->constrained('users')->cascadeOnDelete();
             $table->string('nidn')->nullable();
-            $table->string('bidang_riset')->nullable();
             $table->text('roadmap_riset')->nullable();
             $table->text('publikasi')->nullable();
             $table->string('foto')->nullable();

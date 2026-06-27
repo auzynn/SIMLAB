@@ -7,40 +7,47 @@
     <div class="main-container bg-grey">
       <div class="card-bio flex-h between">
         <div class="dosen-photo-250">
-          <img src="../assets/foto-dosen/nur-widiyasono.jpg">
+          <img :src="fotoUrl" :alt="dosen?.user?.name" referrerpolicy="no-referrer" />
         </div>
 
         <div class="side-table">
-          <h2> Ir. Nur Widiyasono, S.Kom., M.Kom., CEH., CHFI., CITAP., MCE.</h2>
-          <table style="width: 100%; margin-top: 20px">
+          <h2>{{ dosen?.user?.name }}</h2>
+          <table class="bio-table">
             <tbody>
-              <tr style="height: 23px;">
-                <td style="width: 21.8243%; height: 23px;">&nbsp;Jenis Kelamin</td>
-                <td style="width: 68.1757%; height: 23px;">&nbsp;: Laki-laki</td>
+              <tr v-if="dosen?.jenis_kelamin">
+                <td class="bio-label">Jenis Kelamin</td>
+                <td class="bio-sep">:</td>
+                <td>{{ dosen.jenis_kelamin }}</td>
               </tr>
-              <tr style="height: 23px;">
-                <td style="width: 21.8243%; height: 23px;">&nbsp;Jabatan Fungsional</td>
-                <td style="width: 68.1757%; height: 23px;">&nbsp;: Lektor</td>
+              <tr v-if="dosen?.jabatan_fungsional">
+                <td class="bio-label">Jabatan Fungsional</td>
+                <td class="bio-sep">:</td>
+                <td>{{ dosen.jabatan_fungsional }}</td>
               </tr>
-              <tr style="height: 23px;">
-                <td style="width: 21.8243%; height: 23px;">&nbsp;NIDN</td>
-                <td style="width: 68.1757%; height: 23px;">&nbsp;: 310127203</td>
+              <tr v-if="dosen?.nidn">
+                <td class="bio-label">NIDN</td>
+                <td class="bio-sep">:</td>
+                <td>{{ dosen.nidn }}</td>
               </tr>
-              <tr style="height: 23px;">
-                <td style="width: 21.8243%; height: 23px;">&nbsp;Tempat dan Tanggal Lahir</td>
-                <td style="width: 68.1757%; height: 23px;">&nbsp;: Jakarta, 10 Desember 1972</td>
+              <tr v-if="ttl">
+                <td class="bio-label">Tempat dan Tanggal Lahir</td>
+                <td class="bio-sep">:</td>
+                <td>{{ ttl }}</td>
               </tr>
-              <tr style="height: 23px;">
-                <td style="width: 21.8243%; height: 23px;">&nbsp;Email</td>
-                <td style="width: 68.1757%; height: 23px;">&nbsp;: nur.widiyasono@unsil.ac.id, nur.w095@gmail.com</td>
+              <tr v-if="dosen?.user?.email">
+                <td class="bio-label">Email</td>
+                <td class="bio-sep">:</td>
+                <td>{{ dosen.user.email }}</td>
               </tr>
-              <tr style="height: 23.5px;">
-                <td style="width: 21.8243%; height: 23.5px;">&nbsp;Nomor Telepon</td>
-                <td style="width: 68.1757%; height: 23.5px;">&nbsp;: 0819-0968-0432 / 0896-7641-6325</td>
+              <tr v-if="dosen?.user?.no_telp">
+                <td class="bio-label">Nomor Telepon</td>
+                <td class="bio-sep">:</td>
+                <td>{{ dosen.user.no_telp }}</td>
               </tr>
-              <tr style="height: 23px;">
-                <td style="width: 21.8243%; height: 23px;">&nbsp;Bidang Minat</td>
-                <td style="width: 68.1757%; height: 23px;">&nbsp;: Digital Forensik, Network Engineering, System Engineering, Internet of Things, AI, IoT, <br />&nbsp;&nbsp;&nbsp;Cloud Computing, Security Engineering</td>
+              <tr v-if="bidangMinat">
+                <td class="bio-label">Bidang Minat</td>
+                <td class="bio-sep">:</td>
+                <td>{{ bidangMinat }}</td>
               </tr>
             </tbody>
           </table>
@@ -58,7 +65,8 @@
         </div>
 
         <div class="mt-30">
-          <p>Ir. Nur Widiyasono, S.Kom., M.Kom., merupakan dosen tetap Program Studi Informatika Universitas Siliwangi dengan jabatan fungsional Lektor. Beliau menekuni bidang Digital Forensik, Network Engineering, dan Keamanan Sistem, serta aktif membimbing riset mahasiswa di Laboratorium Riset KK JKF.</p>
+          <p v-if="dosen?.biografi">{{ dosen.biografi }}</p>
+          <p v-else-if="!loading">Biografi belum tersedia.</p>
         </div>
       </div>
     </div>
@@ -70,14 +78,76 @@
 </template>
 
 <script setup>
-// Halaman detail biografi dosen
+// Halaman detail biografi dosen — data dinamis dari /api/dosen/{id} (T2.10)
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import SidemenuDosen from '@/components/sidemenu-dosen.vue'
 import FooterComponent from '@/components/footer-component.vue'
+import { dosenService } from '@/services/dosen'
+import fotoFallback from '@/assets/foto-dosen/nur-widiyasono.jpg'
+
+const route = useRoute()
+const dosen = ref(null)
+const loading = ref(true)
+
+const fotoUrl = computed(() => dosen.value?.foto || dosen.value?.user?.avatar || fotoFallback)
+
+// Bidang Minat = relasi master many-to-many → gabung nama jadi teks
+const bidangMinat = computed(() => {
+  const v = dosen.value?.bidang_minat
+  return Array.isArray(v) && v.length ? v.map((b) => b.nama).join(', ') : ''
+})
+
+// Gabungan "Tempat, DD Bulan YYYY" — parse string Y-m-d manual agar bebas zona waktu
+const ttl = computed(() => {
+  const tempat = dosen.value?.tempat_lahir
+  const tgl = formatTanggal(dosen.value?.tanggal_lahir)
+  if (tempat && tgl) return `${tempat}, ${tgl}`
+  return tempat || tgl || null
+})
+
+function formatTanggal(iso) {
+  if (!iso) return null
+  const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+  const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number)
+  if (!y || !m || !d) return null
+  return `${d} ${bulan[m - 1]} ${y}`
+}
+
+onMounted(async () => {
+  try {
+    const res = await dosenService.get(route.params.id)
+    dosen.value = res.data.data
+  } catch {
+    dosen.value = null
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <style scoped>
-td {
+.bio-table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+}
+
+/* 3 kolom: label · pemisah ":" · nilai — agar nilai yang membungkus tetap
+   sejajar di bawah teks (bukan di bawah titik dua). */
+.bio-table td {
   vertical-align: top;
+  padding: 2px 0;
+}
+
+.bio-label {
+  width: 30%;
+  white-space: nowrap;
+}
+
+.bio-sep {
+  width: 18px;
+  padding-right: 8px;
 }
 </style>

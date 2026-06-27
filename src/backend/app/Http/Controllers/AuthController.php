@@ -60,9 +60,9 @@ class AuthController extends Controller
     public function me(Request $request): JsonResponse
     {
         // Muat profil sesuai role agar halaman Profil bisa menampilkan data diri.
-        // Dosen: ikut sertakan relasi bidangRiset agar Edit Profil bisa pre-fill pilihan.
+        // Dosen: ikut sertakan relasi bidangMinat agar Edit Profil bisa pre-fill pilihan.
         return response()->json(
-            $request->user()->load(['dosen.bidangRiset', 'mahasiswa']),
+            $request->user()->load(['dosen.bidangMinat', 'mahasiswa']),
         );
     }
 
@@ -170,7 +170,7 @@ class AuthController extends Controller
      * - Role hanya diubah Admin lewat Kelola User
      *
      * Field umum (semua role): name, no_telp.
-     * Khusus dosen: nidn, bidang_riset_ids[] (banyak-banyak via dosen_bidang_riset).
+     * Khusus dosen: nidn, bidang_minat_ids[] (banyak-banyak via dosen_bidang_minat).
      */
     public function updateProfile(Request $request): JsonResponse
     {
@@ -183,8 +183,8 @@ class AuthController extends Controller
 
         if ($user->role === 'dosen') {
             $rules['nidn'] = ['sometimes', 'nullable', 'string', 'max:32'];
-            $rules['bidang_riset_ids'] = ['sometimes', 'array'];
-            $rules['bidang_riset_ids.*'] = ['integer', 'exists:bidang_riset,id'];
+            $rules['bidang_minat_ids'] = ['sometimes', 'array'];
+            $rules['bidang_minat_ids.*'] = ['integer', 'exists:bidang_minat,id'];
         }
 
         if ($user->role === 'mahasiswa') {
@@ -200,15 +200,15 @@ class AuthController extends Controller
             $user->update($userFields);
         }
 
-        // Update kolom dosen + sinkronisasi relasi bidang_riset
+        // Update kolom dosen + sinkronisasi relasi bidang_minat
         if ($user->role === 'dosen') {
             $dosen = $user->dosen()->firstOrCreate([]);
 
             if (array_key_exists('nidn', $data)) {
                 $dosen->update(['nidn' => $data['nidn']]);
             }
-            if (array_key_exists('bidang_riset_ids', $data)) {
-                $dosen->bidangRiset()->sync($data['bidang_riset_ids']);
+            if (array_key_exists('bidang_minat_ids', $data)) {
+                $dosen->bidangMinat()->sync($data['bidang_minat_ids']);
             }
         }
 
@@ -218,7 +218,7 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'data' => $user->fresh()->load(['dosen.bidangRiset', 'mahasiswa']),
+            'data' => $user->fresh()->load(['dosen.bidangMinat', 'mahasiswa']),
             'message' => 'Profil berhasil diperbarui.',
         ]);
     }

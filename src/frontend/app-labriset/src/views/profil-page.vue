@@ -53,7 +53,7 @@
                 </tr>
               </template>
 
-              <!-- Dosen: NIDN sebelum Status (Bidang Riset di akhir, di bawah No. Telp) -->
+              <!-- Dosen: NIDN sebelum Status (Bidang Minat di akhir, di bawah No. Telp) -->
               <tr v-if="user?.dosen" style="height: 26px">
                 <td>&nbsp;NIDN</td>
                 <td>&nbsp;: {{ user.dosen.nidn || '-' }}</td>
@@ -69,7 +69,7 @@
               </tr>
 
               <tr v-if="user?.dosen" style="height: 26px">
-                <td>&nbsp;Bidang Riset</td>
+                <td>&nbsp;Bidang Minat</td>
                 <td>&nbsp;: {{ dosenBidangLabel }}</td>
               </tr>
             </tbody>
@@ -107,6 +107,12 @@
           <input type="text" class="form-ctrl input-border" v-model="profileForm.name" required />
         </div>
 
+        <!-- Dosen: NIDN tepat setelah Nama (sebelum No. Telp) -->
+        <div v-if="user?.role === 'dosen'" class="form-row">
+          <label>NIDN</label>
+          <input type="text" class="form-ctrl input-border" v-model="profileForm.nidn" maxlength="32" />
+        </div>
+
         <div class="form-row">
           <label>No. Telp</label>
           <input
@@ -129,25 +135,18 @@
           </div>
         </template>
 
-        <!-- Field khusus dosen -->
-        <template v-if="user?.role === 'dosen'">
-          <div class="form-row">
-            <label>NIDN</label>
-            <input type="text" class="form-ctrl input-border" v-model="profileForm.nidn" maxlength="32" />
+        <!-- Dosen: Bidang Minat (banyak-banyak) di akhir -->
+        <div v-if="user?.role === 'dosen'" class="form-row">
+          <label>Bidang Minat (boleh lebih dari satu)</label>
+          <div v-if="bidangLoading" style="color: #6b7280">Memuat daftar bidang minat...</div>
+          <div v-else-if="!bidangOptions.length" style="color: #6b7280">-</div>
+          <div v-else class="bidang-grid">
+            <label v-for="b in bidangOptions" :key="b.id" class="bidang-check">
+              <input type="checkbox" :value="b.id" v-model="profileForm.bidang_minat_ids" />
+              {{ b.nama }}
+            </label>
           </div>
-
-          <div class="form-row">
-            <label>Bidang Riset (boleh lebih dari satu)</label>
-            <div v-if="bidangLoading" style="color: #6b7280">Memuat daftar bidang riset...</div>
-            <div v-else-if="!bidangOptions.length" style="color: #6b7280">-</div>
-            <div v-else class="bidang-grid">
-              <label v-for="b in bidangOptions" :key="b.id" class="bidang-check">
-                <input type="checkbox" :value="b.id" v-model="profileForm.bidang_riset_ids" />
-                {{ b.nama }}
-              </label>
-            </div>
-          </div>
-        </template>
+        </div>
 
         <p v-if="profileError" style="color: #c0392b">{{ profileError }}</p>
         <p v-if="profileSuccess" style="color: #2e7d32">{{ profileSuccess }}</p>
@@ -243,7 +242,7 @@
 import { ref, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { authService } from '@/services/auth'
-import { bidangRisetService } from '@/services/bidang-riset'
+import { bidangMinatService } from '@/services/bidang-minat'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 
@@ -293,19 +292,19 @@ const avatarSuccess = ref('')
 
 // State edit profil
 const showProfileForm = ref(false)
-const profileForm = ref({ name: '', no_telp: '', prodi: '', nidn: '', bidang_riset_ids: [] })
+const profileForm = ref({ name: '', no_telp: '', prodi: '', nidn: '', bidang_minat_ids: [] })
 const profileLoading = ref(false)
 const profileError = ref('')
 const profileSuccess = ref('')
 
-// Master Bidang Riset (untuk dosen)
+// Master Bidang Minat (untuk dosen)
 const bidangOptions = ref([])
 const bidangLoading = ref(false)
 
-// Label gabungan bidang riset di kartu identitas (sumber: relasi many-to-many).
+// Label gabungan bidang minat di kartu identitas (sumber: relasi many-to-many).
 // Array kosong → "-" (truthy di JS, jadi tak boleh diserahkan ke `|| '-'`).
 const dosenBidangLabel = computed(() => {
-  const v = user.value?.dosen?.bidang_riset
+  const v = user.value?.dosen?.bidang_minat
   if (Array.isArray(v)) return v.length ? v.map((b) => b.nama).join(', ') : '-'
   return v || '-'
 })
@@ -313,7 +312,7 @@ const dosenBidangLabel = computed(() => {
 async function loadBidangOptions() {
   bidangLoading.value = true
   try {
-    const res = await bidangRisetService.list()
+    const res = await bidangMinatService.list()
     bidangOptions.value = res.data.data
   } catch {
     bidangOptions.value = []
@@ -334,7 +333,7 @@ function openProfileForm() {
     no_telp: u.no_telp || '',
     prodi: m.prodi || '',
     nidn: d.nidn || '',
-    bidang_riset_ids: Array.isArray(d.bidang_riset) ? d.bidang_riset.map((b) => b.id) : [],
+    bidang_minat_ids: Array.isArray(d.bidang_minat) ? d.bidang_minat.map((b) => b.id) : [],
   }
   showProfileForm.value = true
   if (u.role === 'dosen' && !bidangOptions.value.length) loadBidangOptions()
@@ -358,7 +357,7 @@ async function submitProfile() {
     }
     if (user.value?.role === 'dosen') {
       payload.nidn = profileForm.value.nidn || null
-      payload.bidang_riset_ids = profileForm.value.bidang_riset_ids || []
+      payload.bidang_minat_ids = profileForm.value.bidang_minat_ids || []
     }
     if (user.value?.role === 'mahasiswa') {
       payload.prodi = profileForm.value.prodi || null

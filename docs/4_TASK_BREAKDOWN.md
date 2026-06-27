@@ -10,7 +10,7 @@
 
 ---
 
-## Catatan Progres (per 2026-06-27)
+## Catatan Progres (per 2026-06-28)
 
 **Backend (`src/backend`)**:
 - Sanctum token auth fungsional: `POST /api/auth/login` (cek NULL password, pesan eksplisit sesuai SRS UC-01), `GET /api/auth/me`, `POST /api/auth/logout` — sudah sesuai SDD 5.1.
@@ -19,12 +19,13 @@
 - Model `User`, `Dosen`, `Mahasiswa` + relasi Eloquent lengkap (`User::dosen()/mahasiswa()`, `Dosen::mahasiswaBimbingan()`, `Mahasiswa::dosenPembimbing()`).
 - `laravel/socialite ^5.28` terpasang, `config/services.php` punya blok `google` (client id/secret/redirect) & `frontend.url`.
 - Google OAuth: `GET /api/auth/google/redirect` & `/callback` jalan — validasi domain (`@student.unsil.ac.id`→mahasiswa, `@unsil.ac.id`→dosen), find-or-create `users`, terbitkan Sanctum token, redirect ke frontend. **Auto-create profil `dosen`/`mahasiswa` + ekstraksi NPM/angkatan sudah AKTIF** (`createRoleProfile()` dipanggil saat registrasi pertama; `ensureRoleProfile()` backfill profil untuk akun lama yang belum punya — keduanya idempotent via `firstOrCreate`).
-- **Profil Akun (semua role)**: `POST /api/auth/avatar` (unggah foto, validasi `image|mimes:jpeg,jpg,png,webp|max:2048`, simpan disk publik `avatars/<uuid>`, hapus avatar lokal lama) & `PATCH /api/auth/profile` (edit `name`/`no_telp`; dosen +`nidn`; mahasiswa +`prodi`; `email`/`role`/`npm`/`angkatan` immutable). Kolom `no_telp` ditambahkan ke `users` (migration `add_no_telp_to_users`). Diuji `AvatarTest` (3 test). _Master Bidang Riset (relasi `dosen ↔ bidang_riset`) ada di kode namun dokumentasi & finalisasinya **ditunda/pending** — lihat catatan `3_SDD.md` 5.1._
+- **Profil Akun (semua role)**: `POST /api/auth/avatar` (unggah foto, validasi `image|mimes:jpeg,jpg,png,webp|max:2048`, simpan disk publik `avatars/<uuid>`, hapus avatar lokal lama) & `PATCH /api/auth/profile` (edit `name`/`no_telp`; dosen +`nidn`; mahasiswa +`prodi`; `email`/`role`/`npm`/`angkatan` immutable). Kolom `no_telp` ditambahkan ke `users` (migration `add_no_telp_to_users`). Diuji `AvatarTest` (3 test). _**Bidang Minat** (master banyak-banyak `dosen ↔ bidang_minat`) aktif: panel admin (Gate `manage-bidang-minat`), dipilih dosen via `bidang_minat_ids[]` di Edit Profil, tampil di Profil & Detail Dosen. Penamaan konsisten `bidang_minat` di semua lapisan — lihat `3_SDD.md` 3.2a._
 - `DatabaseSeeder` membuat akun Admin & Supervisor sesuai SDD Bagian 2.
 - `laravel/sanctum` terpasang, `config/cors.php` dikonfigurasi (`supports_credentials: true`, origin dari env `FRONTEND_URL`).
 - **Kelola User (Admin)**: `UserController` CRUD (`/api/users`) + Form Request (`StoreUserRequest`/`UpdateUserRequest`) + Gate `manage-users`; create role `dosen` otomatis membuat profil `dosen`; `destroy` menolak hapus akun sendiri. Diuji `UserManagementTest` (5 test lulus).
 - **Info Lab (FASE 2)**: migration + model `InfoLab`, seeder 4 tipe (`InfoLabSeeder` di `DatabaseSeeder`), endpoint `GET` (publik) & `PATCH` (Admin via Gate `manage-info-lab`) dengan constraint enum `tipe`. Diuji `InfoLabTest`. _Seeder kini berisi konten nyata (bukan placeholder): `kepala_lab` (foto `frontend/public/nur-widiyasono.jpg` + tabel profil markdown), `visi_misi` (Visi + 8 poin Misi). Konten tetap dapat disunting Admin lewat panel._
-- **Belum ada**: endpoint Dosen (T2.5/T2.6), Gate/Policy modul lain, seluruh modul FASE 3–9.
+- **Dosen (FASE 2)**: tabel `dosen` diperluas (migration `add_profile_fields_to_dosen`: jenis_kelamin, jabatan_fungsional, tempat_lahir, tanggal_lahir, biografi) agar Detail Dosen sepadan situs lama. `DosenController` (index/show **publik**, update via `DosenPolicy` pemilik/Admin/Supervisor) + `UpdateDosenRequest`. `DosenSeeder` menyalin profil dari situs lama (1 dosen nyata: Ir. Nur Widiyasono). Diuji `DosenTest` (8 test).
+- **Belum ada**: Gate/Policy modul lain, seluruh modul FASE 3–9.
 
 **Frontend (`src/frontend/app-labriset`)**:
 - Vue 3 + Vite, Vue Router 4, Pinia, Axios — semua terpasang. Struktur folder lengkap (`components/`, `views/`, `stores/`, `services/`, `router/`, `composables/`).
@@ -33,9 +34,10 @@
 - `router/index.js`: navigation guard RBAC (`requiresAuth`/`roles`), restore sesi saat refresh halaman, redirect sudah-login ke beranda; route `/auth/callback` terdaftar.
 - `views/login-page.vue`: form login email+password terhubung ke `authStore.login()`; tombol "Login dengan UNSIL Mail" redirect ke `/api/auth/google/redirect`, plus penanganan & tampilan pesan error OAuth dari query string.
 - `views/auth-callback.vue`: penerima redirect Google OAuth — ambil token dari query, simpan via `authStore.loginWithToken()`, muat data user, lalu arahkan ke tujuan semula (atau balik ke login dengan pesan error bila gagal).
-- `views/profil-page.vue` (route `/profil`, `requiresAuth`): kartu identitas (avatar Google/inisial, nama, email, peran; NPM/angkatan/prodi untuk mahasiswa, NIDN/bidang riset untuk dosen) + **form Edit Profil** (nama, no_telp; dosen +NIDN; mahasiswa +prodi — via `authService.updateProfile()`) + **ganti foto profil** (unggah file via `authService.updateAvatar()`) + form password kondisional — "Atur Password Login" bila `has_password=false`, "Ubah Password" (wajib password lama) bila sudah ada. Terhubung ke `authService.setPassword()`/`changePassword()`, lalu `fetchUser()` untuk segarkan state. Link "Profil Saya" muncul di header saat login.
-- Backend pendukung: `me()` kini eager-load relasi `dosen.bidangRiset`/`mahasiswa`; model `User` mengekspos flag `has_password` agar frontend memilih form yang tepat, dan `no_telp` masuk `fillable`.
-- Halaman info lab **tersambung API** lewat `composables/use-info-lab.js` + `components/markdown-content.vue` (render Markdown, dep `marked`): Beranda, Visi-Misi, Profil Kepala Lab, Roadmap Lab membaca `GET /api/info-lab/{tipe}`. Daftar Dosen & Detail Dosen **masih UI statis** (menunggu endpoint Dosen T2.5/T2.6). _`markdown-content.vue` menata tabel profil (kepala lab) & daftar: penanda daftar berupa panah kanan dua warna (kuning atas, biru `--bs-navy` bawah) via `li::before` + `background-clip:text`, sejajar judul — menyamai tampilan halaman statis lama._
+- `views/profil-page.vue` (route `/profil`, `requiresAuth`): kartu identitas (avatar Google/inisial, nama, email, peran; NPM/angkatan/prodi untuk mahasiswa, NIDN/bidang minat untuk dosen) + **form Edit Profil** (nama, no_telp; dosen +NIDN; mahasiswa +prodi — via `authService.updateProfile()`) + **ganti foto profil** (unggah file via `authService.updateAvatar()`) + form password kondisional — "Atur Password Login" bila `has_password=false`, "Ubah Password" (wajib password lama) bila sudah ada. Terhubung ke `authService.setPassword()`/`changePassword()`, lalu `fetchUser()` untuk segarkan state. Link "Profil Saya" muncul di header saat login.
+- Backend pendukung: `me()` kini eager-load relasi `dosen.bidangMinat`/`mahasiswa`; model `User` mengekspos flag `has_password` agar frontend memilih form yang tepat, dan `no_telp` masuk `fillable`.
+- Halaman info lab **tersambung API** lewat `composables/use-info-lab.js` + `components/markdown-content.vue` (render Markdown, dep `marked`): Beranda, Visi-Misi, Profil Kepala Lab, Roadmap Lab membaca `GET /api/info-lab/{tipe}`. _`markdown-content.vue` menata tabel profil (kepala lab) & daftar: penanda daftar berupa panah kanan dua warna (kuning atas, biru `--bs-navy` bawah) via `li::before` + `background-clip:text`, sejajar judul — menyamai tampilan halaman statis lama._
+- **Dosen tersambung API**: `views/list-dosen.vue` (Daftar Dosen) & `views/detail-dosen.vue` (Biografi/Detail) kini dinamis via `services/dosen.js` (`GET /api/dosen`, `GET /api/dosen/{id}`); route `/detaildosen/:id`; tabel bio (3 kolom rapi) + biografi + **Bidang Minat** (gabungan nama relasi) dirender dari data, `tanggal_lahir` diformat ke teks Indonesia. `sidemenu-dosen.vue`: tautan Biografi mengikuti id aktif, sub-halaman (Credential/Publikasi/Buku/Roadmap) membawa konteks `?dosen=<id>`. **Roadmap Penelitian Dosen** (`roadmap-dosen.vue`) kini dinamis dari `dosen.roadmap_riset` — dibedakan dari **Roadmap Laboratorium** (`roadmap-lab.vue`, `info_lab.roadmap_kk`).
 - **Panel Admin**: hub `/admin` (`admin-page.vue`) + `components/sidemenu-admin.vue`; **Kelola User** (`admin-users.vue`) & **Konten Info Lab** (`admin-info-lab.vue`) fungsional; link "Panel Admin" di header untuk role admin.
 - **Belum ada**: modul admin lain (Data Master, Persetujuan Peminjaman, Sertifikasi, Presensi, Laporan), seluruh modul FASE 3–9.
 
@@ -70,7 +72,7 @@ Fondasi yang harus selesai sebelum modul lain bisa diuji end-to-end (hampir semu
 - [x] **T1.5** — Endpoint `GET /api/auth/google/redirect` & `GET /api/auth/google/callback` — implementasi alur SDD Bagian 2 lengkap: validasi domain email, auto-create `users` + `dosen`/`mahasiswa`, ekstraksi NPM & angkatan (format `"20" . dua_digit_awal`). _Catatan: `createRoleProfile()` kini **aktif** (dipanggil saat registrasi pertama) + `ensureRoleProfile()` (backfill akun lama), keduanya idempotent via `firstOrCreate`. Tabel `dosen`/`mahasiswa` sudah ada (T1.2/T1.3). Test otomatis (T1.18–T1.20) belum dibuat._
 - [x] **T1.6** — Endpoint `POST /api/auth/login` (login manual) — tolak jika `password` NULL, dengan pesan sesuai SRS UC-01 skenario 1b
 - [x] **T1.7** — Endpoint `POST /api/auth/set-password` & `PATCH /api/auth/change-password` (SRS UC-01b). _set-password hanya untuk akun ber-password NULL (tanpa password lama); change-password wajib `current_password` cocok. Validasi `min:8` + `confirmed`; flag `has_password` diekspos via model `User` dan `me()` eager-load profil._
-- [x] **T1.7a** — Migration `add_no_telp_to_users` (kolom `no_telp` varchar(32) nullable) + endpoint `PATCH /api/auth/profile` (Edit Profil akun sendiri, SDD 5.1): field `name`/`no_telp` (semua role), `nidn` (dosen), `prodi` (mahasiswa, whitelist `Informatika`); `email`/`role`/`npm`/`angkatan` **immutable** (ditolak di backend). _Field `bidang_riset_ids[]` (dosen) sudah diterima endpoint, namun bagian Master Bidang Riset **pending** — lihat SDD 5.1._
+- [x] **T1.7a** — Migration `add_no_telp_to_users` (kolom `no_telp` varchar(32) nullable) + endpoint `PATCH /api/auth/profile` (Edit Profil akun sendiri, SDD 5.1): field `name`/`no_telp` (semua role), `nidn` (dosen), `prodi` (mahasiswa, whitelist `Informatika`); `email`/`role`/`npm`/`angkatan` **immutable** (ditolak di backend). _Field `bidang_minat_ids[]` (dosen) di-`sync` ke pivot Bidang Minat (master aktif) — lihat SDD 3.2a._
 - [x] **T1.7b** — Endpoint `POST /api/auth/avatar` (unggah/ganti foto akun sendiri, SDD 5.1): validasi `image|mimes:jpeg,jpg,png,webp|max:2048`, simpan disk publik `avatars/<uuid>`, kolom `avatar` diisi URL absolut, avatar lokal lama dihapus (avatar Google eksternal dibiarkan). Diuji `AvatarTest`.
 - [x] **T1.8** — Endpoint `POST /api/auth/logout` & `GET /api/auth/me`
 - [x] **T1.9** — Seeder `UserSeeder` untuk membuat akun Admin & Supervisor manual (SDD Bagian 2, catatan implementasi)
@@ -104,19 +106,19 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.15).
 - [x] **T2.2** — Model `InfoLab`
 - [x] **T2.3** — Endpoint `GET /api/info-lab/{tipe}` & `PATCH /api/info-lab/{tipe}` (Admin only untuk update). _`InfoLabController` (`show` publik, `update` via Gate `manage-info-lab`, upsert by `tipe`); constraint enum `tipe` di route; diuji `InfoLabTest`._
 - [x] **T2.4** — Seeder data awal untuk tipe `beranda`, `visi_misi`, `kepala_lab`, `roadmap_kk` (`InfoLabSeeder`, dipanggil di `DatabaseSeeder`). _`kepala_lab` & `visi_misi` berisi konten nyata (foto + tabel profil; Visi + 8 Misi) sebagai markdown; `beranda` & `roadmap_kk` masih placeholder satu kalimat._
-- [ ] **T2.5** — Endpoint `GET /api/dosen` & `GET /api/dosen/{id}` dengan eager load relasi `user` (SDD 3.2 catatan penting)
-- [ ] **T2.6** — Endpoint `PATCH /api/dosen/{id}` — izinkan update oleh pemilik (Dosen) atau Admin/Supervisor
+- [x] **T2.5** — Endpoint `GET /api/dosen` & `GET /api/dosen/{id}` (publik) dengan eager load relasi `user` (SDD 3.2 catatan penting). _`DosenController` index/show + route publik._
+- [x] **T2.6** — Endpoint `PATCH /api/dosen/{id}` — update oleh pemilik (Dosen) atau Admin/Supervisor via `DosenPolicy`. _`UpdateDosenRequest`; `name`/`no_telp` ditulis ke `users`, sisanya ke `dosen`. Tabel `dosen` diperluas (jenis_kelamin, jabatan_fungsional, tempat_lahir, tanggal_lahir, biografi) agar Detail Dosen sepadan situs lama — lihat SDD 3.2._
 
 ### Frontend
 - [x] **T2.7** — Halaman Beranda (tersambung `GET /api/info-lab/beranda`). _Konten dinamis (judul/gambar/markdown) di bawah jumbotron._
 - [x] **T2.8** — Halaman Visi & Misi (tersambung `GET /api/info-lab/visi_misi`)
 - [x] **T2.9** — Halaman Profil Kepala Lab (tersambung `GET /api/info-lab/kepala_lab`). _Foto (`info.gambar`) + judul (nama) + tabel profil markdown; data nyata di-seed, foto di `frontend/public/`._
-- [ ] **T2.10** — Halaman Daftar Dosen (list dari `GET /api/dosen`) + halaman Detail Profil Dosen (`GET /api/dosen/{id}`). _Masih UI statis — menunggu endpoint Dosen (T2.5/T2.6)._
+- [x] **T2.10** — Halaman Daftar Dosen (list dari `GET /api/dosen`) + halaman Detail Profil Dosen (`GET /api/dosen/{id}`). _`list-dosen.vue` & `detail-dosen.vue` kini dinamis via `services/dosen.js`; route `/detaildosen/:id`; tabel bio + biografi dirender dari data (tanggal_lahir diformat Indonesia). `sidemenu-dosen.vue` Biografi mengikuti id aktif._
 - [x] **T2.11** — Halaman Roadmap Laboratorium (tersambung `GET /api/info-lab/roadmap_kk`)
 - [x] **T2.12** — Panel kelola konten info lab (Admin only). _`views/admin-info-lab.vue`: tab 4 tipe + form judul/gambar/konten, terhubung `infoLabService`. Shared: `composables/use-info-lab.js` + `components/markdown-content.vue` (dep `marked`)._
 
 ### Testing
-- [ ] **T2.13** — Test: hanya Admin yang bisa update `info_lab` dan data dosen milik orang lain. _Catatan: bagian `info_lab` sudah diuji (`InfoLabTest`: non-admin ditolak update, admin bisa). Bagian data dosen menunggu endpoint Dosen (T2.5/T2.6)._
+- [x] **T2.13** — Test: hanya Admin yang bisa update `info_lab` dan data dosen milik orang lain. _`info_lab` diuji `InfoLabTest`; bagian dosen diuji `DosenTest` (8 test): baca publik, pemilik & Admin/Supervisor bisa update, dosen lain/mahasiswa 403, guest 401._
 
 ---
 

@@ -7,43 +7,12 @@
     <div class="main-container bg-grey">
       <div class="card-bio flex-h between">
         <div class="dosen-photo-250">
-          <img src="../assets/foto-dosen/nur-widiyasono.jpg">
+          <img :src="fotoUrl" :alt="dosen?.user?.name" referrerpolicy="no-referrer" />
         </div>
 
         <div class="side-table">
-          <h2> Ir. Nur Widiyasono, S.Kom., M.Kom., CEH., CHFI., CITAP., MCE.</h2>
-          <table style="width: 100%; margin-top: 20px">
-            <tbody>
-              <tr style="height: 23px;">
-                <td style="width: 21.8243%; height: 23px;">&nbsp;Jenis Kelamin</td>
-                <td style="width: 68.1757%; height: 23px;">&nbsp;: Laki-laki</td>
-              </tr>
-              <tr style="height: 23px;">
-                <td style="width: 21.8243%; height: 23px;">&nbsp;Jabatan Fungsional</td>
-                <td style="width: 68.1757%; height: 23px;">&nbsp;: Lektor</td>
-              </tr>
-              <tr style="height: 23px;">
-                <td style="width: 21.8243%; height: 23px;">&nbsp;NIDN</td>
-                <td style="width: 68.1757%; height: 23px;">&nbsp;: 310127203</td>
-              </tr>
-              <tr style="height: 23px;">
-                <td style="width: 21.8243%; height: 23px;">&nbsp;Tempat dan Tanggal Lahir</td>
-                <td style="width: 68.1757%; height: 23px;">&nbsp;: Jakarta, 10 Desember 1972</td>
-              </tr>
-              <tr style="height: 23px;">
-                <td style="width: 21.8243%; height: 23px;">&nbsp;Email</td>
-                <td style="width: 68.1757%; height: 23px;">&nbsp;: nur.widiyasono@unsil.ac.id, nur.w095@gmail.com</td>
-              </tr>
-              <tr style="height: 23.5px;">
-                <td style="width: 21.8243%; height: 23.5px;">&nbsp;Nomor Telepon</td>
-                <td style="width: 68.1757%; height: 23.5px;">&nbsp;: 0819-0968-0432 / 0896-7641-6325</td>
-              </tr>
-              <tr style="height: 23px;">
-                <td style="width: 21.8243%; height: 23px;">&nbsp;Bidang Minat</td>
-                <td style="width: 68.1757%; height: 23px;">&nbsp;: Digital Forensik, Network Engineering, System Engineering, Internet of Things, AI, IoT, <br />&nbsp;&nbsp;&nbsp;Cloud Computing, Security Engineering</td>
-              </tr>
-            </tbody>
-          </table>
+          <h2>{{ dosen?.user?.name }}</h2>
+          <p v-if="bidangMinat" class="mt-20"><strong>Bidang Minat:</strong> {{ bidangMinat }}</p>
         </div>
       </div>
     </div>
@@ -53,12 +22,13 @@
 
       <div class="profil-container">
         <div>
-          <h1>Roadmap</h1>
+          <h1>Roadmap Penelitian Dosen</h1>
           <div class="profil-title"></div>
         </div>
 
         <div class="mt-30">
-          <p>Peta jalan penelitian dosen yang menggambarkan arah dan rencana riset jangka panjang, mulai dari topik yang sedang dikembangkan hingga target capaian di bidang keminatannya. Roadmap ini selaras dengan roadmap riset Laboratorium KK JKF.</p>
+          <MarkdownContent v-if="dosen?.roadmap_riset" :source="dosen.roadmap_riset" />
+          <p v-else-if="!loading">Roadmap penelitian belum tersedia.</p>
         </div>
       </div>
     </div>
@@ -70,10 +40,44 @@
 </template>
 
 <script setup>
-// Halaman roadmap dosen
+// Roadmap PENELITIAN DOSEN (per dosen) — dinamis dari kolom dosen.roadmap_riset.
+// Berbeda dari Roadmap Laboratorium (info_lab roadmap_kk) yang bersifat tingkat KK.
+// Id dosen dibawa lewat query ?dosen=<id> dari menu samping detail dosen.
+import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import SidemenuDosen from '@/components/sidemenu-dosen.vue'
 import FooterComponent from '@/components/footer-component.vue'
+import MarkdownContent from '@/components/markdown-content.vue'
+import { dosenService } from '@/services/dosen'
+import fotoFallback from '@/assets/foto-dosen/nur-widiyasono.jpg'
+
+const route = useRoute()
+const dosen = ref(null)
+const loading = ref(true)
+
+const fotoUrl = computed(() => dosen.value?.foto || dosen.value?.user?.avatar || fotoFallback)
+
+const bidangMinat = computed(() => {
+  const v = dosen.value?.bidang_minat
+  return Array.isArray(v) && v.length ? v.map((b) => b.nama).join(', ') : ''
+})
+
+onMounted(async () => {
+  const id = route.query.dosen
+  if (!id) {
+    loading.value = false
+    return
+  }
+  try {
+    const res = await dosenService.get(id)
+    dosen.value = res.data.data
+  } catch {
+    dosen.value = null
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <style scoped>

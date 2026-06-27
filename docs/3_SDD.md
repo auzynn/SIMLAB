@@ -109,13 +109,37 @@ Profil publik dosen (ditampilkan di halaman Daftar Dosen). Dibuat otomatis bersa
 | `id` | bigint, PK | |
 | `user_id` | bigint, FK → `users.id`, unique | Selalu terisi (dibuat otomatis saat registrasi Dosen), `on delete cascade` |
 | `nidn` | varchar, nullable | Diisi manual menyusul oleh dosen/admin |
-| `bidang_riset` | varchar, nullable | |
+| `jenis_kelamin` | varchar, nullable | `Laki-laki` / `Perempuan` — ditampilkan di halaman Detail Dosen |
+| `jabatan_fungsional` | varchar, nullable | Mis. `Lektor`, `Lektor Kepala` |
+| `tempat_lahir` | varchar, nullable | Komponen "Tempat, Tanggal Lahir" di Detail Dosen |
+| `tanggal_lahir` | date, nullable | Diformat ke teks Indonesia di frontend (mis. `10 Desember 1972`) |
+| `biografi` | text, nullable | Narasi biografi singkat dosen (halaman Detail Dosen) |
 | `roadmap_riset` | text, nullable | Peta jalan riset pribadi dosen (PRD 3.7) |
 | `publikasi` | text, nullable | Ringkasan/daftar publikasi ilmiah |
 | `foto` | varchar, nullable | |
 | `created_at`, `updated_at` | timestamp | |
 
-**Catatan**: `user_id` wajib (`not null`) karena keputusan final menyatakan entri `dosen` **selalu** lahir bersamaan dengan akun `users`, tidak ada lagi dosen "profil saja tanpa akun". Kolom `name`, `email`, dan `avatar` **tidak diduplikasi** di tabel ini — selalu diambil lewat relasi ke `users` (`dosen->user->name`). Endpoint `GET /api/dosen` and `GET /api/dosen/{id}` **wajib** memuat (eager load) relasi `user` agar nama dan foto profil ikut tampil di response.
+**Catatan**: `user_id` wajib (`not null`) karena keputusan final menyatakan entri `dosen` **selalu** lahir bersamaan dengan akun `users`, tidak ada lagi dosen "profil saja tanpa akun". Kolom `name`, `email`, dan `avatar` **tidak diduplikasi** di tabel ini — selalu diambil lewat relasi ke `users` (`dosen->user->name`). Endpoint `GET /api/dosen` and `GET /api/dosen/{id}` **wajib** memuat (eager load) relasi `user` **dan** `bidangMinat` agar nama, foto, serta Bidang Minat ikut tampil di response. **Bidang Minat** dosen disimpan sebagai relasi many-to-many (lihat 3.2a), bukan kolom di tabel ini. Kolom `roadmap_riset` dipakai halaman **Roadmap Penelitian Dosen** (berbeda dari Roadmap Laboratorium di `info_lab.roadmap_kk`).
+
+### 3.2a `bidang_minat` & `dosen_bidang_minat` (Bidang Minat)
+Master **Bidang Minat** — daftar bidang yang dikelola Admin/Supervisor dan dipilih Dosen (boleh lebih dari satu) di Edit Profil. Penamaan konsisten `bidang_minat` di seluruh lapisan (tabel, pivot, model `BidangMinat`, route `/api/bidang-minat`, Gate `manage-bidang-minat`, service `bidangMinatService`).
+
+**`bidang_minat`** (master)
+
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| `id` | bigint, PK | |
+| `nama` | varchar, unique | Mis. `Digital Forensik`, `Internet of Things` |
+| `created_at`, `updated_at` | timestamp | |
+
+**`dosen_bidang_minat`** (pivot banyak-ke-banyak `dosen ↔ bidang_minat`)
+
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| `dosen_id` | bigint, FK → `dosen.id` | `on delete cascade`; PK komposit bersama `bidang_minat_id` |
+| `bidang_minat_id` | bigint, FK → `bidang_minat.id` | `on delete cascade` |
+
+**Akses**: CRUD master via Gate `manage-bidang-minat` (Admin/Supervisor); read terbuka untuk semua role yang login (dipakai dropdown Edit Profil). Pemilihan dosen disinkronkan (`sync`) lewat `PATCH /api/auth/profile` (`bidang_minat_ids[]`).
 
 ### 3.3 `mahasiswa`
 Profil mahasiswa, dibuat otomatis bersamaan saat user dengan email `@student.unsil.ac.id` registrasi pertama kali — simetris dengan pola tabel `dosen`.
@@ -352,11 +376,11 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | POST | `/api/auth/set-password` | Atur password pertama kali (hanya `password` baru + konfirmasi, untuk user yang `password`-nya masih NULL) |
 | PATCH | `/api/auth/change-password` | Ubah password yang sudah ada (wajib sertakan password lama) |
 | POST | `/api/auth/avatar` | Unggah/ganti foto profil akun sendiri (multipart, field `avatar`: `jpeg/jpg/png/webp`, maks 2 MB). File disimpan di disk publik (`storage/app/public/avatars`, nama file UUID), kolom `avatar` diisi URL absolut. Avatar lama yang berupa file lokal dihapus; avatar Google eksternal dibiarkan |
-| PATCH | `/api/auth/profile` | Edit profil akun sendiri. Field umum semua role: `name`, `no_telp`. Dosen: `nidn` (pemilihan bidang riset dikelola terpisah — lihat catatan di bawah). Mahasiswa: `prodi` (whitelist `Informatika`). `email`, `role`, serta `npm`/`angkatan` (mahasiswa) **immutable** — diabaikan/ditolak meski dikirim di body |
+| PATCH | `/api/auth/profile` | Edit profil akun sendiri. Field umum semua role: `name`, `no_telp`. Dosen: `nidn` + `bidang_minat_ids[]` (pilihan Bidang Minat — lihat catatan di bawah). Mahasiswa: `prodi` (whitelist `Informatika`). `email`, `role`, serta `npm`/`angkatan` (mahasiswa) **immutable** — diabaikan/ditolak meski dikirim di body |
 
 **Catatan**:
 - Penyimpanan avatar memerlukan disk publik Laravel aktif (`php artisan storage:link`) agar URL `…/storage/avatars/…` dapat diakses frontend.
-- Untuk Dosen, **pemilihan bidang riset** (relasi banyak-ke-banyak `dosen ↔ bidang_riset`) merupakan bagian dari **modul Master Bidang Riset** yang dokumentasinya **ditunda (pending)** — endpoint `PATCH /api/auth/profile` sudah menerima `bidang_riset_ids[]` di implementasi, namun skema tabel master & alurnya akan dirinci saat modul tersebut didokumentasikan resmi.
+- **Bidang Minat (master, banyak-banyak)**: dikelola Admin/Supervisor lewat panel **Bidang Minat** (Gate `manage-bidang-minat`), lalu dipilih Dosen di Edit Profil. Dosen mengirim `bidang_minat_ids[]` ke `PATCH /api/auth/profile`; backend `sync` ke pivot `dosen_bidang_minat`. Ditampilkan di kartu Profil Saya & halaman Detail Dosen (lihat skema 3.2a).
 
 ### 5.2 User & Role (Admin only)
 | Method | Endpoint | Keterangan |
@@ -369,9 +393,9 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 ### 5.3 Dosen
 | Method | Endpoint | Keterangan |
 |---|---|---|
-| GET | `/api/dosen` | List semua dosen (untuk halaman Daftar Dosen) |
-| GET | `/api/dosen/{id}` | Detail profil satu dosen |
-| PATCH | `/api/dosen/{id}` | Update profil — milik sendiri (Dosen) atau Admin/Supervisor |
+| GET | `/api/dosen` | **(publik)** List semua dosen (halaman Daftar Dosen), eager load relasi `user` |
+| GET | `/api/dosen/{id}` | **(publik)** Detail profil satu dosen (halaman Biografi/Detail Dosen) |
+| PATCH | `/api/dosen/{id}` | Update profil — pemilik (Dosen) atau Admin/Supervisor (via `DosenPolicy`). Field `name`/`no_telp` ditulis ke akun `users`, sisanya ke tabel `dosen` |
 
 ### 5.4 Mahasiswa
 | Method | Endpoint | Keterangan |

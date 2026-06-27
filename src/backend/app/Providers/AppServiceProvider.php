@@ -27,9 +27,9 @@ class AppServiceProvider extends ServiceProvider
         // Hak kelola konten halaman informasi lab: khusus Admin (2_SRS.md Bagian 1)
         Gate::define('manage-info-lab', fn (User $user) => $user->role === 'admin');
 
-        // Hak kelola master Bidang Riset: Admin & Supervisor (sesuai instruksi pemilik).
+        // Hak kelola master Bidang Minat: Admin & Supervisor (sesuai instruksi pemilik).
         Gate::define(
-            'manage-bidang-riset',
+            'manage-bidang-minat',
             fn (User $user) => in_array($user->role, ['admin', 'supervisor'], true),
         );
     }

@@ -1,7 +1,8 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\BidangRisetController;
+use App\Http\Controllers\BidangMinatController;
+use App\Http\Controllers\DosenController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\InfoLabController;
 use App\Http\Controllers\UserController;
@@ -25,6 +26,10 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback']);
 Route::get('/info-lab/{tipe}', [InfoLabController::class, 'show'])
     ->whereIn('tipe', ['beranda', 'visi_misi', 'kepala_lab', 'roadmap_kk']);
 
+// Profil dosen (publik untuk baca — halaman Daftar & Detail Dosen tanpa login)
+Route::get('/dosen', [DosenController::class, 'index']);
+Route::get('/dosen/{dosen}', [DosenController::class, 'show']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
@@ -36,13 +41,16 @@ Route::middleware('auth:sanctum')->group(function () {
     // Unggah/ganti foto avatar akun sendiri (multipart) — Profil Saya
     Route::post('/auth/avatar', [AuthController::class, 'updateAvatar']);
 
-    // Edit profil sendiri (name, no_telp; +nidn & bidang_riset_ids[] untuk dosen)
+    // Edit profil sendiri (name, no_telp; +nidn & bidang_minat_ids[] untuk dosen)
     Route::patch('/auth/profile', [AuthController::class, 'updateProfile']);
 
-    // Master Bidang Riset: read terbuka untuk semua yang login (dipakai dropdown Edit Profil),
-    // CUD via Gate manage-bidang-riset (Admin/Supervisor) di controller.
-    Route::apiResource('bidang-riset', BidangRisetController::class)
+    // Master Bidang Minat: read terbuka untuk semua yang login (dipakai dropdown Edit Profil),
+    // CUD via Gate manage-bidang-minat (Admin/Supervisor) di controller.
+    Route::apiResource('bidang-minat', BidangMinatController::class)
         ->only(['index', 'store', 'update', 'destroy']);
+
+    // Update profil dosen — pemilik atau Admin/Supervisor (3_SDD.md 5.3, DosenPolicy)
+    Route::patch('/dosen/{dosen}', [DosenController::class, 'update']);
 
     // Kelola user & role — khusus Admin (3_SDD.md 5.2, otorisasi via Gate manage-users)
     Route::apiResource('users', UserController::class)->only(['index', 'store', 'update', 'destroy']);

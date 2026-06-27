@@ -15,10 +15,18 @@ class Dosen extends Model
     protected $fillable = [
         'user_id',
         'nidn',
-        'bidang_riset',
+        'jenis_kelamin',
+        'jabatan_fungsional',
+        'tempat_lahir',
+        'tanggal_lahir',
+        'biografi',
         'roadmap_riset',
         'publikasi',
         'foto',
+    ];
+
+    protected $casts = [
+        'tanggal_lahir' => 'date:Y-m-d',
     ];
 
     /**
@@ -38,12 +46,12 @@ class Dosen extends Model
     }
 
     /**
-     * Bidang riset yang dipilih dosen (many-to-many; kolom string `bidang_riset`
-     * dipertahankan sebagai legacy/free-text, sumber utama kini relasi ini).
+     * Bidang minat yang dipilih dosen (many-to-many via pivot `dosen_bidang_minat`).
+     * Satu-satunya sumber bidang minat (tak ada lagi kolom free-text di tabel dosen).
      */
-    public function bidangRiset(): BelongsToMany
+    public function bidangMinat(): BelongsToMany
     {
-        return $this->belongsToMany(BidangRiset::class, 'dosen_bidang_riset')
+        return $this->belongsToMany(BidangMinat::class, 'dosen_bidang_minat')
             ->orderBy('nama');
     }
 }

@@ -11,7 +11,7 @@
 
       <div class="profil-container">
         <div>
-          <h1>{{ info?.judul || 'Roadmap' }}</h1>
+          <h1>{{ info?.judul || 'Roadmap Laboratorium' }}</h1>
           <div class="profil-title"></div>
         </div>
 

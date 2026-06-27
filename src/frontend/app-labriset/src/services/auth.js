@@ -34,7 +34,7 @@ export const authService = {
     })
   },
 
-  // Edit profil sendiri (name, no_telp; +nidn & bidang_riset_ids[] khusus dosen).
+  // Edit profil sendiri (name, no_telp; +nidn & bidang_minat_ids[] khusus dosen).
   // Email & status tidak boleh diubah (immutable di backend).
   async updateProfile(payload) {
     return api.patch('/api/auth/profile', payload)

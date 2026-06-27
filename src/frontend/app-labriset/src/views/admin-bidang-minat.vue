@@ -1,6 +1,6 @@
 <template>
   <div>
-    <JumbotronSmall title="Bidang Riset" />
+    <JumbotronSmall title="Bidang Minat" />
 
     <div class="main-container flex-h between">
       <SidemenuAdmin />
@@ -8,7 +8,7 @@
       <div class="profil-container">
         <div class="flex-h between">
           <div>
-            <h1>Bidang Riset</h1>
+            <h1>Bidang Minat</h1>
             <div class="profil-title"></div>
           </div>
           <button class="btn btn-navy-solid" style="width: auto; padding: 8px 20px" @click="openCreate">
@@ -17,7 +17,7 @@
         </div>
 
         <p class="mt-20" style="max-width: 640px">
-          Daftar bidang riset yang dapat dipilih dosen di menu Edit Profil. Bisa dipilih lebih dari satu per dosen.
+          Daftar bidang minat yang dapat dipilih dosen di menu Edit Profil. Bisa dipilih lebih dari satu per dosen.
         </p>
 
         <!-- Form tambah / edit -->
@@ -66,7 +66,7 @@
               </td>
             </tr>
             <tr v-if="!items.length">
-              <td colspan="2" style="text-align: center; color: #9aa0a6">Belum ada bidang riset.</td>
+              <td colspan="2" style="text-align: center; color: #9aa0a6">Belum ada bidang minat.</td>
             </tr>
           </tbody>
         </table>
@@ -78,9 +78,9 @@
 </template>
 
 <script setup>
-// Panel Admin/Supervisor — kelola master Bidang Riset (Gate manage-bidang-riset).
+// Panel Admin/Supervisor — kelola master Bidang Minat (Gate manage-bidang-minat).
 import { ref, onMounted } from 'vue'
-import { bidangRisetService } from '@/services/bidang-riset'
+import { bidangMinatService } from '@/services/bidang-minat'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import SidemenuAdmin from '@/components/sidemenu-admin.vue'
 import FooterComponent from '@/components/footer-component.vue'
@@ -99,7 +99,7 @@ async function load() {
   loading.value = true
   listError.value = ''
   try {
-    const res = await bidangRisetService.list()
+    const res = await bidangMinatService.list()
     items.value = res.data.data
   } catch (err) {
     listError.value = extractError(err)
@@ -131,9 +131,9 @@ async function submitForm() {
   error.value = ''
   try {
     if (editingId.value) {
-      await bidangRisetService.update(editingId.value, form.value.nama)
+      await bidangMinatService.update(editingId.value, form.value.nama)
     } else {
-      await bidangRisetService.create(form.value.nama)
+      await bidangMinatService.create(form.value.nama)
     }
     showForm.value = false
     await load()
@@ -147,7 +147,7 @@ async function submitForm() {
 async function removeItem(b) {
   if (!confirm(`Hapus bidang "${b.nama}"? Pilihan dosen pada bidang ini akan ikut terhapus.`)) return
   try {
-    await bidangRisetService.remove(b.id)
+    await bidangMinatService.remove(b.id)
     await load()
   } catch (err) {
     alert(extractError(err))
