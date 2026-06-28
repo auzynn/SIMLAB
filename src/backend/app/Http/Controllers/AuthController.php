@@ -170,7 +170,8 @@ class AuthController extends Controller
      * - Role hanya diubah Admin lewat Kelola User
      *
      * Field umum (semua role): name, no_telp.
-     * Khusus dosen: nidn, bidang_minat_ids[] (banyak-banyak via dosen_bidang_minat).
+     * Khusus dosen: nidn, jabatan_fungsional, tempat_lahir, tanggal_lahir,
+     * bidang_minat_ids[] (banyak-banyak via dosen_bidang_minat).
      */
     public function updateProfile(Request $request): JsonResponse
     {
@@ -183,6 +184,9 @@ class AuthController extends Controller
 
         if ($user->role === 'dosen') {
             $rules['nidn'] = ['sometimes', 'nullable', 'string', 'max:32'];
+            $rules['jabatan_fungsional'] = ['sometimes', 'nullable', 'string', 'max:100'];
+            $rules['tempat_lahir'] = ['sometimes', 'nullable', 'string', 'max:100'];
+            $rules['tanggal_lahir'] = ['sometimes', 'nullable', 'date'];
             $rules['bidang_minat_ids'] = ['sometimes', 'array'];
             $rules['bidang_minat_ids.*'] = ['integer', 'exists:bidang_minat,id'];
         }
@@ -204,8 +208,12 @@ class AuthController extends Controller
         if ($user->role === 'dosen') {
             $dosen = $user->dosen()->firstOrCreate([]);
 
-            if (array_key_exists('nidn', $data)) {
-                $dosen->update(['nidn' => $data['nidn']]);
+            $dosenFields = array_intersect_key(
+                $data,
+                array_flip(['nidn', 'jabatan_fungsional', 'tempat_lahir', 'tanggal_lahir']),
+            );
+            if (! empty($dosenFields)) {
+                $dosen->update($dosenFields);
             }
             if (array_key_exists('bidang_minat_ids', $data)) {
                 $dosen->bidangMinat()->sync($data['bidang_minat_ids']);

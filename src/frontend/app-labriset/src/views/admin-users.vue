@@ -71,7 +71,7 @@
         <!-- ---------- FILTER ---------- -->
         <div class="flex-h mt-30" style="gap: 10px; align-items: center">
           <label>Filter role:</label>
-          <select class="form-ctrl input-border" style="width: auto; padding: 8px" v-model="filterRole" @change="loadUsers">
+          <select class="form-ctrl input-border" style="width: auto; padding: 8px" v-model="filterRole" @change="onFilterChange">
             <option value="">Semua</option>
             <option v-for="r in allRoles" :key="r" :value="r">{{ roleLabels[r] }}</option>
           </select>
@@ -91,7 +91,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="u in users" :key="u.id">
+            <tr v-for="u in pagedItems" :key="u.id">
               <td>{{ u.name }}</td>
               <td>{{ u.email }}</td>
               <td><span class="role-badge">{{ roleLabels[u.role] || u.role }}</span></td>
@@ -107,6 +107,8 @@
             </tr>
           </tbody>
         </table>
+
+        <PaginationBar v-model:page="page" :total-pages="totalPages" />
         <!-- ---------- TABEL USER END ---------- -->
       </div>
     </div>
@@ -123,9 +125,11 @@
 import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { userService } from '@/services/users'
+import { usePagination } from '@/composables/use-pagination'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import SidemenuAdmin from '@/components/sidemenu-admin.vue'
 import FooterComponent from '@/components/footer-component.vue'
+import PaginationBar from '@/components/pagination-bar.vue'
 
 const auth = useAuthStore()
 const currentUserId = auth.user?.id
@@ -141,9 +145,16 @@ const allRoles = ['admin', 'supervisor', 'dosen', 'mahasiswa']
 const createRoles = ['admin', 'supervisor', 'dosen']
 
 const users = ref([])
+const { page, totalPages, pagedItems } = usePagination(users, 10)
 const loading = ref(false)
 const listError = ref('')
 const filterRole = ref('')
+
+// Ganti filter role → kembali ke halaman 1 lalu muat ulang
+function onFilterChange() {
+  page.value = 1
+  loadUsers()
+}
 
 // State form tambah/edit (satu form dipakai untuk keduanya)
 const showForm = ref(false)

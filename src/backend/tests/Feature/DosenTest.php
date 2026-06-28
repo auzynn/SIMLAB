@@ -97,6 +97,25 @@ class DosenTest extends TestCase
         $this->assertDatabaseHas('users', ['id' => $user->id, 'name' => 'Nama Terkoreksi']);
     }
 
+    public function test_dosen_dapat_mengedit_jabatan_dan_ttl_lewat_profil(): void
+    {
+        [$user, $dosen] = $this->buatDosen();
+        Sanctum::actingAs($user);
+
+        $this->patchJson('/api/auth/profile', [
+            'jabatan_fungsional' => 'Lektor Kepala',
+            'tempat_lahir' => 'Bandung',
+            'tanggal_lahir' => '1980-05-17',
+        ])->assertOk();
+
+        $this->assertDatabaseHas('dosen', [
+            'id' => $dosen->id,
+            'jabatan_fungsional' => 'Lektor Kepala',
+            'tempat_lahir' => 'Bandung',
+            'tanggal_lahir' => '1980-05-17',
+        ]);
+    }
+
     public function test_dosen_lain_tidak_dapat_memperbarui_profil_bukan_miliknya(): void
     {
         [, $dosen] = $this->buatDosen();

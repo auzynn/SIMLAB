@@ -34,15 +34,15 @@ class InfoLabSeeder extends Seeder
         MD;
 
         $kepalaLab = <<<'MD'
-        |  |  |
-        | --- | --- |
-        | **Jenis Kelamin** | : Laki-laki |
-        | **Jabatan Fungsional** | : Lektor |
-        | **NIDN** | : 310127203 |
-        | **Tempat dan Tanggal Lahir** | : Jakarta, 10 Desember 1972 |
-        | **Email** | : nur.widiyasono@unsil.ac.id, nur.w095@gmail.com |
-        | **Nomor Telepon** | : 0819-0968-0432 / 0896-7641-6325 |
-        | **Bidang Minat** | : Digital Forensik, Network Engineering, System Engineering, Internet of Things, AI, IoT, Cloud Computing, Security Engineering |
+        |  |  |  |
+        | --- | --- | --- |
+        | **Jenis Kelamin** | : | Laki-laki |
+        | **Jabatan Fungsional** | : | Lektor |
+        | **NIDN** | : | 310127203 |
+        | **Tempat dan Tanggal Lahir** | : | Jakarta, 10 Desember 1972 |
+        | **Email** | : | nur.widiyasono@unsil.ac.id, nur.w095@gmail.com |
+        | **Nomor Telepon** | : | 0819-0968-0432 / 0896-7641-6325 |
+        | **Bidang Minat** | : | Digital Forensik, Network Engineering, System Engineering, Internet of Things, AI, IoT, Cloud Computing, Security Engineering |
         MD;
 
         $defaults = [

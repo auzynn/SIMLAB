@@ -30,48 +30,99 @@
 
         <div class="ml-30 side-table">
           <h2>{{ user?.name || '-' }}</h2>
-          <table style="width: 100%; margin-top: 20px">
+          <table class="bio-table">
             <tbody>
-              <tr style="height: 26px">
-                <td style="width: 25%">&nbsp;Email</td>
-                <td>&nbsp;: {{ user?.email || '-' }}</td>
-              </tr>
-
-              <!-- Mahasiswa: NPM, Angkatan, Program Studi sebelum Status -->
-              <template v-if="user?.mahasiswa">
-                <tr style="height: 26px">
-                  <td>&nbsp;NPM</td>
-                  <td>&nbsp;: {{ user.mahasiswa.npm || '-' }}</td>
+              <!-- Dosen: Status, Jabatan, NIDN, TTL, Email, No. Telp, Bidang Minat -->
+              <template v-if="user?.dosen">
+                <tr>
+                  <td class="bio-label">Status</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ roleLabel }}</td>
                 </tr>
-                <tr style="height: 26px">
-                  <td>&nbsp;Angkatan</td>
-                  <td>&nbsp;: {{ user.mahasiswa.angkatan || '-' }}</td>
+                <tr v-if="user.dosen.jabatan_fungsional">
+                  <td class="bio-label">Jabatan Fungsional</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ user.dosen.jabatan_fungsional }}</td>
                 </tr>
-                <tr style="height: 26px">
-                  <td>&nbsp;Program Studi</td>
-                  <td>&nbsp;: {{ user.mahasiswa.prodi || '-' }}</td>
+                <tr>
+                  <td class="bio-label">NIDN</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ user.dosen.nidn || '-' }}</td>
+                </tr>
+                <tr v-if="dosenTtl">
+                  <td class="bio-label">Tempat dan Tanggal Lahir</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ dosenTtl }}</td>
+                </tr>
+                <tr>
+                  <td class="bio-label">Email</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ user?.email || '-' }}</td>
+                </tr>
+                <tr>
+                  <td class="bio-label">No. Telp</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ user?.no_telp || '-' }}</td>
+                </tr>
+                <tr>
+                  <td class="bio-label">Bidang Minat</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ dosenBidangLabel }}</td>
                 </tr>
               </template>
 
-              <!-- Dosen: NIDN sebelum Status (Bidang Minat di akhir, di bawah No. Telp) -->
-              <tr v-if="user?.dosen" style="height: 26px">
-                <td>&nbsp;NIDN</td>
-                <td>&nbsp;: {{ user.dosen.nidn || '-' }}</td>
-              </tr>
+              <!-- Mahasiswa: Email, NPM, Angkatan, Program Studi, Status, No. Telp -->
+              <template v-else-if="user?.mahasiswa">
+                <tr>
+                  <td class="bio-label">Email</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ user?.email || '-' }}</td>
+                </tr>
+                <tr>
+                  <td class="bio-label">NPM</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ user.mahasiswa.npm || '-' }}</td>
+                </tr>
+                <tr>
+                  <td class="bio-label">Angkatan</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ user.mahasiswa.angkatan || '-' }}</td>
+                </tr>
+                <tr>
+                  <td class="bio-label">Program Studi</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ user.mahasiswa.prodi || '-' }}</td>
+                </tr>
+                <tr>
+                  <td class="bio-label">Status</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ roleLabel }}</td>
+                </tr>
+                <tr>
+                  <td class="bio-label">No. Telp</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ user?.no_telp || '-' }}</td>
+                </tr>
+              </template>
 
-              <tr style="height: 26px">
-                <td>&nbsp;Status</td>
-                <td>&nbsp;: {{ roleLabel }}</td>
-              </tr>
-              <tr style="height: 26px">
-                <td>&nbsp;No. Telp</td>
-                <td>&nbsp;: {{ user?.no_telp || '-' }}</td>
-              </tr>
-
-              <tr v-if="user?.dosen" style="height: 26px">
-                <td>&nbsp;Bidang Minat</td>
-                <td>&nbsp;: {{ dosenBidangLabel }}</td>
-              </tr>
+              <!-- Admin/Supervisor: Email, Status, No. Telp -->
+              <template v-else>
+                <tr>
+                  <td class="bio-label">Email</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ user?.email || '-' }}</td>
+                </tr>
+                <tr>
+                  <td class="bio-label">Status</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ roleLabel }}</td>
+                </tr>
+                <tr>
+                  <td class="bio-label">No. Telp</td>
+                  <td class="bio-sep">:</td>
+                  <td>{{ user?.no_telp || '-' }}</td>
+                </tr>
+              </template>
             </tbody>
           </table>
         </div>
@@ -107,10 +158,34 @@
           <input type="text" class="form-ctrl input-border" v-model="profileForm.name" required />
         </div>
 
-        <!-- Dosen: NIDN tepat setelah Nama (sebelum No. Telp) -->
+        <!-- Dosen: NIDN, Jabatan, TTL setelah Nama (sebelum No. Telp) -->
         <div v-if="user?.role === 'dosen'" class="form-row">
           <label>NIDN</label>
           <input type="text" class="form-ctrl input-border" v-model="profileForm.nidn" maxlength="32" />
+        </div>
+
+        <div v-if="user?.role === 'dosen'" class="form-row">
+          <label>Jabatan Fungsional</label>
+          <input type="text" class="form-ctrl input-border" v-model="profileForm.jabatan_fungsional" maxlength="100" placeholder="mis. Lektor" />
+        </div>
+
+        <div v-if="user?.role === 'dosen'" class="form-row">
+          <label>Tempat Lahir</label>
+          <input type="text" class="form-ctrl input-border" v-model="profileForm.tempat_lahir" maxlength="100" placeholder="mis. Jakarta" />
+        </div>
+
+        <div v-if="user?.role === 'dosen'" class="form-row">
+          <label>Tanggal Lahir</label>
+          <input type="date" class="form-ctrl input-border" v-model="profileForm.tanggal_lahir" />
+        </div>
+
+        <!-- Mahasiswa: Program Studi sebelum No. Telp -->
+        <div v-if="user?.role === 'mahasiswa'" class="form-row">
+          <label>Program Studi</label>
+          <select class="form-ctrl input-border" v-model="profileForm.prodi">
+            <option value="">- pilih -</option>
+            <option value="Informatika">Informatika</option>
+          </select>
         </div>
 
         <div class="form-row">
@@ -124,28 +199,16 @@
           />
         </div>
 
-        <!-- Field khusus mahasiswa -->
-        <template v-if="user?.role === 'mahasiswa'">
-          <div class="form-row">
-            <label>Program Studi</label>
-            <select class="form-ctrl input-border" v-model="profileForm.prodi">
-              <option value="">- pilih -</option>
-              <option value="Informatika">Informatika</option>
-            </select>
-          </div>
-        </template>
-
-        <!-- Dosen: Bidang Minat (banyak-banyak) di akhir -->
+        <!-- Dosen: Bidang Minat (banyak-banyak) — dropdown multi-select -->
         <div v-if="user?.role === 'dosen'" class="form-row">
           <label>Bidang Minat (boleh lebih dari satu)</label>
           <div v-if="bidangLoading" style="color: #6b7280">Memuat daftar bidang minat...</div>
-          <div v-else-if="!bidangOptions.length" style="color: #6b7280">-</div>
-          <div v-else class="bidang-grid">
-            <label v-for="b in bidangOptions" :key="b.id" class="bidang-check">
-              <input type="checkbox" :value="b.id" v-model="profileForm.bidang_minat_ids" />
-              {{ b.nama }}
-            </label>
-          </div>
+          <MultiSelectDropdown
+            v-else
+            v-model="profileForm.bidang_minat_ids"
+            :options="bidangOptions"
+            placeholder="Pilih bidang minat"
+          />
         </div>
 
         <p v-if="profileError" style="color: #c0392b">{{ profileError }}</p>
@@ -245,6 +308,7 @@ import { authService } from '@/services/auth'
 import { bidangMinatService } from '@/services/bidang-minat'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
+import MultiSelectDropdown from '@/components/multi-select-dropdown.vue'
 
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
@@ -292,7 +356,7 @@ const avatarSuccess = ref('')
 
 // State edit profil
 const showProfileForm = ref(false)
-const profileForm = ref({ name: '', no_telp: '', prodi: '', nidn: '', bidang_minat_ids: [] })
+const profileForm = ref({ name: '', no_telp: '', prodi: '', nidn: '', jabatan_fungsional: '', tempat_lahir: '', tanggal_lahir: '', bidang_minat_ids: [] })
 const profileLoading = ref(false)
 const profileError = ref('')
 const profileSuccess = ref('')
@@ -308,6 +372,24 @@ const dosenBidangLabel = computed(() => {
   if (Array.isArray(v)) return v.length ? v.map((b) => b.nama).join(', ') : '-'
   return v || '-'
 })
+
+// Gabungan "Tempat, DD Bulan YYYY" untuk kartu identitas dosen
+const dosenTtl = computed(() => {
+  const d = user.value?.dosen
+  if (!d) return ''
+  const tempat = d.tempat_lahir
+  const tgl = formatTanggalLahir(d.tanggal_lahir)
+  if (tempat && tgl) return `${tempat}, ${tgl}`
+  return tempat || tgl || ''
+})
+
+function formatTanggalLahir(iso) {
+  if (!iso) return ''
+  const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
+  const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number)
+  if (!y || !m || !d) return ''
+  return `${d} ${bulan[m - 1]} ${y}`
+}
 
 async function loadBidangOptions() {
   bidangLoading.value = true
@@ -333,6 +415,9 @@ function openProfileForm() {
     no_telp: u.no_telp || '',
     prodi: m.prodi || '',
     nidn: d.nidn || '',
+    jabatan_fungsional: d.jabatan_fungsional || '',
+    tempat_lahir: d.tempat_lahir || '',
+    tanggal_lahir: d.tanggal_lahir || '',
     bidang_minat_ids: Array.isArray(d.bidang_minat) ? d.bidang_minat.map((b) => b.id) : [],
   }
   showProfileForm.value = true
@@ -357,6 +442,9 @@ async function submitProfile() {
     }
     if (user.value?.role === 'dosen') {
       payload.nidn = profileForm.value.nidn || null
+      payload.jabatan_fungsional = profileForm.value.jabatan_fungsional || null
+      payload.tempat_lahir = profileForm.value.tempat_lahir || null
+      payload.tanggal_lahir = profileForm.value.tanggal_lahir || null
       payload.bidang_minat_ids = profileForm.value.bidang_minat_ids || []
     }
     if (user.value?.role === 'mahasiswa') {
@@ -523,25 +611,6 @@ function extractError(err) {
   width: 100%;
 }
 
-.bidang-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 6px 16px;
-  margin-top: 4px;
-}
-
-.bidang-check {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 400 !important;
-  cursor: pointer;
-}
-
-.bidang-check input {
-  margin: 0;
-}
-
 .password-form {
   max-width: 420px;
 }
@@ -555,7 +624,29 @@ function extractError(err) {
   width: 100%;
 }
 
-td {
+.bio-table {
+  width: 100%;
+  margin-top: 16px;
+  border-collapse: collapse;
+}
+
+/* Padding atas/bawah saja (jangan shorthand) agar tak menimpa padding-right kolom.
+   Selector .bio-table .bio-label/.bio-sep dibuat lebih spesifik dari .bio-table td. */
+.bio-table td {
   vertical-align: top;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  line-height: 1.5;
+}
+
+.bio-table .bio-label {
+  width: 1px;
+  white-space: nowrap;
+  padding-right: 32px;
+}
+
+.bio-table .bio-sep {
+  width: 1px;
+  padding-right: 8px;
 }
 </style>

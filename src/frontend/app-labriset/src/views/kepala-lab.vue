@@ -42,7 +42,10 @@ const { data: info, loading } = useInfoLab('kepala_lab')
 </script>
 
 <style scoped>
-td {
-  vertical-align: top;
+/* Foto Kepala Lab sedikit lebih kecil dari default global (250px). */
+.dosen-photo-250,
+.dosen-photo-250 img {
+  width: 190px;
+  height: 190px;
 }
 </style>

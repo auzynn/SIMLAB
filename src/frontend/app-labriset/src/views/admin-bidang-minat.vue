@@ -16,7 +16,7 @@
           </button>
         </div>
 
-        <p class="mt-20" style="max-width: 640px">
+        <p class="mt-30" style="max-width: 640px">
           Daftar bidang minat yang dapat dipilih dosen di menu Edit Profil. Bisa dipilih lebih dari satu per dosen.
         </p>
 
@@ -58,7 +58,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr v-for="b in items" :key="b.id">
+            <tr v-for="b in pagedItems" :key="b.id">
               <td>{{ b.nama }}</td>
               <td style="text-align: right">
                 <button class="btn-link" @click="openEdit(b)">Edit</button>
@@ -70,6 +70,8 @@
             </tr>
           </tbody>
         </table>
+
+        <PaginationBar v-model:page="page" :total-pages="totalPages" />
       </div>
     </div>
 
@@ -81,11 +83,14 @@
 // Panel Admin/Supervisor — kelola master Bidang Minat (Gate manage-bidang-minat).
 import { ref, onMounted } from 'vue'
 import { bidangMinatService } from '@/services/bidang-minat'
+import { usePagination } from '@/composables/use-pagination'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import SidemenuAdmin from '@/components/sidemenu-admin.vue'
 import FooterComponent from '@/components/footer-component.vue'
+import PaginationBar from '@/components/pagination-bar.vue'
 
 const items = ref([])
+const { page, totalPages, pagedItems } = usePagination(items, 10)
 const loading = ref(false)
 const listError = ref('')
 

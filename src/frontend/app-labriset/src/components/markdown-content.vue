@@ -12,7 +12,16 @@ const props = defineProps({
   source: { type: String, default: '' },
 })
 
-const html = computed(() => marked.parse(props.source || ''))
+const html = computed(() => {
+  let out = marked.parse(props.source || '')
+  // Ubah link email (mailto:) → Gmail compose, dibuka di tab baru.
+  out = out.replace(
+    /href="mailto:([^"?]+)[^"]*"/g,
+    (_, email) =>
+      `href="https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}" target="_blank" rel="noopener noreferrer"`,
+  )
+  return out
+})
 </script>
 
 <style scoped>
@@ -93,10 +102,29 @@ const html = computed(() => marked.parse(props.source || ''))
   padding: 4px 8px;
 }
 
-/* Kolom label kiri lebih ringkas, kolom nilai mengisi sisanya. */
+/* Paragraf di dalam sel (keluaran editor tabel TipTap) tak menambah jarak antar baris. */
+.markdown-body :deep(td) p {
+  margin: 0;
+}
+
+/* Tabel profil 3 kolom (Label | : | Nilai): kolom label & titik dua selebar isinya
+   sehingga titik dua rata, dan nilai yang membungkus otomatis sejajar di bawah teks nilai. */
 .markdown-body :deep(td:first-child) {
-  width: 22%;
+  width: 1px;
   white-space: nowrap;
+  padding-left: 0;
+  padding-right: 24px;
+}
+
+.markdown-body :deep(td:nth-child(2)) {
+  width: 1px;
+  white-space: nowrap;
+  padding-left: 0;
+  padding-right: 10px;
+}
+
+.markdown-body :deep(td:last-child) {
+  padding-left: 0;
 }
 
 /* Header kosong dari tabel markdown tak perlu tampil. */
