@@ -69,7 +69,7 @@ Fondasi yang harus selesai sebelum modul lain bisa diuji end-to-end (hampir semu
 - [x] **T1.2** — Migration tabel `dosen` sesuai SDD 3.2 (relasi `user_id` wajib unique)
 - [x] **T1.3** — Migration tabel `mahasiswa` sesuai SDD 3.3 (kolom `npm`, `angkatan`, `dosen_pembimbing_id` FK -> dosen.id — lihat aturan auto-extract & bimbingan)
 - [x] **T1.4** — Model `User`, `Dosen`, `Mahasiswa` + relasi Eloquent (`User::dosen()`, `User::mahasiswa()`, `Mahasiswa::dosenPembimbing()`, dst.)
-- [x] **T1.5** — Endpoint `GET /api/auth/google/redirect` & `GET /api/auth/google/callback` — implementasi alur SDD Bagian 2 lengkap: validasi domain email, auto-create `users` + `dosen`/`mahasiswa`, ekstraksi NPM & angkatan (format `"20" . dua_digit_awal`). _Catatan: `createRoleProfile()` kini **aktif** (dipanggil saat registrasi pertama) + `ensureRoleProfile()` (backfill akun lama), keduanya idempotent via `firstOrCreate`. Tabel `dosen`/`mahasiswa` sudah ada (T1.2/T1.3). Test otomatis (T1.18–T1.20) belum dibuat._
+- [x] **T1.5** — Endpoint `GET /api/auth/google/redirect` & `GET /api/auth/google/callback` — implementasi alur SDD Bagian 2 lengkap: validasi domain email, auto-create `users` + `dosen`/`mahasiswa`, ekstraksi NPM & angkatan (format `"20" . dua_digit_awal`). _Catatan: `createRoleProfile()` kini **aktif** (dipanggil saat registrasi pertama) + `ensureRoleProfile()` (backfill akun lama), keduanya idempotent via `firstOrCreate`. Tabel `dosen`/`mahasiswa` sudah ada (T1.2/T1.3). Test otomatis T1.18–T1.20 ada di `GoogleAuthTest` (Socialite di-mock)._
 - [x] **T1.6** — Endpoint `POST /api/auth/login` (login manual) — tolak jika `password` NULL, dengan pesan sesuai SRS UC-01 skenario 1b
 - [x] **T1.7** — Endpoint `POST /api/auth/set-password` & `PATCH /api/auth/change-password` (SRS UC-01b). _set-password hanya untuk akun ber-password NULL (tanpa password lama); change-password wajib `current_password` cocok. Validasi `min:8` + `confirmed`; flag `has_password` diekspos via model `User` dan `me()` eager-load profil._
 - [x] **T1.7a** — Migration `add_no_telp_to_users` (kolom `no_telp` varchar(32) nullable) + endpoint `PATCH /api/auth/profile` (Edit Profil akun sendiri, SDD 5.1): field `name`/`no_telp` (semua role), `nidn`/`jabatan_fungsional`/`tempat_lahir`/`tanggal_lahir` (dosen), `prodi` (mahasiswa, whitelist `Informatika`); `email`/`role`/`npm`/`angkatan` **immutable** (ditolak di backend). _Field `bidang_minat_ids[]` (dosen) di-`sync` ke pivot Bidang Minat (master aktif) — lihat SDD 3.2a._
@@ -88,11 +88,11 @@ Fondasi yang harus selesai sebelum modul lain bisa diuji end-to-end (hampir semu
 - [x] **T1.17** — Halaman Kelola User (Admin only) — list, edit role, hapus user. _`views/admin-users.vue` (route `/admin/users`, guard `roles: ['admin']`): tabel user + filter role + form tambah/edit + hapus (tombol hapus disembunyikan untuk akun sendiri). Plus halaman hub Panel Admin `views/admin-page.vue` (`/admin`) & `components/sidemenu-admin.vue`; link "Panel Admin" di header untuk role admin._
 
 ### Testing
-- [ ] **T1.18** — Test: domain email non-UNSIL ditolak saat login Google
-- [ ] **T1.19** — Test: login Google pertama kali membuat `users` + entri `dosen`/`mahasiswa` otomatis sesuai role
-- [ ] **T1.20** — Test: ekstraksi NPM dan angkatan dari email mahasiswa menghasilkan nilai yang benar
-- [ ] **T1.21** — Test: login manual ditolak jika `password` masih NULL
-- [ ] **T1.22** — Test: field `npm` dan `angkatan` tidak bisa diubah lewat endpoint update profil mahasiswa
+- [x] **T1.18** — Test: domain email non-UNSIL ditolak saat login Google. _Diuji `GoogleAuthTest` — Socialite di-mock, email `@gmail.com` ditolak: redirect `/login?error=invalid_domain` & tidak ada `users` dibuat._
+- [x] **T1.19** — Test: login Google pertama kali membuat `users` + entri `dosen`/`mahasiswa` otomatis sesuai role. _Diuji `GoogleAuthTest` (2 kasus: `@student`→mahasiswa, `@unsil`→dosen; profil terkait ikut terbuat, profil lawan 0)._
+- [x] **T1.20** — Test: ekstraksi NPM dan angkatan dari email mahasiswa menghasilkan nilai yang benar. _Diuji `GoogleAuthTest`: `197006028@student…`→`npm=197006028`, `angkatan=2019` (concat `"20"."19"`)._
+- [x] **T1.21** — Test: login manual ditolak jika `password` masih NULL. _Diuji `LoginTest`: `POST /api/auth/login` → 422 + pesan eksplisit SRS UC-01 (2b)._
+- [x] **T1.22** — Test: field `npm` dan `angkatan` tidak bisa diubah lewat endpoint update profil mahasiswa. _Diuji `ProfileTest`: `PATCH /api/auth/profile` kirim `npm`/`angkatan` → diabaikan, hanya `prodi` berubah._
 - [x] **T1.23** — Test: unggah avatar (`AvatarTest`) — user dapat unggah gambar, file non-gambar ditolak (422), endpoint butuh login (401)
 
 ---
