@@ -327,10 +327,12 @@ Konten halaman informasi lab (Beranda, Visi-Misi, Profil Kepala Lab, Roadmap Lab
 | `id` | bigint, PK | |
 | `tipe` | enum(`beranda`,`visi_misi`,`kepala_lab`,`roadmap_kk`) | Satu baris per tipe konten |
 | `judul` | varchar, nullable | |
-| `konten` | longtext | Rich text/markdown |
+| `konten` | longtext | Rich text — lihat catatan format di bawah |
 | `gambar` | varchar, nullable | |
 | `updated_by` | bigint, FK → `users.id`, nullable | Admin terakhir yang mengubah |
 | `created_at`, `updated_at` | timestamp | |
+
+**Catatan format konten**: Kolom `konten` menyimpan **HTML** yang dihasilkan editor visual (TipTap WYSIWYG) di panel Admin (Konten Info Lab). Konten lama yang masih berformat **Markdown** tetap didukung — frontend (`markdown-content.vue`) merender baik HTML maupun Markdown (lewat `marked`). Khusus tipe `kepala_lab`, Admin dapat menyusun konten otomatis lewat fitur *Ambil dari Profil Dosen*: data dosen terpilih diambil via `GET /api/dosen/{id}` lalu diisikan ke editor untuk disunting sebelum disimpan (tidak menambah endpoint baru).
 
 ---
 
@@ -376,7 +378,7 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | POST | `/api/auth/set-password` | Atur password pertama kali (hanya `password` baru + konfirmasi, untuk user yang `password`-nya masih NULL) |
 | PATCH | `/api/auth/change-password` | Ubah password yang sudah ada (wajib sertakan password lama) |
 | POST | `/api/auth/avatar` | Unggah/ganti foto profil akun sendiri (multipart, field `avatar`: `jpeg/jpg/png/webp`, maks 2 MB). File disimpan di disk publik (`storage/app/public/avatars`, nama file UUID), kolom `avatar` diisi URL absolut. Avatar lama yang berupa file lokal dihapus; avatar Google eksternal dibiarkan |
-| PATCH | `/api/auth/profile` | Edit profil akun sendiri. Field umum semua role: `name`, `no_telp`. Dosen: `nidn` + `bidang_minat_ids[]` (pilihan Bidang Minat — lihat catatan di bawah). Mahasiswa: `prodi` (whitelist `Informatika`). `email`, `role`, serta `npm`/`angkatan` (mahasiswa) **immutable** — diabaikan/ditolak meski dikirim di body |
+| PATCH | `/api/auth/profile` | Edit profil akun sendiri. Field umum semua role: `name`, `no_telp`. Dosen: `nidn`, `jabatan_fungsional`, `tempat_lahir`, `tanggal_lahir` + `bidang_minat_ids[]` (pilihan Bidang Minat — lihat catatan di bawah). Mahasiswa: `prodi` (whitelist `Informatika`). `email`, `role`, serta `npm`/`angkatan` (mahasiswa) **immutable** — diabaikan/ditolak meski dikirim di body |
 
 **Catatan**:
 - Penyimpanan avatar memerlukan disk publik Laravel aktif (`php artisan storage:link`) agar URL `…/storage/avatars/…` dapat diakses frontend.

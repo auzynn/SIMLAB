@@ -76,7 +76,7 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | ID | Fungsi | Keterangan |
 |---|---|---|
 | F-DS-01 | Login via Google OAuth UNSIL + login manual (setelah set password) | Sama seperti Admin |
-| F-DS-02 | Edit profil pribadi | Update data diri (nama, no. telepon, NIDN), unggah foto profil; email & peran tidak dapat diubah sendiri |
+| F-DS-02 | Edit profil pribadi | Update data diri (nama, no. telepon, NIDN, jabatan fungsional, tempat & tanggal lahir, Bidang Minat), unggah foto profil; email & peran tidak dapat diubah sendiri |
 | F-DS-03 | Kelola portofolio & roadmap riset pribadi | CRUD konten riset pribadi |
 | F-DS-04 | Kelola presensi mahasiswa bimbingan | CRUD entri presensi terkait |
 | F-DS-05 | Lihat & mengajukan jadwal peminjaman lab | R untuk jadwal umum, C untuk pengajuan pribadi |
