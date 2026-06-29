@@ -5,6 +5,10 @@ use App\Http\Controllers\BidangMinatController;
 use App\Http\Controllers\DosenController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\InfoLabController;
+use App\Http\Controllers\KelasLabController;
+use App\Http\Controllers\MataKuliahController;
+use App\Http\Controllers\PeminjamanRuanganController;
+use App\Http\Controllers\RuanganController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -54,6 +58,36 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Kelola user & role — khusus Admin (3_SDD.md 5.2, otorisasi via Gate manage-users)
     Route::apiResource('users', UserController::class)->only(['index', 'store', 'update', 'destroy']);
+
+    // Data Master (3_SDD.md 5.5, 5.6): read terbuka untuk semua role login,
+    // CUD via Gate manage-master-data (Admin/Supervisor) di masing-masing controller.
+    Route::apiResource('ruangan', RuanganController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+    Route::apiResource('mata-kuliah', MataKuliahController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->parameters(['mata-kuliah' => 'mataKuliah']);
+
+    // Peminjaman Ruangan (3_SDD.md 5.5, SRS UC-02). /kalender didefinisikan sebelum aksi
+    // ber-{id} agar tidak terbentur route model binding.
+    Route::get('/peminjaman-ruangan/kalender', [PeminjamanRuanganController::class, 'kalender']);
+    Route::get('/peminjaman-ruangan', [PeminjamanRuanganController::class, 'index']);
+    Route::post('/peminjaman-ruangan', [PeminjamanRuanganController::class, 'store']);
+    Route::patch('/peminjaman-ruangan/{peminjamanRuangan}/approve', [PeminjamanRuanganController::class, 'approve']);
+    Route::patch('/peminjaman-ruangan/{peminjamanRuangan}/reject', [PeminjamanRuanganController::class, 'reject']);
+    Route::delete('/peminjaman-ruangan/{peminjamanRuangan}', [PeminjamanRuanganController::class, 'destroy']);
+
+    // Kelas Lab/Praktikum (3_SDD.md 5.7, SRS UC-02a). Aksi peserta & pendaftaran
+    // didefinisikan sebelum apiResource agar tidak terbaca sebagai {kelasLab}.
+    // Persetujuan pendaftaran — Dosen (kelas miliknya) / Supervisor.
+    Route::get('/kelas-lab/pendaftaran', [KelasLabController::class, 'pendaftaran']);
+    Route::patch('/kelas-lab/pendaftaran/{kelasLabPeserta}/approve', [KelasLabController::class, 'approvePendaftaran']);
+    Route::patch('/kelas-lab/pendaftaran/{kelasLabPeserta}/reject', [KelasLabController::class, 'rejectPendaftaran']);
+    Route::get('/kelas-lab/{kelasLab}/peserta', [KelasLabController::class, 'peserta']);
+    Route::post('/kelas-lab/{kelasLab}/daftar', [KelasLabController::class, 'daftar']);
+    Route::delete('/kelas-lab/{kelasLab}/daftar', [KelasLabController::class, 'batalDaftar']);
+    Route::apiResource('kelas-lab', KelasLabController::class)
+        ->only(['index', 'show', 'store', 'update', 'destroy'])
+        ->parameters(['kelas-lab' => 'kelasLab']);
 
     // Update konten info lab — khusus Admin (3_SDD.md 5.12, otorisasi via Gate manage-info-lab)
     Route::patch('/info-lab/{tipe}', [InfoLabController::class, 'update'])

@@ -32,5 +32,21 @@ class AppServiceProvider extends ServiceProvider
             'manage-bidang-minat',
             fn (User $user) => in_array($user->role, ['admin', 'supervisor'], true),
         );
+
+        // Hak kelola Data Master (ruangan, mata kuliah, perangkat): Admin & Supervisor
+        // (2_SRS.md Bagian 1; 3_SDD.md 3.4, 3.6). Read tetap terbuka untuk semua role login.
+        Gate::define(
+            'manage-master-data',
+            fn (User $user) => in_array($user->role, ['admin', 'supervisor'], true),
+        );
+
+        // Approve/reject pengajuan peminjaman ruangan: Admin & Supervisor (2_SRS.md Bagian 1, UC-02).
+        Gate::define(
+            'approve-peminjaman-ruangan',
+            fn (User $user) => in_array($user->role, ['admin', 'supervisor'], true),
+        );
+
+        // Mendaftar sebagai peserta Kelas Lab: khusus Mahasiswa (2_SRS.md Bagian 1, UC-02a).
+        Gate::define('daftar-kelas-lab', fn (User $user) => $user->role === 'mahasiswa');
     }
 }

@@ -17,9 +17,13 @@
           <router-link to="/kepalalab">Profil</router-link>
         </li>
 
-        <!-- Jadwal Lab hanya tampil setelah login -->
+        <!-- Jadwal Lab & Kelas Lab hanya tampil setelah login -->
         <li v-if="auth.isAuthenticated" class="nav-hover" :class="{ activenav: activeMenu === 'jadwal' }">
           <router-link to="/jadwallab">Jadwal Lab</router-link>
+        </li>
+
+        <li v-if="auth.isAuthenticated" class="nav-hover" :class="{ activenav: activeMenu === 'kelaslab' }">
+          <router-link to="/kelaslab">Kelas Lab</router-link>
         </li>
 
         <!-- Belum login: tombol Login -->
@@ -36,6 +40,12 @@
           <ul class="user-dropdown">
             <!-- Akses Panel Admin hanya untuk role admin -->
             <li v-if="auth.user?.role === 'admin'"><router-link to="/admin">Panel Admin</router-link></li>
+            <!-- Persetujuan Peminjaman kini diakses dari halaman Jadwal Lab;
+                 Kelola Kelas Lab dari halaman Kelas Lab — tidak lagi di dropdown ini. -->
+            <!-- Peminjaman Saya — Mahasiswa (Dosen tidak meminjam ruangan) -->
+            <li v-if="auth.user?.role === 'mahasiswa'">
+              <router-link to="/peminjaman-saya">Peminjaman Saya</router-link>
+            </li>
             <li><router-link to="/profil">Profil Saya</router-link></li>
             <li><a class="logout-link" @click="handleLogout">Logout</a></li>
           </ul>
@@ -65,6 +75,7 @@ const activeMenu = computed(() => {
   const path = route.path
   if (path === '/') return 'home'
   if (path === '/jadwallab') return 'jadwal'
+  if (path === '/kelaslab' || path.startsWith('/kelaslab/')) return 'kelaslab'
   // startsWith agar path berparameter (mis. /detaildosen/2) tetap ter-highlight
   if (profilPaths.some((p) => path === p || path.startsWith(p + '/'))) return 'profil'
   return '' // /profil (Profil Saya), /login, dll → tidak ada highlight di nav atas

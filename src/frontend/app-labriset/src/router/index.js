@@ -101,11 +101,60 @@ const routes = [
     meta: { requiresAuth: true, roles: ['admin'] }
   },
   {
-    path: '/admin/bidang-minat',
-    name: 'admin-bidang-minat',
-    // Kelola master Bidang Minat — Admin & Supervisor (Gate manage-bidang-minat)
-    component: () => import('../views/admin-bidang-minat.vue'),
+    path: '/admin/data-master',
+    name: 'admin-data-master',
+    // Kelola Data Master (Ruangan & Mata Kuliah) — Admin & Supervisor (Gate manage-master-data)
+    component: () => import('../views/admin-data-master.vue'),
     meta: { requiresAuth: true, roles: ['admin', 'supervisor'] }
+  },
+  {
+    path: '/peminjaman-saya',
+    name: 'peminjaman-saya',
+    // Status pengajuan peminjaman ruangan milik sendiri — Mahasiswa (Dosen tidak meminjam ruangan)
+    component: () => import('../views/peminjaman-saya.vue'),
+    meta: { requiresAuth: true, roles: ['mahasiswa'] }
+  },
+  {
+    path: '/persetujuan-peminjaman',
+    name: 'persetujuan-peminjaman',
+    // Approve/reject pengajuan peminjaman ruangan — Admin & Supervisor (Gate approve-peminjaman-ruangan)
+    component: () => import('../views/persetujuan-peminjaman.vue'),
+    meta: { requiresAuth: true, roles: ['admin', 'supervisor'] }
+  },
+  {
+    path: '/kelaslab',
+    name: 'kelaslab',
+    // Daftar Kelas Lab/Praktikum + pendaftaran peserta — semua role yang login
+    component: () => import('../views/kelas-lab.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/kelaslab/katalog',
+    name: 'katalog-kelas-lab',
+    // Katalog pendaftaran Kelas Lab (semua role lihat; Mahasiswa mendaftar)
+    component: () => import('../views/katalog-kelas-lab.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/kelaslab/persetujuan',
+    name: 'persetujuan-kelas-lab',
+    // Persetujuan pendaftaran Kelas Lab — Dosen (kelas miliknya) / Supervisor
+    component: () => import('../views/persetujuan-kelas-lab.vue'),
+    meta: { requiresAuth: true, roles: ['dosen', 'supervisor'] }
+  },
+  {
+    path: '/kelaslab/kelola',
+    name: 'kelola-kelas-lab',
+    // Buka & kelola Kelas Lab — Dosen (milik sendiri) atau Supervisor (atas nama dosen)
+    component: () => import('../views/kelola-kelas-lab.vue'),
+    meta: { requiresAuth: true, roles: ['dosen', 'supervisor'] }
+  },
+  {
+    path: '/kelaslab/:id/peserta',
+    name: 'peserta-kelas-lab',
+    // Daftar peserta satu sesi Kelas Lab — pemilik (Dosen) atau Supervisor
+    component: () => import('../views/peserta-kelas-lab.vue'),
+    meta: { requiresAuth: true, roles: ['dosen', 'supervisor'] }
   }
 ]
 

@@ -44,5 +44,12 @@ class DatabaseSeeder extends Seeder
 
         // Data dosen awal (profil dari situs lama) — 3_SDD.md 3.2
         $this->call(DosenSeeder::class);
+
+        // Data Master FASE 3 (ruangan & mata kuliah) — 3_SDD.md 3.4, 3.6
+        $this->call(RuanganSeeder::class);
+        $this->call(MataKuliahSeeder::class);
+
+        // Demo Kelas Lab/Praktikum (butuh dosen + ruangan + mata kuliah) — 3_SDD.md 3.7
+        $this->call(KelasLabSeeder::class);
     }
 }

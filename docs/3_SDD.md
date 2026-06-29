@@ -169,13 +169,13 @@ Data master ruangan lab.
 | `created_at`, `updated_at` | timestamp | |
 
 ### 3.5 `peminjaman_ruangan`
-Pengajuan peminjaman ruangan oleh Mahasiswa/Dosen.
+Pengajuan peminjaman ruangan oleh Mahasiswa (Dosen tidak meminjam ruangan — SRS UC-02).
 
 | Kolom | Tipe | Keterangan |
 |---|---|---|
 | `id` | bigint, PK | |
 | `ruangan_id` | bigint, FK → `ruangan.id` | `on delete cascade` |
-| `user_id` | bigint, FK → `users.id` | Pengaju (Mahasiswa atau Dosen), `on delete cascade` |
+| `user_id` | bigint, FK → `users.id` | Pengaju (Mahasiswa), `on delete cascade` |
 | `tanggal` | date | |
 | `jam_mulai` | time | |
 | `jam_selesai` | time | |
@@ -184,7 +184,7 @@ Pengajuan peminjaman ruangan oleh Mahasiswa/Dosen.
 | `disetujui_oleh` | bigint, FK → `users.id`, nullable | Supervisor/Admin yang memproses, `on delete set null` |
 | `created_at`, `updated_at` | timestamp | |
 
-**Constraint penting (SRS UC-02)**: kombinasi `ruangan_id` + `tanggal` + rentang `jam_mulai`–`jam_selesai` dengan status `disetujui` **tidak boleh tumpang tindih** dengan pengajuan lain berstatus `disetujui`, **maupun** dengan jadwal `kelas_lab` (3.6) yang aktif pada ruangan, hari, dan jam yang sama. Peminjaman hanya diizinkan jika `ruangan.status = 'tersedia'`. Validasi ini dilakukan di Form Request backend, bukan hanya constraint database.
+**Constraint penting (SRS UC-02)**: kombinasi `ruangan_id` + `tanggal` + rentang `jam_mulai`–`jam_selesai` dengan status `disetujui` **tidak boleh tumpang tindih** dengan pengajuan lain berstatus `disetujui`, **maupun** dengan jadwal `kelas_lab` (3.6) yang aktif pada ruangan, hari, dan jam yang sama. Peminjaman hanya diizinkan jika `ruangan.status = 'tersedia'`. **Jam wajib dalam rentang operasional lab 07.00–17.00 WIB** (`jam_mulai ≥ 07:00`, `jam_selesai ≤ 17:00`). Validasi dilakukan di Form Request backend, bukan hanya constraint database.
 
 ### 3.6 `mata_kuliah`
 Data master mata kuliah/praktikum — induk yang mengelompokkan sesi-sesi Kelas Lab (Kelas A/B/C) yang merupakan sesi paralel dari mata kuliah yang sama.
@@ -222,18 +222,26 @@ Jadwal Kelas Lab/Praktikum — satu sesi terjadwal tetap (umumnya mingguan) sela
 - Beberapa sesi paralel (Kelas A, B, C) dari mata kuliah yang sama disimpan sebagai **baris terpisah** di tabel ini, semuanya merujuk `mata_kuliah_id` yang sama, masing-masing dengan `kuota` independen — pengelompokan formal kini tersedia lewat relasi ini (mis. untuk menampilkan "semua sesi Praktikum Jaringan Komputer" atau laporan rekap per mata kuliah)
 - Backend **wajib** memvalidasi `dosen_id` yang dimasukkan benar merujuk dosen yang sah, terlepas dari apakah yang membuat entri adalah Dosen itu sendiri (`dibuat_oleh = dosen_id`'s `user_id`) atau Supervisor atas permintaannya
 - Constraint bentrok jadwal terhadap `peminjaman_ruangan` dan sesama `kelas_lab` lain divalidasi di Form Request, mengecek ruangan + hari + rentang jam yang overlap, dalam rentang `tanggal_mulai_semester`–`tanggal_selesai_semester`. Pembukaan kelas hanya diizinkan jika `ruangan.status = 'tersedia'`.
+- **Jam wajib dalam rentang operasional lab 07.00–17.00 WIB** (`jam_mulai ≥ 07:00`, `jam_selesai ≤ 17:00`).
 
 ### 3.8 `kelas_lab_peserta`
-Pendaftaran mahasiswa sebagai peserta suatu sesi Kelas Lab/Praktikum.
+Pendaftaran mahasiswa sebagai peserta suatu sesi Kelas Lab/Praktikum. **Pendaftaran butuh persetujuan** Dosen pengampu (atau Supervisor) sebelum mahasiswa resmi menjadi peserta.
 
 | Kolom | Tipe | Keterangan |
 |---|---|---|
 | `id` | bigint, PK | |
 | `kelas_lab_id` | bigint, FK → `kelas_lab.id` | `on delete cascade` |
 | `mahasiswa_id` | bigint, FK → `mahasiswa.id` | `on delete cascade` |
+| `status` | enum(`menunggu`,`disetujui`,`ditolak`) | Default `menunggu`. Diubah oleh Dosen pengampu/Supervisor lewat menu Persetujuan Pendaftaran |
+| `disetujui_oleh` | bigint, FK → `users.id`, nullable | Dosen/Supervisor yang memproses, `on delete set null` |
 | `created_at`, `updated_at` | timestamp | |
 
-**Constraint penting (SRS UC-02a)**: jumlah baris dengan `kelas_lab_id` yang sama **tidak boleh melebihi** nilai `kuota` pada `kelas_lab` terkait — divalidasi di Form Request sebelum insert. Kombinasi `kelas_lab_id` + `mahasiswa_id` harus unique (satu mahasiswa tidak bisa mendaftar dua kali ke sesi yang sama).
+**Constraint & aturan (SRS UC-02a)**:
+- Kombinasi `kelas_lab_id` + `mahasiswa_id` **unique** (tak bisa mendaftar dua kali ke sesi yang sama). Baris `ditolak` boleh diajukan ulang — backend mengubah statusnya kembali ke `menunggu` (tanpa baris baru).
+- **Kuota memesan slot**: jumlah baris berstatus `menunggu` + `disetujui` (mengecualikan `ditolak`) untuk satu `kelas_lab` **tidak boleh melebihi** `kuota` — divalidasi di backend.
+- **Satu sesi per mata kuliah**: mahasiswa tidak boleh mengambil lebih dari satu sesi pada `mata_kuliah` yang sama, namun **boleh** mengambil sesi pada mata kuliah berbeda (selama tidak bentrok jadwal).
+- **Tanpa bentrok jadwal**: sesi baru tidak boleh `hari` sama + rentang jam tumpang tindih dengan sesi lain yang sudah diambil mahasiswa tsb.
+- `sisa_kuota` yang ditampilkan = `kuota − (menunggu + disetujui)`.
 
 ### 3.9 `perangkat`
 Data master perangkat lab (PC, Router, Switch, IoT Kit, dll).
@@ -414,10 +422,11 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | PATCH | `/api/ruangan/{id}` | Update status/data ruangan |
 | DELETE | `/api/ruangan/{id}` | Hapus ruangan (Admin/Supervisor) — ditolak jika masih ada `peminjaman_ruangan` atau `kelas_lab` aktif yang merujuk ruangan ini |
 | GET | `/api/peminjaman-ruangan` | List pengajuan (milik sendiri, atau semua untuk Admin/Supervisor) |
-| GET | `/api/peminjaman-ruangan/kalender` | Data kalender ketersediaan |
-| POST | `/api/peminjaman-ruangan` | Ajukan peminjaman (Mahasiswa/Dosen) |
-| PATCH | `/api/peminjaman-ruangan/{id}/approve` | Setujui (Admin/Supervisor) |
+| GET | `/api/peminjaman-ruangan/kalender` | Data ketersediaan: `kelas_lab` aktif + peminjaman `disetujui` **mulai awal minggu berjalan ke depan** (peminjaman minggu lalu otomatis rontok tiap pergantian minggu) |
+| POST | `/api/peminjaman-ruangan` | Ajukan peminjaman (**Mahasiswa saja**) |
+| PATCH | `/api/peminjaman-ruangan/{id}/approve` | Setujui (Admin/Supervisor) — validasi ulang bentrok & status ruangan |
 | PATCH | `/api/peminjaman-ruangan/{id}/reject` | Tolak (Admin/Supervisor) |
+| DELETE | `/api/peminjaman-ruangan/{id}` | Hapus pengajuan dari daftar (Admin/Supervisor) |
 
 ### 5.6 Mata Kuliah (Data Master)
 | Method | Endpoint | Keterangan |
@@ -435,9 +444,12 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | POST | `/api/kelas-lab` | Buka Kelas Lab/Praktikum baru — **Dosen** (untuk dirinya sendiri) atau **Supervisor** (atas permintaan, wajib isi `dosen_id` terkait). Wajib pilih `mata_kuliah_id` dari data master yang sudah ada. Admin tidak memiliki akses ke endpoint ini |
 | PATCH | `/api/kelas-lab/{id}` | Update jadwal/kuota — pemilik (`dosen_id`) atau Supervisor |
 | DELETE | `/api/kelas-lab/{id}` | Hapus/batalkan kelas — pemilik (`dosen_id`) atau Supervisor |
-| POST | `/api/kelas-lab/{id}/daftar` | Mahasiswa mendaftar sebagai peserta — ditolak jika kuota penuh atau sudah terdaftar |
+| POST | `/api/kelas-lab/{id}/daftar` | Mahasiswa mendaftar — dibuat status `menunggu`. Ditolak jika kuota penuh, sudah terdaftar di sesi tsb, sudah ambil sesi lain di mata kuliah yang sama, atau bentrok jadwal |
 | DELETE | `/api/kelas-lab/{id}/daftar` | Mahasiswa membatalkan pendaftaran dirinya sendiri |
-| GET | `/api/kelas-lab/{id}/peserta` | List peserta terdaftar (pemilik kelas, Supervisor, Admin) |
+| GET | `/api/kelas-lab/{id}/peserta` | List peserta satu sesi + status (pemilik kelas, Supervisor, Admin) |
+| GET | `/api/kelas-lab/pendaftaran` | List pendaftaran untuk persetujuan — Dosen (kelas miliknya) / Supervisor (semua); filter opsional `?status=` |
+| PATCH | `/api/kelas-lab/pendaftaran/{peserta}/approve` | Setujui pendaftaran — pemilik kelas (Dosen) atau Supervisor |
+| PATCH | `/api/kelas-lab/pendaftaran/{peserta}/reject` | Tolak pendaftaran — pemilik kelas (Dosen) atau Supervisor |
 
 ### 5.8 Perangkat, Peminjaman & Perpanjangan
 | Method | Endpoint | Keterangan |

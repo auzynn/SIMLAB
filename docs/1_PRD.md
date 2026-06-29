@@ -32,7 +32,7 @@ Sistem memiliki 4 peran pengguna dengan hak akses berbeda:
 
 ### 2.2 Dosen
 - **Siapa**: Dosen pembimbing/peneliti yang terafiliasi dengan lab
-- **Bisa melakukan**: login, kelola profil & portofolio/roadmap riset pribadi, kelola presensi (untuk mahasiswa bimbingannya), melihat & mengelola jadwal peminjaman lab
+- **Bisa melakukan**: login, kelola profil & portofolio/roadmap riset pribadi, kelola presensi (untuk mahasiswa bimbingannya), melihat jadwal ketersediaan lab (read-only), serta membuka & mengelola Kelas Lab/Praktikum miliknya sendiri. **Tidak** mengajukan peminjaman ruangan (itu hak Mahasiswa)
 - **Hak akses data**: Create, Read, Update, Delete (CRUD) untuk data yang menjadi tanggung jawabnya
 
 ### 2.3 Supervisor (Asisten Lab / Aslab)
@@ -98,10 +98,11 @@ Berlaku untuk **semua role** terhadap akunnya masing-masing, lewat halaman **Pro
 5. Jadwal Kelas Lab tersimpan dan secara otomatis "mengisi" slot kalender ruangan untuk seluruh rentang semester
 
 **Pendaftaran Mahasiswa**:
-1. Mahasiswa membuka menu **Kelas Lab/Praktikum** → melihat daftar mata kuliah beserta sesi-sesi paralel yang tersedia, termasuk sisa kuota tiap sesi
-2. Mahasiswa memilih satu sesi dan mendaftar sebagai peserta
-3. Sistem memvalidasi kuota belum penuh sebelum menerima pendaftaran; jika penuh, mahasiswa dapat memilih sesi paralel lain
-4. Mahasiswa menerima **notifikasi in-app** (lihat 3.10) konfirmasi pendaftaran berhasil
+1. Mahasiswa membuka menu **Kelas Lab/Praktikum** → menu **Daftar Kelas** menampilkan mata kuliah beserta sesi paralel yang tersedia + sisa kuota tiap sesi
+2. Mahasiswa memilih satu sesi dan mendaftar → pendaftaran berstatus **menunggu persetujuan**
+3. Sistem memvalidasi kuota belum penuh, **satu sesi per mata kuliah**, dan tidak bentrok jadwal kelas lain yang sudah diambil
+4. **Dosen pengampu (atau Supervisor) menyetujui/menolak** pendaftaran; mahasiswa resmi menjadi peserta setelah disetujui. Halaman "Kelas Lab Saya" menampilkan status tiap pendaftaran
+5. Mahasiswa menerima **notifikasi in-app** (lihat 3.10) atas hasil pendaftaran
 
 > **Catatan penting**: Slot yang sudah terisi jadwal Kelas Lab diperlakukan sama seperti peminjaman yang sudah disetujui — tidak tersedia untuk dipilih saat mengajukan peminjaman ruangan biasa (lihat 3.3). Admin **tidak** memiliki kewenangan membuka Kelas Lab (lihat 2.4).
 
@@ -147,7 +148,7 @@ Berlaku untuk **semua role** terhadap akunnya masing-masing, lewat halaman **Pro
 5. Pengguna dapat menandai satu notifikasi sebagai sudah dibaca, atau menandai semua sekaligus, atau menghapus satu per satu
 
 **Pemicu notifikasi**:
-- Mahasiswa/Dosen: pengajuan peminjaman ruangan atau perangkat disetujui/ditolak
+- Mahasiswa: pengajuan peminjaman ruangan atau perangkat disetujui/ditolak
 - Mahasiswa: pengajuan perpanjangan perangkat disetujui/ditolak; berhasil mendaftar ke sesi Kelas Lab
 - Supervisor/Admin: ada pengajuan peminjaman baru (ruangan/perangkat/perpanjangan) yang menunggu persetujuan
 

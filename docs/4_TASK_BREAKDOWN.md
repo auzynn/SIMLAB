@@ -10,7 +10,7 @@
 
 ---
 
-## Catatan Progres (per 2026-06-28)
+## Catatan Progres (per 2026-06-29)
 
 **Backend (`src/backend`)**:
 - Sanctum token auth fungsional: `POST /api/auth/login` (cek NULL password, pesan eksplisit sesuai SRS UC-01), `GET /api/auth/me`, `POST /api/auth/logout` — sudah sesuai SDD 5.1.
@@ -25,7 +25,14 @@
 - **Kelola User (Admin)**: `UserController` CRUD (`/api/users`) + Form Request (`StoreUserRequest`/`UpdateUserRequest`) + Gate `manage-users`; create role `dosen` otomatis membuat profil `dosen`; `destroy` menolak hapus akun sendiri. Diuji `UserManagementTest` (5 test lulus).
 - **Info Lab (FASE 2)**: migration + model `InfoLab`, seeder 4 tipe (`InfoLabSeeder` di `DatabaseSeeder`), endpoint `GET` (publik) & `PATCH` (Admin via Gate `manage-info-lab`) dengan constraint enum `tipe`. Diuji `InfoLabTest`. _Seeder kini berisi konten nyata (bukan placeholder): `kepala_lab` (foto `frontend/public/nur-widiyasono.jpg` + tabel profil markdown), `visi_misi` (Visi + 8 poin Misi). Konten tetap dapat disunting Admin lewat panel._
 - **Dosen (FASE 2)**: tabel `dosen` diperluas (migration `add_profile_fields_to_dosen`: jenis_kelamin, jabatan_fungsional, tempat_lahir, tanggal_lahir, biografi) agar Detail Dosen sepadan situs lama. `DosenController` (index/show **publik**, update via `DosenPolicy` pemilik/Admin/Supervisor) + `UpdateDosenRequest`. `DosenSeeder` menyalin profil dari situs lama (1 dosen nyata: Ir. Nur Widiyasono). _Edit Profil dosen kini juga mencakup `jabatan_fungsional`, `tempat_lahir`, `tanggal_lahir` (selain `nidn` & Bidang Minat) lewat `PATCH /api/auth/profile`._ Diuji `DosenTest` (10 test).
-- **Belum ada**: Gate/Policy modul lain, seluruh modul FASE 3–9.
+- **Data Master (FASE 3)**: tabel & model `ruangan` (SDD 3.4) dan `mata_kuliah` (SDD 3.6); Gate `manage-master-data` (Admin/Supervisor) di `AppServiceProvider`. `RuanganController` & `MataKuliahController` (apiResource index/store/update/destroy) — read terbuka untuk semua role login, CUD via Gate. Route `apiResource('ruangan')` & `apiResource('mata-kuliah')` (param `mataKuliah`). Seeder `RuanganSeeder` (3 ruangan KK JKF) & `MataKuliahSeeder` (4 praktikum JKF) di `DatabaseSeeder`. Diuji `RuanganTest` (8) & `MataKuliahTest` (7). _Tolak-hapus saat masih dirujuk peminjaman/kelas aktif ditandai `ponytail` — menyusul bersama T3.5/T3.12._
+- **Peminjaman Ruangan & Kelas Lab (FASE 3)**: tabel/model `peminjaman_ruangan`, `kelas_lab`, `kelas_lab_peserta` (relasi lengkap ke `ruangan`/`mata_kuliah`/`dosen`/`mahasiswa`/`users`). `JadwalRuanganService` memusatkan deteksi bentrok dua arah (peminjaman titik-waktu ↔ kelas berulang mingguan; overlap jam string `H:i:s`, hari dari tanggal via ISO day, rentang semester). `PeminjamanRuanganController` (index filter-per-role, kalender gabungan, store, approve/reject dgn re-validasi, **destroy** Admin/Supervisor) + `StorePeminjamanRuanganRequest` (ajukan **Mahasiswa saja**; approve/reject via Gate `approve-peminjaman-ruangan`). `KelasLabController` (index/show + `sisa_kuota`, store/update/destroy via `KelasLabPolicy` — Admin dilarang buka kelas) + `Store/UpdateKelasLabRequest`. Seeder `KelasLabSeeder`. Diuji `PeminjamanRuanganTest` & `KelasLabTest`.
+- **Penyempurnaan FASE 3 (per 2026-06-29)**:
+  - **Jam operasional 07.00–17.00 WIB** divalidasi di `StorePeminjamanRuanganRequest`, `Store/UpdateKelasLabRequest` (`after_or_equal:07:00` / `before_or_equal:17:00`).
+  - **Kalender** kini menampilkan peminjaman disetujui **dari awal minggu berjalan ke depan** (peminjaman minggu lalu otomatis rontok tiap pergantian minggu — tanpa cron).
+  - **Persetujuan pendaftaran Kelas Lab**: migration `add_status_to_kelas_lab_peserta` (`status` enum menunggu/disetujui/ditolak + `disetujui_oleh`). `daftar` membuat status `menunggu`; kuota & aturan menghitung menunggu+disetujui. Endpoint baru `GET /api/kelas-lab/pendaftaran`, `PATCH …/pendaftaran/{peserta}/approve|reject` (Dosen pemilik / Supervisor). Aturan pendaftaran: **1 sesi per mata kuliah** + **tanpa bentrok jadwal** (boleh ambil >1 mata kuliah). Baris `ditolak` boleh diajukan ulang.
+  - Suite backend **72 test lulus**.
+- **Belum ada**: Gate/Policy modul FASE 4–9, seluruh modul FASE 4–9.
 
 **Frontend (`src/frontend/app-labriset`)**:
 - Vue 3 + Vite, Vue Router 4, Pinia, Axios — semua terpasang. Struktur folder lengkap (`components/`, `views/`, `stores/`, `services/`, `router/`, `composables/`).
@@ -38,8 +45,11 @@
 - Backend pendukung: `me()` kini eager-load relasi `dosen.bidangMinat`/`mahasiswa`; model `User` mengekspos flag `has_password` agar frontend memilih form yang tepat, dan `no_telp` masuk `fillable`.
 - Halaman info lab **tersambung API** lewat `composables/use-info-lab.js` + `components/markdown-content.vue` (render konten HTML dari editor TipTap maupun Markdown legacy, dep `marked`): Beranda, Visi-Misi, Profil Kepala Lab, Roadmap Lab membaca `GET /api/info-lab/{tipe}`. _`markdown-content.vue` menata tabel profil (kepala lab) & daftar: penanda daftar berupa panah kanan dua warna (kuning atas, biru `--bs-navy` bawah) via `li::before` + `background-clip:text`, sejajar judul — menyamai tampilan halaman statis lama._
 - **Dosen tersambung API**: `views/list-dosen.vue` (Daftar Dosen) & `views/detail-dosen.vue` (Biografi/Detail) kini dinamis via `services/dosen.js` (`GET /api/dosen`, `GET /api/dosen/{id}`); route `/detaildosen/:id`; tabel bio (3 kolom rapi) + biografi + **Bidang Minat** (gabungan nama relasi) dirender dari data, `tanggal_lahir` diformat ke teks Indonesia. `sidemenu-dosen.vue`: tautan Biografi mengikuti id aktif, sub-halaman (Credential/Publikasi/Buku/Roadmap) membawa konteks `?dosen=<id>`. **Roadmap Penelitian Dosen** (`roadmap-dosen.vue`) kini dinamis dari `dosen.roadmap_riset` — dibedakan dari **Roadmap Laboratorium** (`roadmap-lab.vue`, `info_lab.roadmap_kk`). _Semua sub-halaman dosen (Biografi/Credential/Penelitian/Buku/Roadmap) memakai komponen seragam `components/dosen-identity-card.vue` (kartu identitas) + composable cache `composables/use-dosen.js` agar berpindah menu tak memuat ulang data dosen yang sama._
-- **Panel Admin**: hub `/admin` (`admin-page.vue`) + `components/sidemenu-admin.vue`; **Kelola User** (`admin-users.vue`), **Konten Info Lab** (`admin-info-lab.vue` — editor **TipTap** WYSIWYG via `components/rich-text-editor.vue`, plus fitur "Ambil dari Profil Dosen" untuk tab Kepala Lab) & **Bidang Minat** (`admin-bidang-minat.vue`, Gate `manage-bidang-minat`) fungsional; daftar admin (Kelola User & Bidang Minat) memakai **paginasi** lokal (`components/pagination-bar.vue` + `composables/use-pagination.js`); link "Panel Admin" di header untuk role admin.
-- **Belum ada**: modul admin lain (Data Master, Persetujuan Peminjaman, Sertifikasi, Presensi, Laporan), seluruh modul FASE 3–9.
+- **Panel Admin**: hub `/admin` (`admin-page.vue`) + `components/sidemenu-admin.vue`; **Kelola User** (`admin-users.vue`), **Konten Info Lab** (`admin-info-lab.vue` — editor **TipTap** WYSIWYG via `components/rich-text-editor.vue`, plus fitur "Ambil dari Profil Dosen" untuk tab Kepala Lab) fungsional; paginasi lokal (`components/pagination-bar.vue` + `composables/use-pagination.js`); link "Panel Admin" di header untuk role admin.
+- **Data Master (FASE 3)**: `views/admin-data-master.vue` (route `/admin/data-master`, guard `roles: ['admin','supervisor']`) — satu halaman dengan **tab Ruangan · Mata Kuliah · Bidang Minat** (Bidang Minat dipindah ke sini dari panel terpisah; `admin-bidang-minat.vue` dihapus, route `/admin/bidang-minat` dihapus), masing-masing CRUD penuh + paginasi lokal, via `services/ruangan.js`/`mata-kuliah.js`/`bidang-minat.js`. Status ruangan badge berwarna. Link "Data Master" di `sidemenu-admin.vue` & kartu hub `admin-page.vue`.
+- **Peminjaman Ruangan (FASE 3)**: `jadwal-lab.vue` (kartu **Informasi Jadwal Lab** = kelas mingguan + peminjaman disetujui dikelompokkan **Minggu ini / Mendatang** dgn pembatas & catatan auto-refresh mingguan; **form pengajuan Mahasiswa** mode Satu hari / Beberapa hari + jam 07–17; kolom kanan jadi kartu **Persetujuan Peminjaman Ruangan** utk Admin/Supervisor), `peminjaman-saya.vue` (status pengajuan sendiri), `persetujuan-peminjaman.vue` (tabel + **filter per kolom** Pengaju Nama/NPM dll + Approve/Reject/Hapus). Service `peminjaman-ruangan.js`.
+- **Kelas Lab (FASE 3)**: `kelas-lab.vue` (landing — Mahasiswa lihat "Kelas Lab Saya" + status, tombol ke katalog; Dosen/Supervisor lihat katalog + tombol Kelola & Persetujuan), `katalog-kelas-lab.vue` (pilih & daftar sesi), `persetujuan-kelas-lab.vue` (Dosen/Supervisor terima/tolak pendaftaran + filter kolom + tab Menunggu/Semua), `kelola-kelas-lab.vue` (buka/edit/hapus kelas + filter kolom, Nama Sesi dropdown A–F), `peserta-kelas-lab.vue` (halaman peserta terpisah: kolom NPM·Nama·Prodi). Service `kelas-lab.js` (+ pendaftaran/approve/reject). Nav header "Kelas Lab"; aksi dipindah ke tombol dalam halaman (bukan dropdown profil). Util `namaHari()` di `utils/format.js`.
+- **Belum ada**: modul admin lain (Katalog Sertifikasi, Rekap Presensi, Laporan), seluruh modul FASE 4–9.
 
 ---
 
@@ -129,56 +139,57 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.15).
 > Fase ini dikerjakan sebagai satu kesatuan karena `kelas_lab` dan `peminjaman_ruangan` saling bergantung dalam validasi bentrok jadwal — migration dan logika validasinya harus ada bersamaan sebelum salah satu bisa diuji secara penuh.
 
 ### Backend — Mata Kuliah (Data Master)
-- [ ] **T3.1** — Migration tabel `mata_kuliah` (SDD 3.6)
-- [ ] **T3.2** — Model `MataKuliah`
-- [ ] **T3.3** — Endpoint CRUD `/api/mata-kuliah` (Admin/Supervisor); `GET /api/mata-kuliah` bisa diakses semua role (dipakai Dosen saat memilih saat membuka Kelas Lab — SRS F-DS-07)
+- [x] **T3.1** — Migration tabel `mata_kuliah` (SDD 3.6). _`kode_mk` nullable unique, `nama_mk`, `sks` nullable._
+- [x] **T3.2** — Model `MataKuliah` (`$table = 'mata_kuliah'`, fillable `kode_mk`/`nama_mk`/`sks`)
+- [x] **T3.3** — Endpoint CRUD `/api/mata-kuliah` (Admin/Supervisor via Gate `manage-master-data`); `GET` bisa diakses semua role login (dipakai Dosen saat memilih saat membuka Kelas Lab). _`MataKuliahController` apiResource (index/store/update/destroy), validasi inline (`kode_mk` unique, `nama_mk` wajib). Diuji `MataKuliahTest` (7 test)._
 
 ### Backend — Ruangan & Peminjaman Ruangan
-- [ ] **T3.4** — Migration tabel `ruangan` (SDD 3.4)
-- [ ] **T3.5** — Migration tabel `peminjaman_ruangan` (SDD 3.5)
-- [ ] **T3.6** — Model `Ruangan`, `PeminjamanRuangan` + relasi
-- [ ] **T3.7** — Endpoint CRUD `/api/ruangan` (Admin/Supervisor)
-- [ ] **T3.8** — Endpoint `GET /api/peminjaman-ruangan/kalender` — data ketersediaan gabungan: peminjaman disetujui + jadwal `kelas_lab` aktif, untuk tampilan kalender frontend
-- [ ] **T3.9** — Endpoint `POST /api/peminjaman-ruangan` — Form Request **wajib** validasi: status ruangan adalah 'tersedia', dan validasi bentrok terhadap dua sumber sekaligus: (1) `peminjaman_ruangan` berstatus `disetujui`, dan (2) `kelas_lab` aktif pada ruangan + tanggal + rentang jam yang sama (SRS UC-02 aturan validasi kunci)
-- [ ] **T3.10** — Endpoint `PATCH /api/peminjaman-ruangan/{id}/approve` & `/reject` — saat approve, backend **wajib** menjalankan ulang validasi bentrok (kondisi bisa berubah antara saat pengaju submit dan saat Supervisor approve) serta memastikan status ruangan masih 'tersedia'
-- [ ] **T3.11** — Endpoint `GET /api/peminjaman-ruangan` — filter milik sendiri vs semua (sesuai role)
+- [x] **T3.4** — Migration tabel `ruangan` (SDD 3.4). _`status` enum(`tersedia`,`dipakai`,`perbaikan`) default `tersedia`._
+- [x] **T3.5** — Migration tabel `peminjaman_ruangan` (SDD 3.5). _FK `ruangan_id`/`user_id` cascade, `disetujui_oleh` nullOnDelete; `status` enum default `menunggu`._
+- [x] **T3.6** — Model `Ruangan`, `PeminjamanRuangan` + relasi. _`Ruangan::peminjaman()`/`kelasLab()`; `PeminjamanRuangan` belongsTo `ruangan`/`user` (pengaju)/`penyetuju` (`disetujui_oleh`); cast `tanggal` date._
+- [x] **T3.7** — Endpoint CRUD `/api/ruangan` (Admin/Supervisor via Gate `manage-master-data`; `GET` terbuka untuk semua role login). _`RuanganController` apiResource (index/store/update/destroy), validasi inline (status enum). Tolak-hapus saat ada peminjaman/kelas aktif ditandai `ponytail` (menunggu T3.5/T3.12). Diuji `RuanganTest` (8 test)._
+- [x] **T3.8** — Endpoint `GET /api/peminjaman-ruangan/kalender` — data ketersediaan gabungan: peminjaman `disetujui` + jadwal `kelas_lab` aktif (masing-masing dengan info ruangan), untuk tampilan kalender frontend.
+- [x] **T3.9** — Endpoint `POST /api/peminjaman-ruangan` — `StorePeminjamanRuanganRequest` (authorize: **Mahasiswa saja**; Dosen tidak meminjam ruangan — SRS UC-02) validasi status ruangan `tersedia` + bentrok terhadap dua sumber via `JadwalRuanganService::peminjamanBentrok()`: (1) `peminjaman_ruangan` `disetujui`, (2) `kelas_lab` aktif pada ruangan + hari(dari tanggal) + rentang jam, dalam rentang semester. Disimpan status `menunggu`.
+- [x] **T3.10** — Endpoint `PATCH /api/peminjaman-ruangan/{id}/approve` & `/reject` (Gate `approve-peminjaman-ruangan`, Admin/Supervisor) — saat approve, validasi bentrok dijalankan ulang (`peminjamanBentrok`, abaikan diri sendiri) + status ruangan masih `tersedia`; set `disetujui_oleh`. Transaksi DB.
+- [x] **T3.11** — Endpoint `GET /api/peminjaman-ruangan` — Admin/Supervisor lihat semua, Dosen/Mahasiswa hanya `user_id` sendiri; eager load `ruangan`/`user`/`penyetuju`. Diuji `PeminjamanRuanganTest`.
 
 ### Backend — Kelas Lab/Praktikum
-- [ ] **T3.12** — Migration tabel `kelas_lab` (SDD 3.7)
-- [ ] **T3.13** — Migration tabel `kelas_lab_peserta` (SDD 3.8)
-- [ ] **T3.14** — Model `KelasLab`, `KelasLabPeserta` + relasi (`belongsTo MataKuliah`, `belongsTo Dosen`, `hasMany KelasLabPeserta`)
-- [ ] **T3.15** — Endpoint `GET /api/kelas-lab` — list semua sesi, support filter `?mata_kuliah_id=` untuk menampilkan semua sesi paralel suatu mata kuliah (SDD 5.7)
-- [ ] **T3.16** — Endpoint `GET /api/kelas-lab/{id}` — detail satu sesi, termasuk sisa kuota (`kuota - COUNT(kelas_lab_peserta)`)
-- [ ] **T3.17** — Endpoint `POST /api/kelas-lab` — **Dosen** (untuk dirinya sendiri) atau **Supervisor** (wajib sertakan `dosen_id` valid). Admin **dilarang** — implementasi via Policy, bukan cuma kondisi `if`. Form Request **wajib**: validasi `mata_kuliah_id` ada di data master, `kuota` dalam range 1–40, tidak ada bentrok jadwal ruangan (SRS UC-02a aturan validasi kunci)
-- [ ] **T3.18** — Endpoint `PATCH /api/kelas-lab/{id}` & `DELETE /api/kelas-lab/{id}` — hanya pemilik (`dosen_id`) atau Supervisor
-- [ ] **T3.19** — Endpoint `POST /api/kelas-lab/{id}/daftar` (Mahasiswa mendaftar) — Form Request **wajib** validasi: (1) kuota belum penuh, (2) mahasiswa belum terdaftar di sesi yang sama (SRS UC-02a)
-- [ ] **T3.20** — Endpoint `DELETE /api/kelas-lab/{id}/daftar` (Mahasiswa batalkan pendaftaran)
-- [ ] **T3.21** — Endpoint `GET /api/kelas-lab/{id}/peserta` — hanya pemilik kelas, Supervisor, Admin
+- [x] **T3.12** — Migration tabel `kelas_lab` (SDD 3.7). _FK `mata_kuliah_id`/`dosen_id`/`ruangan_id`/`dibuat_oleh` cascade; `hari` enum senin–sabtu._
+- [x] **T3.13** — Migration tabel `kelas_lab_peserta` (SDD 3.8). _FK cascade; unique `(kelas_lab_id, mahasiswa_id)`._
+- [x] **T3.14** — Model `KelasLab`, `KelasLabPeserta` + relasi (`belongsTo MataKuliah`/`Dosen`/`Ruangan`/`pembuat`, `hasMany peserta`); accessor `sisa_kuota` (`kuota − peserta_count`).
+- [x] **T3.15** — Endpoint `GET /api/kelas-lab` — list semua sesi, filter `?mata_kuliah_id=`; eager load `mataKuliah`/`dosen.user`/`ruangan` + `withCount('peserta')` + `sisa_kuota`.
+- [x] **T3.16** — Endpoint `GET /api/kelas-lab/{id}` — detail satu sesi termasuk sisa kuota.
+- [x] **T3.17** — Endpoint `POST /api/kelas-lab` — `KelasLabPolicy::create` (Dosen/Supervisor; **Admin 403**). `StoreKelasLabRequest`: Dosen `dosen_id` di-set dari profilnya, Supervisor wajib kirim `dosen_id` valid; `mata_kuliah_id`/`ruangan_id` exists, `kuota` 1–40, ruangan `tersedia`, tidak bentrok (`JadwalRuanganService::kelasBentrok`). `dibuat_oleh` = user login. Transaksi DB.
+- [x] **T3.18** — Endpoint `PATCH /api/kelas-lab/{id}` & `DELETE /api/kelas-lab/{id}` — `KelasLabPolicy::update`/`delete` (pemilik `dosen_id` atau Supervisor). `UpdateKelasLabRequest` re-validasi bentrok abaikan diri sendiri.
+- [x] **T3.19** — Endpoint `POST /api/kelas-lab/{id}/daftar` (Gate `daftar-kelas-lab`, Mahasiswa) — insert `kelas_lab_peserta` status **`menunggu`** (butuh persetujuan). Validasi: kuota (menunggu+disetujui) belum penuh, belum terdaftar di sesi tsb, **1 sesi/mata kuliah**, **tidak bentrok jadwal** kelas mahasiswa lain. Baris `ditolak` dapat diajukan ulang. _Penyempurnaan per 2026-06-29 — lihat Catatan Progres._
+- [x] **T3.20** — Endpoint `DELETE /api/kelas-lab/{id}/daftar` — Mahasiswa batalkan pendaftaran dirinya sendiri.
+- [x] **T3.21** — Endpoint `GET /api/kelas-lab/{id}/peserta` — pemilik kelas, Supervisor, atau Admin (via `KelasLabPolicy::viewPeserta`); eager load `mahasiswa.user` + status.
+- [x] **T3.21a** — Persetujuan pendaftaran (penyempurnaan): `GET /api/kelas-lab/pendaftaran` (Dosen kelasnya / Supervisor) + `PATCH …/pendaftaran/{peserta}/approve|reject`. Migration `add_status_to_kelas_lab_peserta` (`status`+`disetujui_oleh`). Diuji `KelasLabTest`.
 
 ### Frontend — Mata Kuliah
-- [ ] **T3.22** — Panel kelola data mata kuliah (Admin/Supervisor): list, tambah, edit, hapus
+- [x] **T3.22** — Panel kelola data mata kuliah (Admin/Supervisor): list, tambah, edit, hapus. _Diwujudkan sebagai tab "Mata Kuliah" di halaman gabungan `views/admin-data-master.vue` (route `/admin/data-master`, guard `roles: ['admin','supervisor']`) via `services/mata-kuliah.js`; paginasi lokal._
 
 ### Frontend — Ruangan & Peminjaman Ruangan
-- [ ] **T3.23** — Halaman Kalender Ketersediaan Ruangan — tampilan kalender yang menggabungkan slot `peminjaman_ruangan` disetujui + slot `kelas_lab` aktif (dibedakan secara visual, mis. warna berbeda)
-- [ ] **T3.24** — Form Pengajuan Peminjaman Ruangan (Mahasiswa/Dosen) — slot yang sudah terisi `kelas_lab` tidak bisa dipilih
-- [ ] **T3.25** — Halaman Daftar Pengajuan + tombol Approve/Reject (Admin/Supervisor)
-- [ ] **T3.26** — Panel kelola data ruangan (Admin/Supervisor)
-- [ ] **T3.27** — Halaman "Peminjaman Saya" — status pengajuan milik mahasiswa/dosen
+- [x] **T3.23** — Halaman Kalender Ketersediaan Ruangan. _`views/jadwal-lab.vue` (route `/jadwallab`): kalender mingguan dari `GET /api/peminjaman-ruangan/kalender`, slot peminjaman disetujui & `kelas_lab` dibedakan warna; filter ruangan + navigasi minggu._
+- [x] **T3.24** — Form Pengajuan Peminjaman Ruangan (**Mahasiswa saja**). _Tertanam di `jadwal-lab.vue` sebagai kartu kanan (form hanya tampil untuk Mahasiswa): pilih ruangan/tanggal/jam/keperluan (textarea auto-resize) → `POST /api/peminjaman-ruangan`; error bentrok/ruangan tak tersedia ditampilkan dari backend. Layout 2 kolom: kartu Ketersediaan (kiri, lebih lebar) + kartu Form (kanan)._
+- [x] **T3.25** — Halaman Daftar Pengajuan + Approve/Reject (Admin/Supervisor). _`views/persetujuan-peminjaman.vue` (route `/persetujuan-peminjaman`): tabel pengajuan + filter status + tombol Setujui/Tolak (`PATCH …/approve|reject`)._
+- [x] **T3.26** — Panel kelola data ruangan (Admin/Supervisor). _Diwujudkan sebagai tab "Ruangan" di halaman gabungan `views/admin-data-master.vue` (route `/admin/data-master`) via `services/ruangan.js`; status ditampilkan sebagai badge berwarna, paginasi lokal._
+- [x] **T3.27** — Halaman "Peminjaman Saya". _`views/peminjaman-saya.vue` (route `/peminjaman-saya`, **Mahasiswa saja**): daftar pengajuan milik sendiri + badge status._
 
 ### Frontend — Kelas Lab/Praktikum
-- [ ] **T3.28** — Halaman Kelas Lab/Praktikum — list semua mata kuliah + sesi paralel yang tersedia, termasuk sisa kuota tiap sesi
-- [ ] **T3.29** — Tombol "Daftar" / "Batalkan Pendaftaran" per sesi (Mahasiswa)
-- [ ] **T3.30** — Form buka Kelas Lab baru (Dosen/Supervisor): pilih mata kuliah dari dropdown, isi ruangan, hari, jam, tanggal semester, kuota, nama sesi (mis. "Kelas A")
-- [ ] **T3.31** — Halaman kelola Kelas Lab milik Dosen (edit jadwal, lihat peserta, hapus)
+- [x] **T3.28** — Halaman Kelas Lab/Praktikum. _`views/kelas-lab.vue` (route `/kelaslab`): sesi dikelompokkan per mata kuliah, tampil jadwal + sisa kuota tiap sesi._
+- [x] **T3.29** — Tombol "Daftar" / "Batalkan Pendaftaran" per sesi (Mahasiswa). _Di `kelas-lab.vue`: tombol kondisional sesuai status pendaftaran & sisa kuota (`POST`/`DELETE …/daftar`)._
+- [x] **T3.30** — Form buka Kelas Lab baru (Dosen/Supervisor). _`views/kelola-kelas-lab.vue` (route `/kelaslab/kelola`): pilih mata kuliah/ruangan, hari, jam, tanggal semester, kuota, nama sesi; Supervisor wajib pilih dosen._
+- [x] **T3.31** — Halaman kelola Kelas Lab milik Dosen. _`kelola-kelas-lab.vue`: list kelas milik sendiri (Supervisor: yang dibuatnya), edit/hapus, lihat peserta._
 
 ### Testing
-- [ ] **T3.32** — Test: pengajuan `peminjaman_ruangan` pada slot yang sudah ada `kelas_lab` aktif → ditolak (SRS UC-02 skenario alternatif)
-- [ ] **T3.33** — Test: pengajuan `peminjaman_ruangan` pada slot kosong (di luar `kelas_lab`) → diterima
-- [ ] **T3.34** — Test: pembukaan `kelas_lab` baru yang bentrok dengan `kelas_lab` atau `peminjaman_ruangan` lain yang sudah disetujui → ditolak (SRS UC-02a)
-- [ ] **T3.35** — Test: pendaftaran peserta melebihi kuota → ditolak sistem
-- [ ] **T3.36** — Test: mahasiswa yang sudah terdaftar di sesi yang sama tidak bisa mendaftar dua kali
-- [ ] **T3.37** — Test: Admin tidak bisa membuka Kelas Lab (endpoint mengembalikan 403)
-- [ ] **T3.38** — Test: Mahasiswa/Dosen hanya bisa melihat pengajuan peminjaman miliknya sendiri
+- [x] **T3.32** — Test: pengajuan `peminjaman_ruangan` pada slot yang sudah ada `kelas_lab` aktif → ditolak. _`PeminjamanRuanganTest`._
+- [x] **T3.33** — Test: pengajuan `peminjaman_ruangan` pada slot kosong (di luar `kelas_lab`) → diterima. _`PeminjamanRuanganTest`._
+- [x] **T3.34** — Test: pembukaan `kelas_lab` baru yang bentrok dengan `kelas_lab` atau `peminjaman_ruangan` disetujui → ditolak. _`KelasLabTest`._
+- [x] **T3.35** — Test: pendaftaran peserta melebihi kuota → ditolak. _`KelasLabTest`._
+- [x] **T3.36** — Test: mahasiswa yang sudah terdaftar di sesi yang sama tidak bisa mendaftar dua kali. _`KelasLabTest`._
+- [x] **T3.37** — Test: Admin tidak bisa membuka Kelas Lab (403). _`KelasLabTest`._
+- [x] **T3.38** — Test: Mahasiswa/Dosen hanya bisa melihat pengajuan peminjaman miliknya sendiri. _`PeminjamanRuanganTest`._
 
 ---
 

@@ -48,9 +48,8 @@ import FooterComponent from '@/components/footer-component.vue'
 const areas = [
   { title: 'Kelola User & Role', desc: 'Tambah, ubah role, dan hapus akun pengguna lintas role.', to: '/admin/users' },
   { title: 'Konten Informasi Lab', desc: 'Beranda, Visi-Misi, Profil Kepala Lab, dan Roadmap KK.', to: '/admin/info-lab' },
-  { title: 'Bidang Minat', desc: 'Kelola daftar Bidang Minat yang dipilih dosen di Edit Profil.', to: '/admin/bidang-minat' },
-  { title: 'Data Master', desc: 'Kelola ruangan, perangkat, dan mata kuliah.' },
-  { title: 'Persetujuan Peminjaman', desc: 'Setujui atau tolak peminjaman ruangan & perangkat.' },
+  { title: 'Data Master', desc: 'Kelola ruangan, mata kuliah/praktikum, dan bidang minat.', to: '/admin/data-master' },
+  { title: 'Persetujuan Peminjaman', desc: 'Setujui atau tolak pengajuan peminjaman ruangan.', to: '/persetujuan-peminjaman' },
   { title: 'Katalog Sertifikasi', desc: 'Kelola katalog sertifikasi eksternal untuk mahasiswa.' },
   { title: 'Rekap Presensi', desc: 'Rekap kehadiran mahasiswa di laboratorium.' },
   { title: 'Laporan', desc: 'Rekap aktivitas lab dan unduh laporan PDF.' },

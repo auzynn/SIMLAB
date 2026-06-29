@@ -54,4 +54,12 @@ class Dosen extends Model
         return $this->belongsToMany(BidangMinat::class, 'dosen_bidang_minat')
             ->orderBy('nama');
     }
+
+    /**
+     * Kelas Lab/Praktikum yang diampu dosen ini (3_SDD.md 3.7).
+     */
+    public function kelasLab(): HasMany
+    {
+        return $this->hasMany(KelasLab::class);
+    }
 }

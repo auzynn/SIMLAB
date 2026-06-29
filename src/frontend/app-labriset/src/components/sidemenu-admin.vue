@@ -10,7 +10,10 @@
       <router-link to="/admin/info-lab" class="menu" style="display: block" active-class="activemenu">Konten Informasi Lab</router-link>
     </div>
     <div class="menu-group">
-      <router-link to="/admin/bidang-minat" class="menu" style="display: block" active-class="activemenu">Bidang Minat</router-link>
+      <router-link to="/admin/data-master" class="menu" style="display: block" active-class="activemenu">Data Master</router-link>
+    </div>
+    <div class="menu-group">
+      <router-link to="/persetujuan-peminjaman" class="menu" style="display: block" active-class="activemenu">Persetujuan Peminjaman</router-link>
     </div>
 
     <!-- Area kelola lain menyusul per fase — modul backend-nya belum dibuat -->
@@ -24,8 +27,6 @@
 // Menu samping Panel Admin. Hanya "Kelola User" yang aktif;
 // area lain ditandai disabled (segera hadir) sesuai matriks RBAC Admin (2_SRS.md Bagian 1).
 const segeraHadir = [
-  'Data Master',
-  'Persetujuan Peminjaman',
   'Katalog Sertifikasi',
   'Rekap Presensi',
   'Laporan',
