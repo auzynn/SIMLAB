@@ -16,6 +16,7 @@ class InfoLab extends Model
         'judul',
         'konten',
         'gambar',
+        'dosen_id',
         'updated_by',
     ];
 
@@ -25,5 +26,13 @@ class InfoLab extends Model
     public function updatedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'updated_by');
+    }
+
+    /**
+     * Dosen yang ditautkan (khusus tipe `kepala_lab`) untuk render kartu identitas.
+     */
+    public function dosen(): BelongsTo
+    {
+        return $this->belongsTo(Dosen::class);
     }
 }

@@ -93,6 +93,7 @@ Akun login untuk semua role (Admin, Supervisor, Dosen, Mahasiswa dalam satu tabe
 | `id` | bigint, PK | |
 | `name` | varchar | Diambil dari profil Google saat registrasi pertama |
 | `email` | varchar, unique | Email institusi (`@unsil.ac.id` / `@student.unsil.ac.id`). **Immutable** — tidak dapat diubah lewat Edit Profil (acuan identitas + alur Google OAuth) |
+| `email_pribadi` | varchar, nullable | Email cadangan/kontak yang diisi sendiri di tab **Akun**. **Bukan** untuk login (login hanya via email institusi + password) — murni info kontak |
 | `no_telp` | varchar(32), nullable | Nomor telepon/HP. Dipakai semua role, diisi sendiri oleh pemilik akun lewat Edit Profil (`PATCH /api/auth/profile`) |
 | `google_id` | varchar, nullable, unique | ID akun Google, untuk re-login |
 | `avatar` | varchar, nullable | URL foto profil. Awalnya diisi URL dari Google saat registrasi; pemilik akun dapat menggantinya dengan unggah file lewat `POST /api/auth/avatar` (disimpan di disk publik, kolom menyimpan URL absolut) |
@@ -114,8 +115,10 @@ Profil publik dosen (ditampilkan di halaman Daftar Dosen). Dibuat otomatis bersa
 | `tempat_lahir` | varchar, nullable | Komponen "Tempat, Tanggal Lahir" di Detail Dosen |
 | `tanggal_lahir` | date, nullable | Diformat ke teks Indonesia di frontend (mis. `10 Desember 1972`) |
 | `biografi` | text, nullable | Narasi biografi singkat dosen (halaman Detail Dosen) |
+| `credential` | text, nullable | Sertifikasi/keahlian dosen (mis. CEH, CHFI) — diedit di tab **Data Akademik** Profil |
 | `roadmap_riset` | text, nullable | Peta jalan riset pribadi dosen (PRD 3.7) |
 | `publikasi` | text, nullable | Ringkasan/daftar publikasi ilmiah |
+| `buku` | text, nullable | Daftar buku/karya — diedit di tab **Data Akademik** Profil |
 | `foto` | varchar, nullable | |
 | `created_at`, `updated_at` | timestamp | |
 
@@ -242,6 +245,7 @@ Pendaftaran mahasiswa sebagai peserta suatu sesi Kelas Lab/Praktikum. **Pendafta
 - **Satu sesi per mata kuliah**: mahasiswa tidak boleh mengambil lebih dari satu sesi pada `mata_kuliah` yang sama, namun **boleh** mengambil sesi pada mata kuliah berbeda (selama tidak bentrok jadwal).
 - **Tanpa bentrok jadwal**: sesi baru tidak boleh `hari` sama + rentang jam tumpang tindih dengan sesi lain yang sudah diambil mahasiswa tsb.
 - `sisa_kuota` yang ditampilkan = `kuota − (menunggu + disetujui)`.
+- **Pembatalan**: Mahasiswa hanya dapat membatalkan pendaftaran saat status `menunggu`. Setelah `disetujui`, hanya Dosen pengampu/Supervisor yang dapat mengeluarkan peserta (`DELETE /api/kelas-lab/pendaftaran/{peserta}` — lihat 5.7).
 
 ### 3.9 `perangkat`
 Data master perangkat lab (PC, Router, Switch, IoT Kit, dll).
@@ -337,10 +341,13 @@ Konten halaman informasi lab (Beranda, Visi-Misi, Profil Kepala Lab, Roadmap Lab
 | `judul` | varchar, nullable | |
 | `konten` | longtext | Rich text — lihat catatan format di bawah |
 | `gambar` | varchar, nullable | |
+| `dosen_id` | bigint, FK → `dosen.id`, nullable | Khusus tipe `kepala_lab` — tautan ke entri dosen, `on delete set null` |
 | `updated_by` | bigint, FK → `users.id`, nullable | Admin terakhir yang mengubah |
 | `created_at`, `updated_at` | timestamp | |
 
-**Catatan format konten**: Kolom `konten` menyimpan **HTML** yang dihasilkan editor visual (TipTap WYSIWYG) di panel Admin (Konten Info Lab). Konten lama yang masih berformat **Markdown** tetap didukung — frontend (`markdown-content.vue`) merender baik HTML maupun Markdown (lewat `marked`). Khusus tipe `kepala_lab`, Admin dapat menyusun konten otomatis lewat fitur *Ambil dari Profil Dosen*: data dosen terpilih diambil via `GET /api/dosen/{id}` lalu diisikan ke editor untuk disunting sebelum disimpan (tidak menambah endpoint baru).
+**Catatan format konten**: Kolom `konten` menyimpan **HTML** yang dihasilkan editor visual (TipTap WYSIWYG) di panel Admin (Konten Info Lab). Konten lama yang masih berformat **Markdown** tetap didukung — frontend (`markdown-content.vue`) merender baik HTML maupun Markdown (lewat `marked`).
+
+**Profil Kepala Lab (`kepala_lab`)**: bila baris ini punya `dosen_id`, halaman publik dirender sebagai **kartu identitas terstruktur** dari profil dosen tertaut (nama, jabatan fungsional, NIDN, jenis kelamin, TTL, email, no. telp, Bidang Minat) — `GET /api/info-lab/kepala_lab` meng-eager-load `dosen.user` & `dosen.bidangMinat`. Bila `dosen_id` kosong, halaman jatuh kembali ke konten bebas (`judul`/`gambar`/`konten`). Admin menautkan dosen lewat fitur *Ambil dari Profil Dosen* (men-set `dosen_id` saat disimpan; tidak menambah endpoint baru).
 
 ---
 
@@ -386,7 +393,7 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | POST | `/api/auth/set-password` | Atur password pertama kali (hanya `password` baru + konfirmasi, untuk user yang `password`-nya masih NULL) |
 | PATCH | `/api/auth/change-password` | Ubah password yang sudah ada (wajib sertakan password lama) |
 | POST | `/api/auth/avatar` | Unggah/ganti foto profil akun sendiri (multipart, field `avatar`: `jpeg/jpg/png/webp`, maks 2 MB). File disimpan di disk publik (`storage/app/public/avatars`, nama file UUID), kolom `avatar` diisi URL absolut. Avatar lama yang berupa file lokal dihapus; avatar Google eksternal dibiarkan |
-| PATCH | `/api/auth/profile` | Edit profil akun sendiri. Field umum semua role: `name`, `no_telp`. Dosen: `nidn`, `jabatan_fungsional`, `tempat_lahir`, `tanggal_lahir` + `bidang_minat_ids[]` (pilihan Bidang Minat — lihat catatan di bawah). Mahasiswa: `prodi` (whitelist `Informatika`). `email`, `role`, serta `npm`/`angkatan` (mahasiswa) **immutable** — diabaikan/ditolak meski dikirim di body |
+| PATCH | `/api/auth/profile` | Edit profil akun sendiri (halaman Profil, 3 tab: Akun/Data Pribadi/Data Akademik). Semua role: `name`, `no_telp`, `email_pribadi` (email cadangan, **bukan** login). Dosen: `nidn`, `jabatan_fungsional`, `tempat_lahir`, `tanggal_lahir`, `bidang_minat_ids[]` + **Data Akademik**: `biografi`, `credential`, `publikasi`, `buku`, `roadmap_riset`. Mahasiswa: `prodi` (whitelist `Informatika`). `email`, `role`, `npm`/`angkatan` **immutable** |
 
 **Catatan**:
 - Penyimpanan avatar memerlukan disk publik Laravel aktif (`php artisan storage:link`) agar URL `…/storage/avatars/…` dapat diakses frontend.
@@ -399,6 +406,14 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | POST | `/api/users` | Pendaftaran/pembuatan user manual (Dosen/Supervisor/Admin) dengan credential awal |
 | PATCH | `/api/users/{id}` | Update data/role user |
 | DELETE | `/api/users/{id}` | Hapus user |
+
+**Delegasi Asisten Lab (Aslab)** — Admin menetapkan mahasiswa jadi Supervisor (Gate `manage-users`). Sengaja dibatasi hanya transisi mahasiswa↔supervisor (bukan ubah role bebas):
+
+| Method | Endpoint | Keterangan |
+|---|---|---|
+| GET | `/api/aslab` | `{ kandidat: [mahasiswa], aslab: [supervisor dari mahasiswa] }` |
+| POST | `/api/aslab/{user}` | Jadikan mahasiswa → Supervisor (profil mahasiswa dipertahankan) |
+| DELETE | `/api/aslab/{user}` | Kembalikan Supervisor (dari mahasiswa) → Mahasiswa |
 
 ### 5.3 Dosen
 | Method | Endpoint | Keterangan |
@@ -445,11 +460,12 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | PATCH | `/api/kelas-lab/{id}` | Update jadwal/kuota — pemilik (`dosen_id`) atau Supervisor |
 | DELETE | `/api/kelas-lab/{id}` | Hapus/batalkan kelas — pemilik (`dosen_id`) atau Supervisor |
 | POST | `/api/kelas-lab/{id}/daftar` | Mahasiswa mendaftar — dibuat status `menunggu`. Ditolak jika kuota penuh, sudah terdaftar di sesi tsb, sudah ambil sesi lain di mata kuliah yang sama, atau bentrok jadwal |
-| DELETE | `/api/kelas-lab/{id}/daftar` | Mahasiswa membatalkan pendaftaran dirinya sendiri |
+| DELETE | `/api/kelas-lab/{id}/daftar` | Mahasiswa membatalkan pendaftaran dirinya sendiri — **hanya saat status `menunggu`** (setelah disetujui harus lewat Dosen/Supervisor) |
 | GET | `/api/kelas-lab/{id}/peserta` | List peserta satu sesi + status (pemilik kelas, Supervisor, Admin) |
 | GET | `/api/kelas-lab/pendaftaran` | List pendaftaran untuk persetujuan — Dosen (kelas miliknya) / Supervisor (semua); filter opsional `?status=` |
 | PATCH | `/api/kelas-lab/pendaftaran/{peserta}/approve` | Setujui pendaftaran — pemilik kelas (Dosen) atau Supervisor |
 | PATCH | `/api/kelas-lab/pendaftaran/{peserta}/reject` | Tolak pendaftaran — pemilik kelas (Dosen) atau Supervisor |
+| DELETE | `/api/kelas-lab/pendaftaran/{peserta}` | Keluarkan peserta dari kelas (mis. salah daftar) — pemilik kelas (Dosen) atau Supervisor |
 
 ### 5.8 Perangkat, Peminjaman & Perpanjangan
 | Method | Endpoint | Keterangan |

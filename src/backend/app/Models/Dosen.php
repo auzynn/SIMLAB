@@ -20,8 +20,10 @@ class Dosen extends Model
         'tempat_lahir',
         'tanggal_lahir',
         'biografi',
+        'credential',
         'roadmap_riset',
         'publikasi',
+        'buku',
         'foto',
     ];
 

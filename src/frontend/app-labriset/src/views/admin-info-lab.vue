@@ -122,7 +122,7 @@ const tipes = [
 ]
 
 const activeTipe = ref('beranda')
-const form = ref({ judul: '', konten: '', gambar: '' })
+const form = ref({ judul: '', konten: '', gambar: '', dosen_id: null })
 const loading = ref(false)
 const saving = ref(false)
 const error = ref('')
@@ -152,11 +152,12 @@ async function loadTipe() {
   try {
     const res = await infoLabService.get(activeTipe.value)
     const d = res.data.data
-    form.value = { judul: d.judul || '', konten: toEditorHtml(d.konten || ''), gambar: d.gambar || '' }
+    form.value = { judul: d.judul || '', konten: toEditorHtml(d.konten || ''), gambar: d.gambar || '', dosen_id: d.dosen_id ?? null }
+    genDosenId.value = d.dosen_id ?? ''
   } catch (err) {
     // Belum ada baris (404) → mulai dari form kosong, simpan akan membuatnya
     if (err.response?.status === 404) {
-      form.value = { judul: '', konten: '', gambar: '' }
+      form.value = { judul: '', konten: '', gambar: '', dosen_id: null }
     } else {
       error.value = extractError(err)
     }
@@ -262,7 +263,9 @@ async function generateFromDosen() {
     form.value.judul = d.user?.name || form.value.judul
     if (on('foto')) form.value.gambar = d.foto || d.user?.avatar || form.value.gambar
     form.value.konten = html
-    success.value = 'Data dosen berhasil diambil. Sunting bila perlu, lalu klik Simpan Konten.'
+    // Tautkan dosen agar halaman publik dirender sebagai kartu identitas (bukan hanya konten).
+    form.value.dosen_id = Number(genDosenId.value)
+    success.value = 'Data dosen berhasil diambil & ditautkan. Klik Simpan Konten untuk menerapkan.'
   } catch (err) {
     genError.value = extractError(err)
   } finally {

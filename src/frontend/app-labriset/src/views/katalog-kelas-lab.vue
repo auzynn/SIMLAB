@@ -42,7 +42,7 @@
                 class="btn sesi-btn"
                 :class="terdaftar.has(k.id) ? 'btn-navy-border' : 'btn-navy-solid'"
                 style="width: 100%; padding: 8px"
-                :disabled="busyId === k.id || terkunci(k)"
+                :disabled="busyId === k.id || terkunci(k) || (terdaftar.has(k.id) && k.status_pendaftaran === 'disetujui')"
                 @click="toggleDaftar(k)"
               >
                 {{ daftarLabel(k) }}
@@ -101,7 +101,7 @@ const grouped = computed(() => {
 })
 
 function daftarLabel(k) {
-  if (terdaftar.value.has(k.id)) return 'Batalkan Pendaftaran'
+  if (terdaftar.value.has(k.id)) return k.status_pendaftaran === 'disetujui' ? 'Terdaftar (disetujui)' : 'Batalkan Pendaftaran'
   if (sesiMatkulSama(k)) return 'Sudah ambil sesi matkul ini'
   if (bentrokJadwal(k)) return 'Bentrok jadwal'
   if (k.sisa_kuota <= 0) return 'Kuota Penuh'

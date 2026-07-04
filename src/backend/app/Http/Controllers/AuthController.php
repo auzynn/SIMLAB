@@ -180,6 +180,8 @@ class AuthController extends Controller
         $rules = [
             'name' => ['sometimes', 'required', 'string', 'max:255'],
             'no_telp' => ['sometimes', 'nullable', 'string', 'max:32'],
+            // Email pribadi/cadangan — hanya info kontak, tidak dipakai login.
+            'email_pribadi' => ['sometimes', 'nullable', 'email', 'max:255'],
         ];
 
         if ($user->role === 'dosen') {
@@ -189,6 +191,12 @@ class AuthController extends Controller
             $rules['tanggal_lahir'] = ['sometimes', 'nullable', 'date'];
             $rules['bidang_minat_ids'] = ['sometimes', 'array'];
             $rules['bidang_minat_ids.*'] = ['integer', 'exists:bidang_minat,id'];
+            // Data Akademik (tab Profil) — narasi bebas.
+            $rules['biografi'] = ['sometimes', 'nullable', 'string', 'max:5000'];
+            $rules['credential'] = ['sometimes', 'nullable', 'string', 'max:5000'];
+            $rules['publikasi'] = ['sometimes', 'nullable', 'string', 'max:5000'];
+            $rules['buku'] = ['sometimes', 'nullable', 'string', 'max:5000'];
+            $rules['roadmap_riset'] = ['sometimes', 'nullable', 'string', 'max:5000'];
         }
 
         if ($user->role === 'mahasiswa') {
@@ -198,8 +206,8 @@ class AuthController extends Controller
 
         $data = $request->validate($rules);
 
-        // Update kolom users (name, no_telp)
-        $userFields = array_intersect_key($data, array_flip(['name', 'no_telp']));
+        // Update kolom users (name, no_telp, email_pribadi)
+        $userFields = array_intersect_key($data, array_flip(['name', 'no_telp', 'email_pribadi']));
         if (! empty($userFields)) {
             $user->update($userFields);
         }
@@ -210,7 +218,7 @@ class AuthController extends Controller
 
             $dosenFields = array_intersect_key(
                 $data,
-                array_flip(['nidn', 'jabatan_fungsional', 'tempat_lahir', 'tanggal_lahir']),
+                array_flip(['nidn', 'jabatan_fungsional', 'tempat_lahir', 'tanggal_lahir', 'biografi', 'credential', 'publikasi', 'buku', 'roadmap_riset']),
             );
             if (! empty($dosenFields)) {
                 $dosen->update($dosenFields);

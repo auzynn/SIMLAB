@@ -13,6 +13,9 @@
       <router-link to="/admin/data-master" class="menu" style="display: block" active-class="activemenu">Data Master</router-link>
     </div>
     <div class="menu-group">
+      <router-link to="/admin/aslab" class="menu" style="display: block" active-class="activemenu">Delegasi Aslab</router-link>
+    </div>
+    <div class="menu-group">
       <router-link to="/persetujuan-peminjaman" class="menu" style="display: block" active-class="activemenu">Persetujuan Peminjaman</router-link>
     </div>
 

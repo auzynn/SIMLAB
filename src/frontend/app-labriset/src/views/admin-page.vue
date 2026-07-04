@@ -49,6 +49,7 @@ const areas = [
   { title: 'Kelola User & Role', desc: 'Tambah, ubah role, dan hapus akun pengguna lintas role.', to: '/admin/users' },
   { title: 'Konten Informasi Lab', desc: 'Beranda, Visi-Misi, Profil Kepala Lab, dan Roadmap KK.', to: '/admin/info-lab' },
   { title: 'Data Master', desc: 'Kelola ruangan, mata kuliah/praktikum, dan bidang minat.', to: '/admin/data-master' },
+  { title: 'Delegasi Aslab', desc: 'Tetapkan mahasiswa menjadi Asisten Lab (Supervisor).', to: '/admin/aslab' },
   { title: 'Persetujuan Peminjaman', desc: 'Setujui atau tolak pengajuan peminjaman ruangan.', to: '/persetujuan-peminjaman' },
   { title: 'Katalog Sertifikasi', desc: 'Kelola katalog sertifikasi eksternal untuk mahasiswa.' },
   { title: 'Rekap Presensi', desc: 'Rekap kehadiran mahasiswa di laboratorium.' },

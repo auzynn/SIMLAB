@@ -39,4 +39,8 @@ export const kelasLabService = {
   rejectPendaftaran(pesertaId) {
     return api.patch(`/api/kelas-lab/pendaftaran/${pesertaId}/reject`)
   },
+  // Keluarkan peserta dari kelas (Dosen pemilik / Supervisor) — mis. salah daftar.
+  hapusPeserta(pesertaId) {
+    return api.delete(`/api/kelas-lab/pendaftaran/${pesertaId}`)
+  },
 }

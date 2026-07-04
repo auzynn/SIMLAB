@@ -200,13 +200,22 @@ class KelasLabController extends Controller
         Gate::authorize('daftar-kelas-lab');
 
         $mahasiswa = $request->user()->mahasiswa;
-        $dihapus = KelasLabPeserta::where('kelas_lab_id', $kelasLab->id)
+        $peserta = KelasLabPeserta::where('kelas_lab_id', $kelasLab->id)
             ->where('mahasiswa_id', $mahasiswa?->id)
-            ->delete();
+            ->first();
 
-        if (! $dihapus) {
+        if (! $peserta) {
             return response()->json(['message' => 'Anda belum terdaftar di sesi ini.'], 422);
         }
+
+        // Setelah disetujui, mahasiswa tidak dapat membatalkan sendiri — harus lewat Dosen/Supervisor.
+        if ($peserta->status === 'disetujui') {
+            return response()->json([
+                'message' => 'Pendaftaran sudah disetujui dan tidak dapat dibatalkan sendiri. Hubungi dosen/supervisor kelas.',
+            ], 422);
+        }
+
+        $peserta->delete();
 
         return response()->json(['message' => 'Pendaftaran dibatalkan.']);
     }
@@ -279,6 +288,19 @@ class KelasLabController extends Controller
         $kelasLabPeserta->update(['status' => 'ditolak', 'disetujui_oleh' => $request->user()->id]);
 
         return response()->json(['data' => $kelasLabPeserta, 'message' => 'Pendaftaran ditolak.']);
+    }
+
+    /**
+     * Hapus peserta dari kelas — pemilik kelas (Dosen) atau Supervisor.
+     * Dipakai untuk mengeluarkan mahasiswa yang salah mendaftar (termasuk yang sudah disetujui).
+     */
+    public function hapusPeserta(Request $request, KelasLabPeserta $kelasLabPeserta): JsonResponse
+    {
+        $this->authorizePendaftaran($request, $kelasLabPeserta);
+
+        $kelasLabPeserta->delete();
+
+        return response()->json(['message' => 'Peserta dikeluarkan dari kelas.']);
     }
 
     /**

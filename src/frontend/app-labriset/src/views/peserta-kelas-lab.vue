@@ -32,6 +32,8 @@
               <th>NPM</th>
               <th>Nama Mahasiswa</th>
               <th>Prodi</th>
+              <th>Status</th>
+              <th style="text-align: right">Aksi</th>
             </tr>
           </thead>
           <tbody>
@@ -40,9 +42,14 @@
               <td>{{ p.mahasiswa?.npm ?? '-' }}</td>
               <td>{{ p.mahasiswa?.user?.name ?? '-' }}</td>
               <td>{{ p.mahasiswa?.prodi ?? '-' }}</td>
+              <td><span :class="['status-badge', `status-${p.status}`]">{{ statusLabel(p.status) }}</span></td>
+              <td style="text-align: right; white-space: nowrap">
+                <button v-if="p.status === 'menunggu'" class="btn-link" :disabled="busyId === p.id" @click="terima(p)">Terima</button>
+                <button class="btn-link btn-link-danger" :disabled="busyId === p.id" @click="keluarkan(p)">Keluarkan</button>
+              </td>
             </tr>
             <tr v-if="!peserta.length">
-              <td colspan="4" style="text-align: center; color: #9aa0a6">Belum ada mahasiswa terdaftar.</td>
+              <td colspan="6" style="text-align: center; color: #9aa0a6">Belum ada mahasiswa terdaftar.</td>
             </tr>
           </tbody>
         </table>
@@ -59,7 +66,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { kelasLabService } from '@/services/kelas-lab'
-import { formatJam, hariLabel } from '@/utils/format'
+import { formatJam, hariLabel, statusLabel } from '@/utils/format'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 
@@ -70,6 +77,7 @@ const kelas = ref(null)
 const peserta = ref([])
 const loading = ref(false)
 const loadError = ref('')
+const busyId = ref(null)
 
 async function load() {
   loading.value = true
@@ -85,6 +93,31 @@ async function load() {
     loadError.value = err.response?.data?.message || 'Gagal memuat data peserta.'
   } finally {
     loading.value = false
+  }
+}
+
+async function terima(p) {
+  busyId.value = p.id
+  try {
+    await kelasLabService.approvePendaftaran(p.id)
+    await load()
+  } catch (err) {
+    alert(err.response?.data?.message || 'Gagal menyetujui.')
+  } finally {
+    busyId.value = null
+  }
+}
+
+async function keluarkan(p) {
+  if (!confirm(`Keluarkan ${p.mahasiswa?.user?.name ?? 'mahasiswa'} dari kelas ini?`)) return
+  busyId.value = p.id
+  try {
+    await kelasLabService.hapusPeserta(p.id)
+    await load()
+  } catch (err) {
+    alert(err.response?.data?.message || 'Gagal mengeluarkan peserta.')
+  } finally {
+    busyId.value = null
   }
 }
 
@@ -139,5 +172,27 @@ onMounted(load)
 }
 .btn-link:hover {
   text-decoration: underline;
+}
+.btn-link-danger {
+  color: #c0392b;
+}
+.status-badge {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+.status-menunggu {
+  color: #856404;
+  background-color: #fff3cd;
+}
+.status-disetujui {
+  color: #1e7e34;
+  background-color: #d4edda;
+}
+.status-ditolak {
+  color: #c0392b;
+  background-color: #f8d7da;
 }
 </style>

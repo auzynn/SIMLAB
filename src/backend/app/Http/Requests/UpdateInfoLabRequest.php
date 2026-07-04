@@ -24,6 +24,8 @@ class UpdateInfoLabRequest extends FormRequest
             'judul' => ['nullable', 'string', 'max:255'],
             'konten' => ['required', 'string'],
             'gambar' => ['nullable', 'string', 'max:255'],
+            // Khusus tipe kepala_lab: tautan ke entri dosen untuk kartu identitas.
+            'dosen_id' => ['nullable', 'integer', 'exists:dosen,id'],
         ];
     }
 }

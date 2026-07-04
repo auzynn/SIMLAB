@@ -37,6 +37,7 @@
             <p class="sesi-info"><span class="sesi-label">Jadwal:</span> {{ hariLabel(k.hari) }}, {{ formatJam(k.jam_mulai) }}–{{ formatJam(k.jam_selesai) }}</p>
             <p class="sesi-info"><span class="sesi-label">Ruangan:</span> {{ k.ruangan?.nama_ruangan }}</p>
             <button
+              v-if="k.status_pendaftaran === 'menunggu'"
               class="btn btn-navy-border sesi-btn"
               style="width: 100%; padding: 8px"
               :disabled="busyId === k.id"
@@ -44,6 +45,9 @@
             >
               Batalkan Pendaftaran
             </button>
+            <p v-else-if="k.status_pendaftaran === 'disetujui'" class="sesi-note">
+              Sudah disetujui — pembatalan hanya lewat dosen/supervisor.
+            </p>
           </div>
         </div>
         <p v-else class="mt-20" style="color: #9aa0a6">
@@ -159,6 +163,12 @@ onMounted(load)
 }
 .sesi-btn {
   margin-top: 18px;
+}
+.sesi-note {
+  margin-top: 18px;
+  font-size: 0.82em;
+  color: #5f6368;
+  text-align: center;
 }
 .sesi-info {
   font-size: 0.9em;

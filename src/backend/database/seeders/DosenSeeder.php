@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\BidangMinat;
 use App\Models\Dosen;
+use App\Models\InfoLab;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -63,5 +64,9 @@ class DosenSeeder extends Seeder
 
         // syncWithoutDetaching: idempoten & tak menghapus relasi lain bila sudah ada
         $dosen->bidangMinat()->syncWithoutDetaching($ids);
+
+        // Tautkan halaman Profil Kepala Lab ke dosen ini agar dirender sebagai kartu identitas
+        // (InfoLabSeeder sudah membuat baris kepala_lab lebih dulu di DatabaseSeeder).
+        InfoLab::where('tipe', 'kepala_lab')->update(['dosen_id' => $dosen->id]);
     }
 }

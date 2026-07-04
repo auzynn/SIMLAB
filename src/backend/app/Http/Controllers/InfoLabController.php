@@ -19,6 +19,11 @@ class InfoLabController extends Controller
     {
         $info = InfoLab::where('tipe', $tipe)->firstOrFail();
 
+        // Tipe kepala_lab boleh ditautkan ke entri dosen → dirender sebagai kartu identitas.
+        if ($tipe === 'kepala_lab' && $info->dosen_id) {
+            $info->load(['dosen.user', 'dosen.bidangMinat']);
+        }
+
         return response()->json([
             'data' => $info,
             'message' => 'Berhasil mengambil konten.',

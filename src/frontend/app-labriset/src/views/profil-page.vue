@@ -1,308 +1,207 @@
 <template>
   <div>
-    <!-- ---------- JUMBOTRON SMALL ---------- -->
     <JumbotronSmall title="Profil Saya" />
-    <!-- ---------- JUMBOTRON SMALL END ---------- -->
 
-    <!-- ---------- KARTU IDENTITAS ---------- -->
-    <div class="main-container bg-grey">
-      <div class="card-bio flex-h">
-        <div class="flex-v avatar-block">
-          <div class="profil-avatar">
+    <div class="main-container">
+      <!-- Kartu identitas ringkas -->
+      <div class="id-head">
+        <div class="profil-avatar">
+          <img v-if="user?.avatar" :src="user.avatar" alt="Foto profil" referrerpolicy="no-referrer" />
+          <span v-else>{{ initials }}</span>
+        </div>
+        <div>
+          <h2 class="id-name">{{ user?.name || '-' }}</h2>
+          <span class="role-badge">{{ roleLabel }}</span>
+        </div>
+      </div>
+
+      <!-- Tab -->
+      <div class="tab-bar mt-30">
+        <button :class="['tab', { active: tab === 'akun' }]" @click="tab = 'akun'">Akun</button>
+        <button :class="['tab', { active: tab === 'pribadi' }]" @click="tab = 'pribadi'">Data Pribadi</button>
+        <button :class="['tab', { active: tab === 'akademik' }]" @click="tab = 'akademik'">Data Akademik</button>
+      </div>
+
+      <!-- ============ TAB AKUN ============ -->
+      <section v-show="tab === 'akun'" class="tab-panel akun-layout mt-30">
+        <div class="akun-main">
+          <h3 class="panel-title">Informasi Akun</h3>
+          <div class="info-row">
+            <span class="info-label">Email Universitas</span>
+            <span class="info-value">{{ user?.email || '-' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Email Pribadi</span>
+            <div class="info-value" style="flex: 1">
+              <div class="flex-h" style="gap: 8px; align-items: center; flex-wrap: wrap">
+                <input v-model="form.email_pribadi" type="email" class="form-ctrl input-border" style="max-width: 320px; flex: 1" placeholder="email cadangan (opsional)" />
+                <button class="btn btn-navy-solid" style="width: auto; padding: 7px 18px" :disabled="savingAkun" @click="saveAkun">
+                  {{ savingAkun ? '...' : 'Simpan' }}
+                </button>
+              </div>
+              <p class="hint">Email cadangan untuk kontak — <strong>tidak dapat digunakan untuk login</strong>.</p>
+              <p v-if="akunMsg" :style="{ color: akunErr ? '#c0392b' : '#2e7d32' }">{{ akunMsg }}</p>
+            </div>
+          </div>
+
+          <h3 class="panel-title mt-30">{{ hasPassword ? 'Ubah Password' : 'Atur Password Login' }}</h3>
+          <p class="hint">
+            <template v-if="hasPassword">Masukkan password lama untuk mengubah password login.</template>
+            <template v-else>Atur password agar bisa login manual (email + password).</template>
+          </p>
+          <form class="password-form mt-10" @submit.prevent="submitPassword">
+            <div v-if="hasPassword" class="mb-20">
+              <label>Password Lama</label>
+              <input type="password" class="form-ctrl input-border password-input" v-model="currentPassword" autocomplete="current-password" required />
+            </div>
+            <div class="mb-20">
+              <label>Password Baru</label>
+              <input type="password" class="form-ctrl input-border password-input" v-model="newPassword" autocomplete="new-password" minlength="8" required />
+            </div>
+            <div class="mb-20">
+              <label>Konfirmasi Password Baru</label>
+              <input type="password" class="form-ctrl input-border password-input" v-model="confirmPassword" autocomplete="new-password" minlength="8" required />
+            </div>
+            <p v-if="error" style="color: #c0392b">{{ error }}</p>
+            <p v-if="success" style="color: #2e7d32">{{ success }}</p>
+            <button type="submit" class="btn btn-navy-solid" style="width: auto; padding: 8px 24px" :disabled="loading">
+              {{ loading ? 'Menyimpan...' : hasPassword ? 'Ubah Password' : 'Atur Password' }}
+            </button>
+          </form>
+        </div>
+
+        <div class="akun-side">
+          <h4>Foto Profil</h4>
+          <div class="profil-avatar big">
             <img v-if="user?.avatar" :src="user.avatar" alt="Foto profil" referrerpolicy="no-referrer" />
             <span v-else>{{ initials }}</span>
           </div>
-
-          <!-- Unggah/ganti foto avatar (file gambar, maks 2MB) -->
-          <input
-            ref="avatarInput"
-            type="file"
-            accept="image/png,image/jpeg,image/webp"
-            style="display: none"
-            @change="onAvatarSelected"
-          />
-          <button type="button" class="btn-link-avatar" :disabled="avatarLoading" @click="pickAvatar">
-            {{ avatarLoading ? 'Mengunggah...' : user?.avatar ? 'Ubah Foto' : 'Tambah Foto' }}
+          <input ref="avatarInput" type="file" accept="image/png,image/jpeg,image/webp" style="display: none" @change="onAvatarSelected" />
+          <button type="button" class="btn btn-navy-solid" style="width: auto; padding: 8px 18px" :disabled="avatarLoading" @click="pickAvatar">
+            {{ avatarLoading ? 'Mengunggah...' : 'Upload Foto Baru' }}
           </button>
+          <p class="hint" style="text-align: center">Maks 2MB. JPG/PNG/WEBP.</p>
           <p v-if="avatarError" class="avatar-msg" style="color: #c0392b">{{ avatarError }}</p>
           <p v-else-if="avatarSuccess" class="avatar-msg" style="color: #2e7d32">{{ avatarSuccess }}</p>
         </div>
+      </section>
 
-        <div class="ml-30 side-table">
-          <h2>{{ user?.name || '-' }}</h2>
-          <table class="bio-table">
-            <tbody>
-              <!-- Dosen: Status, Jabatan, NIDN, TTL, Email, No. Telp, Bidang Minat -->
-              <template v-if="user?.dosen">
-                <tr>
-                  <td class="bio-label">Status</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ roleLabel }}</td>
-                </tr>
-                <tr v-if="user.dosen.jabatan_fungsional">
-                  <td class="bio-label">Jabatan Fungsional</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ user.dosen.jabatan_fungsional }}</td>
-                </tr>
-                <tr>
-                  <td class="bio-label">NIDN</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ user.dosen.nidn || '-' }}</td>
-                </tr>
-                <tr v-if="dosenTtl">
-                  <td class="bio-label">Tempat dan Tanggal Lahir</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ dosenTtl }}</td>
-                </tr>
-                <tr>
-                  <td class="bio-label">Email</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ user?.email || '-' }}</td>
-                </tr>
-                <tr>
-                  <td class="bio-label">No. Telp</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ user?.no_telp || '-' }}</td>
-                </tr>
-                <tr>
-                  <td class="bio-label">Bidang Minat</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ dosenBidangLabel }}</td>
-                </tr>
-              </template>
+      <!-- ============ TAB DATA PRIBADI ============ -->
+      <section v-show="tab === 'pribadi'" class="tab-panel mt-30">
+        <h3 class="panel-title">Data Pribadi</h3>
+        <p class="hint">{{ immutableNotice }}</p>
+        <form class="profile-form mt-20" @submit.prevent="savePribadi">
+          <div class="form-row">
+            <label>Nama</label>
+            <input type="text" class="form-ctrl input-border" v-model="form.name" required />
+          </div>
 
-              <!-- Mahasiswa: Email, NPM, Angkatan, Program Studi, Status, No. Telp -->
-              <template v-else-if="user?.mahasiswa">
-                <tr>
-                  <td class="bio-label">Email</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ user?.email || '-' }}</td>
-                </tr>
-                <tr>
-                  <td class="bio-label">NPM</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ user.mahasiswa.npm || '-' }}</td>
-                </tr>
-                <tr>
-                  <td class="bio-label">Angkatan</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ user.mahasiswa.angkatan || '-' }}</td>
-                </tr>
-                <tr>
-                  <td class="bio-label">Program Studi</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ user.mahasiswa.prodi || '-' }}</td>
-                </tr>
-                <tr>
-                  <td class="bio-label">Status</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ roleLabel }}</td>
-                </tr>
-                <tr>
-                  <td class="bio-label">No. Telp</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ user?.no_telp || '-' }}</td>
-                </tr>
-              </template>
+          <template v-if="user?.role === 'dosen'">
+            <div class="form-row">
+              <label>NIDN</label>
+              <input type="text" class="form-ctrl input-border" v-model="form.nidn" maxlength="32" />
+            </div>
+            <div class="form-row">
+              <label>Jabatan Fungsional</label>
+              <input type="text" class="form-ctrl input-border" v-model="form.jabatan_fungsional" maxlength="100" placeholder="mis. Lektor" />
+            </div>
+            <div class="form-row">
+              <label>Tempat Lahir</label>
+              <input type="text" class="form-ctrl input-border" v-model="form.tempat_lahir" maxlength="100" />
+            </div>
+            <div class="form-row">
+              <label>Tanggal Lahir</label>
+              <input type="date" class="form-ctrl input-border" v-model="form.tanggal_lahir" />
+            </div>
+            <div class="form-row">
+              <label>Bidang Minat (boleh lebih dari satu)</label>
+              <div v-if="bidangLoading" style="color: #6b7280">Memuat...</div>
+              <MultiSelectDropdown v-else v-model="form.bidang_minat_ids" :options="bidangOptions" placeholder="Pilih bidang minat" />
+            </div>
+          </template>
 
-              <!-- Admin/Supervisor: Email, Status, No. Telp -->
-              <template v-else>
-                <tr>
-                  <td class="bio-label">Email</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ user?.email || '-' }}</td>
-                </tr>
-                <tr>
-                  <td class="bio-label">Status</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ roleLabel }}</td>
-                </tr>
-                <tr>
-                  <td class="bio-label">No. Telp</td>
-                  <td class="bio-sep">:</td>
-                  <td>{{ user?.no_telp || '-' }}</td>
-                </tr>
-              </template>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    <!-- ---------- KARTU IDENTITAS END ---------- -->
+          <template v-else-if="user?.role === 'mahasiswa'">
+            <div class="form-row">
+              <label>Program Studi</label>
+              <select class="form-ctrl input-border" v-model="form.prodi">
+                <option value="">- pilih -</option>
+                <option value="Informatika">Informatika</option>
+              </select>
+            </div>
+          </template>
 
-    <!-- ---------- EDIT PROFIL ---------- -->
-    <div class="main-container">
-      <div class="flex-h between">
-        <div>
-          <h1>Edit Profil</h1>
-          <div class="profil-title"></div>
-        </div>
-        <button
-          v-if="!showProfileForm"
-          type="button"
-          class="btn btn-navy-border"
-          style="width: auto; padding: 8px 20px"
-          @click="openProfileForm"
-        >
-          Edit Profil
-        </button>
-      </div>
+          <div class="form-row">
+            <label>No. Telepon</label>
+            <input type="tel" class="form-ctrl input-border" v-model="form.no_telp" placeholder="mis. 0812xxxxxxxx" maxlength="32" />
+          </div>
 
-      <p class="mt-30" style="max-width: 600px">
-        {{ immutableNotice }}
-      </p>
-
-      <form v-if="showProfileForm" class="profile-form mt-30" @submit.prevent="submitProfile">
-        <div class="form-row">
-          <label>Nama</label>
-          <input type="text" class="form-ctrl input-border" v-model="profileForm.name" required />
-        </div>
-
-        <!-- Dosen: NIDN, Jabatan, TTL setelah Nama (sebelum No. Telp) -->
-        <div v-if="user?.role === 'dosen'" class="form-row">
-          <label>NIDN</label>
-          <input type="text" class="form-ctrl input-border" v-model="profileForm.nidn" maxlength="32" />
-        </div>
-
-        <div v-if="user?.role === 'dosen'" class="form-row">
-          <label>Jabatan Fungsional</label>
-          <input type="text" class="form-ctrl input-border" v-model="profileForm.jabatan_fungsional" maxlength="100" placeholder="mis. Lektor" />
-        </div>
-
-        <div v-if="user?.role === 'dosen'" class="form-row">
-          <label>Tempat Lahir</label>
-          <input type="text" class="form-ctrl input-border" v-model="profileForm.tempat_lahir" maxlength="100" placeholder="mis. Jakarta" />
-        </div>
-
-        <div v-if="user?.role === 'dosen'" class="form-row">
-          <label>Tanggal Lahir</label>
-          <input type="date" class="form-ctrl input-border" v-model="profileForm.tanggal_lahir" />
-        </div>
-
-        <!-- Mahasiswa: Program Studi sebelum No. Telp -->
-        <div v-if="user?.role === 'mahasiswa'" class="form-row">
-          <label>Program Studi</label>
-          <select class="form-ctrl input-border" v-model="profileForm.prodi">
-            <option value="">- pilih -</option>
-            <option value="Informatika">Informatika</option>
-          </select>
-        </div>
-
-        <div class="form-row">
-          <label>No. Telp</label>
-          <input
-            type="tel"
-            class="form-ctrl input-border"
-            v-model="profileForm.no_telp"
-            placeholder="mis. 0812xxxxxxxx"
-            maxlength="32"
-          />
-        </div>
-
-        <!-- Dosen: Bidang Minat (banyak-banyak) — dropdown multi-select -->
-        <div v-if="user?.role === 'dosen'" class="form-row">
-          <label>Bidang Minat (boleh lebih dari satu)</label>
-          <div v-if="bidangLoading" style="color: #6b7280">Memuat daftar bidang minat...</div>
-          <MultiSelectDropdown
-            v-else
-            v-model="profileForm.bidang_minat_ids"
-            :options="bidangOptions"
-            placeholder="Pilih bidang minat"
-          />
-        </div>
-
-        <p v-if="profileError" style="color: #c0392b">{{ profileError }}</p>
-        <p v-if="profileSuccess" style="color: #2e7d32">{{ profileSuccess }}</p>
-
-        <div class="flex-h mt-20" style="gap: 12px">
-          <button type="submit" class="btn btn-navy-solid" style="width: auto; padding: 8px 24px" :disabled="profileLoading">
-            {{ profileLoading ? 'Menyimpan...' : 'Simpan' }}
+          <p v-if="pribadiMsg" :style="{ color: pribadiErr ? '#c0392b' : '#2e7d32' }">{{ pribadiMsg }}</p>
+          <button type="submit" class="btn btn-navy-solid mt-10" style="width: auto; padding: 8px 24px" :disabled="savingPribadi">
+            {{ savingPribadi ? 'Menyimpan...' : 'Simpan Perubahan' }}
           </button>
-          <button type="button" class="btn btn-navy-border" style="width: auto; padding: 8px 24px" @click="cancelProfileForm">
-            Batal
-          </button>
-        </div>
-      </form>
-    </div>
-    <!-- ---------- EDIT PROFIL END ---------- -->
+        </form>
+      </section>
 
-    <!-- ---------- FORM PASSWORD ---------- -->
-    <div class="main-container">
-      <div>
-        <h1>{{ hasPassword ? 'Ubah Password' : 'Atur Password Login' }}</h1>
-        <div class="profil-title"></div>
-      </div>
+      <!-- ============ TAB DATA AKADEMIK ============ -->
+      <section v-show="tab === 'akademik'" class="tab-panel mt-30">
+        <!-- Dosen: editable -->
+        <template v-if="user?.role === 'dosen'">
+          <h3 class="panel-title">Data Akademik</h3>
+          <p class="hint">Ditampilkan di halaman Detail Dosen (Biografi, Credential, Penelitian, Buku, Roadmap).</p>
+          <form class="profile-form mt-20" @submit.prevent="saveAkademik">
+            <div class="form-row">
+              <label>Biografi</label>
+              <textarea class="form-ctrl input-border" rows="4" v-model="form.biografi"></textarea>
+            </div>
+            <div class="form-row">
+              <label>Credential</label>
+              <textarea class="form-ctrl input-border" rows="3" v-model="form.credential" placeholder="Sertifikasi/keahlian, mis. CEH, CHFI, ..."></textarea>
+            </div>
+            <div class="form-row">
+              <label>Penelitian & Publikasi</label>
+              <textarea class="form-ctrl input-border" rows="4" v-model="form.publikasi"></textarea>
+            </div>
+            <div class="form-row">
+              <label>Buku</label>
+              <textarea class="form-ctrl input-border" rows="3" v-model="form.buku"></textarea>
+            </div>
+            <div class="form-row">
+              <label>Roadmap Penelitian</label>
+              <textarea class="form-ctrl input-border" rows="4" v-model="form.roadmap_riset"></textarea>
+            </div>
 
-      <p class="mt-30" style="max-width: 600px">
-        <template v-if="hasPassword">
-          Ubah password login manual Anda. Masukkan password lama untuk konfirmasi.
+            <p v-if="akademikMsg" :style="{ color: akademikErr ? '#c0392b' : '#2e7d32' }">{{ akademikMsg }}</p>
+            <button type="submit" class="btn btn-navy-solid mt-10" style="width: auto; padding: 8px 24px" :disabled="savingAkademik">
+              {{ savingAkademik ? 'Menyimpan...' : 'Simpan Perubahan' }}
+            </button>
+          </form>
         </template>
+
+        <!-- Mahasiswa: read-only -->
+        <template v-else-if="user?.role === 'mahasiswa'">
+          <h3 class="panel-title">Data Akademik</h3>
+          <div class="info-row"><span class="info-label">NPM</span><span class="info-value">{{ user.mahasiswa?.npm || '-' }}</span></div>
+          <div class="info-row"><span class="info-label">Angkatan</span><span class="info-value">{{ user.mahasiswa?.angkatan || '-' }}</span></div>
+          <div class="info-row"><span class="info-label">Program Studi</span><span class="info-value">{{ user.mahasiswa?.prodi || '-' }}</span></div>
+          <div class="info-row"><span class="info-label">Status</span><span class="info-value">Aktif</span></div>
+          <p class="hint">NPM & angkatan diturunkan otomatis dan tidak dapat diubah.</p>
+        </template>
+
         <template v-else>
-          Masukkan password baru.
+          <h3 class="panel-title">Data Akademik</h3>
+          <p class="hint">Tidak ada data akademik untuk peran ini.</p>
         </template>
-      </p>
-
-      <form class="password-form mt-30" @submit.prevent="submitPassword">
-        <div v-if="hasPassword" class="mb-20">
-          <label>Password Lama</label>
-          <input
-            type="password"
-            class="form-ctrl input-border password-input"
-            v-model="currentPassword"
-            autocomplete="current-password"
-            required
-          />
-        </div>
-
-        <div class="mb-20">
-          <label>Password Baru</label>
-          <input
-            type="password"
-            class="form-ctrl input-border password-input"
-            v-model="newPassword"
-            autocomplete="new-password"
-            minlength="8"
-            required
-          />
-        </div>
-
-        <div class="mb-20">
-          <label>Konfirmasi Password Baru</label>
-          <input
-            type="password"
-            class="form-ctrl input-border password-input"
-            v-model="confirmPassword"
-            autocomplete="new-password"
-            minlength="8"
-            required
-          />
-        </div>
-
-        <p v-if="error" style="color: #c0392b">{{ error }}</p>
-        <p v-if="success" style="color: #2e7d32">{{ success }}</p>
-
-        <button
-          type="submit"
-          class="btn btn-navy-solid mt-30"
-          style="width: auto; padding: 8px 28px"
-          :disabled="loading"
-        >
-          {{ loading ? 'Menyimpan...' : hasPassword ? 'Ubah Password' : 'Atur Password' }}
-        </button>
-      </form>
+      </section>
     </div>
-    <!-- ---------- FORM PASSWORD END ---------- -->
 
-    <!-- ---------- FOOTER ---------- -->
     <FooterComponent />
-    <!-- ---------- FOOTER END ---------- -->
   </div>
 </template>
 
 <script setup>
-// Halaman akun pribadi: menampilkan data diri + form Atur/Ubah Password.
-// Form tampil kondisional sesuai apakah user sudah punya password (3_SDD.md 2.1, UC-01b).
-import { ref, computed } from 'vue'
+// Halaman Profil — 3 tab: Akun (email universitas/pribadi + password + foto),
+// Data Pribadi (identitas), Data Akademik (Dosen: editable; Mahasiswa: read-only).
+import { ref, computed, onMounted, watch } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { authService } from '@/services/auth'
 import { bidangMinatService } from '@/services/bidang-minat'
@@ -312,85 +211,56 @@ import MultiSelectDropdown from '@/components/multi-select-dropdown.vue'
 
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
-
-// Apakah login manual sudah aktif → menentukan "Atur" vs "Ubah" password
 const hasPassword = computed(() => !!user.value?.has_password)
 
-// Label peran yang ramah dibaca
-const roleLabels = {
-  admin: 'Administrator',
-  supervisor: 'Supervisor',
-  dosen: 'Dosen',
-  mahasiswa: 'Mahasiswa',
-}
+const tab = ref('akun')
+
+const roleLabels = { admin: 'Administrator', supervisor: 'Supervisor', dosen: 'Dosen', mahasiswa: 'Mahasiswa' }
 const roleLabel = computed(() => roleLabels[user.value?.role] || user.value?.role || '-')
-
-// Peringatan field immutable disesuaikan dengan baris yang tampil per role.
-const immutableNotice = computed(() => {
-  if (user.value?.role === 'mahasiswa') {
-    return 'Email, NPM, Angkatan dan Status tidak dapat diubah.'
-  }
-  return 'Email dan Status tidak dapat diubah.'
-})
-
-// Inisial nama untuk avatar fallback (saat tidak ada foto Google)
+const immutableNotice = computed(() =>
+  user.value?.role === 'mahasiswa'
+    ? 'Email, NPM, dan angkatan tidak dapat diubah.'
+    : 'Email dan peran tidak dapat diubah.',
+)
 const initials = computed(() => {
-  const name = user.value?.name || ''
-  const parts = name.split(' ').filter(Boolean).slice(0, 2)
+  const parts = (user.value?.name || '').split(' ').filter(Boolean).slice(0, 2)
   return parts.map((w) => w[0]).join('').toUpperCase() || '?'
 })
 
-// State form password
-const currentPassword = ref('')
-const newPassword = ref('')
-const confirmPassword = ref('')
-const loading = ref(false)
-const error = ref('')
-const success = ref('')
-
-// State unggah avatar
-const avatarInput = ref(null)
-const avatarLoading = ref(false)
-const avatarError = ref('')
-const avatarSuccess = ref('')
-
-// State edit profil
-const showProfileForm = ref(false)
-const profileForm = ref({ name: '', no_telp: '', prodi: '', nidn: '', jabatan_fungsional: '', tempat_lahir: '', tanggal_lahir: '', bidang_minat_ids: [] })
-const profileLoading = ref(false)
-const profileError = ref('')
-const profileSuccess = ref('')
-
-// Master Bidang Minat (untuk dosen)
-const bidangOptions = ref([])
-const bidangLoading = ref(false)
-
-// Label gabungan bidang minat di kartu identitas (sumber: relasi many-to-many).
-// Array kosong → "-" (truthy di JS, jadi tak boleh diserahkan ke `|| '-'`).
-const dosenBidangLabel = computed(() => {
-  const v = user.value?.dosen?.bidang_minat
-  if (Array.isArray(v)) return v.length ? v.map((b) => b.nama).join(', ') : '-'
-  return v || '-'
+// --- Form terpadu (di-prefill dari user, disimpan per tab) ---
+const form = ref({
+  name: '', no_telp: '', email_pribadi: '', prodi: '',
+  nidn: '', jabatan_fungsional: '', tempat_lahir: '', tanggal_lahir: '', bidang_minat_ids: [],
+  biografi: '', credential: '', publikasi: '', buku: '', roadmap_riset: '',
 })
 
-// Gabungan "Tempat, DD Bulan YYYY" untuk kartu identitas dosen
-const dosenTtl = computed(() => {
-  const d = user.value?.dosen
-  if (!d) return ''
-  const tempat = d.tempat_lahir
-  const tgl = formatTanggalLahir(d.tanggal_lahir)
-  if (tempat && tgl) return `${tempat}, ${tgl}`
-  return tempat || tgl || ''
-})
-
-function formatTanggalLahir(iso) {
-  if (!iso) return ''
-  const bulan = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']
-  const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number)
-  if (!y || !m || !d) return ''
-  return `${d} ${bulan[m - 1]} ${y}`
+function syncForm() {
+  const u = user.value || {}
+  const d = u.dosen || {}
+  const m = u.mahasiswa || {}
+  form.value = {
+    name: u.name || '',
+    no_telp: u.no_telp || '',
+    email_pribadi: u.email_pribadi || '',
+    prodi: m.prodi || '',
+    nidn: d.nidn || '',
+    jabatan_fungsional: d.jabatan_fungsional || '',
+    tempat_lahir: d.tempat_lahir || '',
+    tanggal_lahir: d.tanggal_lahir ? String(d.tanggal_lahir).slice(0, 10) : '',
+    bidang_minat_ids: Array.isArray(d.bidang_minat) ? d.bidang_minat.map((b) => b.id) : [],
+    biografi: d.biografi || '',
+    credential: d.credential || '',
+    publikasi: d.publikasi || '',
+    buku: d.buku || '',
+    roadmap_riset: d.roadmap_riset || '',
+  }
 }
 
+watch(user, syncForm, { immediate: true })
+
+// --- Bidang Minat options (dosen) ---
+const bidangOptions = ref([])
+const bidangLoading = ref(false)
 async function loadBidangOptions() {
   bidangLoading.value = true
   try {
@@ -403,115 +273,134 @@ async function loadBidangOptions() {
   }
 }
 
-function openProfileForm() {
-  profileError.value = ''
-  profileSuccess.value = ''
-  const u = user.value || {}
-  const d = u.dosen || {}
-  const m = u.mahasiswa || {}
-  // Pre-fill dari data user terkini
-  profileForm.value = {
-    name: u.name || '',
-    no_telp: u.no_telp || '',
-    prodi: m.prodi || '',
-    nidn: d.nidn || '',
-    jabatan_fungsional: d.jabatan_fungsional || '',
-    tempat_lahir: d.tempat_lahir || '',
-    tanggal_lahir: d.tanggal_lahir || '',
-    bidang_minat_ids: Array.isArray(d.bidang_minat) ? d.bidang_minat.map((b) => b.id) : [],
-  }
-  showProfileForm.value = true
-  if (u.role === 'dosen' && !bidangOptions.value.length) loadBidangOptions()
-}
-
-function cancelProfileForm() {
-  showProfileForm.value = false
-  profileError.value = ''
-  profileSuccess.value = ''
-}
-
-async function submitProfile() {
-  profileError.value = ''
-  profileSuccess.value = ''
-  profileLoading.value = true
+// --- Simpan Akun (email pribadi) ---
+const savingAkun = ref(false)
+const akunMsg = ref('')
+const akunErr = ref(false)
+async function saveAkun() {
+  savingAkun.value = true
+  akunMsg.value = ''
   try {
-    // Hanya kirim field yang relevan dengan role agar payload bersih
-    const payload = {
-      name: profileForm.value.name,
-      no_telp: profileForm.value.no_telp || null,
-    }
-    if (user.value?.role === 'dosen') {
-      payload.nidn = profileForm.value.nidn || null
-      payload.jabatan_fungsional = profileForm.value.jabatan_fungsional || null
-      payload.tempat_lahir = profileForm.value.tempat_lahir || null
-      payload.tanggal_lahir = profileForm.value.tanggal_lahir || null
-      payload.bidang_minat_ids = profileForm.value.bidang_minat_ids || []
-    }
-    if (user.value?.role === 'mahasiswa') {
-      payload.prodi = profileForm.value.prodi || null
-    }
-    const res = await authService.updateProfile(payload)
-    profileSuccess.value = res.data?.message || 'Profil berhasil diperbarui.'
+    const res = await authService.updateProfile({ email_pribadi: form.value.email_pribadi || null })
+    akunErr.value = false
+    akunMsg.value = res.data?.message || 'Email pribadi disimpan.'
     await authStore.fetchUser()
-    showProfileForm.value = false
   } catch (err) {
-    profileError.value = extractError(err)
+    akunErr.value = true
+    akunMsg.value = extractError(err)
   } finally {
-    profileLoading.value = false
+    savingAkun.value = false
   }
 }
 
+// --- Simpan Data Pribadi ---
+const savingPribadi = ref(false)
+const pribadiMsg = ref('')
+const pribadiErr = ref(false)
+async function savePribadi() {
+  savingPribadi.value = true
+  pribadiMsg.value = ''
+  try {
+    const payload = { name: form.value.name, no_telp: form.value.no_telp || null }
+    if (user.value?.role === 'dosen') {
+      payload.nidn = form.value.nidn || null
+      payload.jabatan_fungsional = form.value.jabatan_fungsional || null
+      payload.tempat_lahir = form.value.tempat_lahir || null
+      payload.tanggal_lahir = form.value.tanggal_lahir || null
+      payload.bidang_minat_ids = form.value.bidang_minat_ids || []
+    }
+    if (user.value?.role === 'mahasiswa') payload.prodi = form.value.prodi || null
+    const res = await authService.updateProfile(payload)
+    pribadiErr.value = false
+    pribadiMsg.value = res.data?.message || 'Profil berhasil diperbarui.'
+    await authStore.fetchUser()
+  } catch (err) {
+    pribadiErr.value = true
+    pribadiMsg.value = extractError(err)
+  } finally {
+    savingPribadi.value = false
+  }
+}
+
+// --- Simpan Data Akademik (dosen) ---
+const savingAkademik = ref(false)
+const akademikMsg = ref('')
+const akademikErr = ref(false)
+async function saveAkademik() {
+  savingAkademik.value = true
+  akademikMsg.value = ''
+  try {
+    const res = await authService.updateProfile({
+      biografi: form.value.biografi || null,
+      credential: form.value.credential || null,
+      publikasi: form.value.publikasi || null,
+      buku: form.value.buku || null,
+      roadmap_riset: form.value.roadmap_riset || null,
+    })
+    akademikErr.value = false
+    akademikMsg.value = res.data?.message || 'Data akademik disimpan.'
+    await authStore.fetchUser()
+  } catch (err) {
+    akademikErr.value = true
+    akademikMsg.value = extractError(err)
+  } finally {
+    savingAkademik.value = false
+  }
+}
+
+// --- Avatar ---
+const avatarInput = ref(null)
+const avatarLoading = ref(false)
+const avatarError = ref('')
+const avatarSuccess = ref('')
 function pickAvatar() {
   avatarError.value = ''
   avatarSuccess.value = ''
   avatarInput.value?.click()
 }
-
 async function onAvatarSelected(event) {
   const file = event.target.files?.[0]
   if (!file) return
-
-  // Validasi ringan di klien (backend tetap memvalidasi ulang)
   if (file.size > 2 * 1024 * 1024) {
     avatarError.value = 'Ukuran foto maksimal 2MB.'
     event.target.value = ''
     return
   }
-
   avatarLoading.value = true
   avatarError.value = ''
   avatarSuccess.value = ''
   try {
     const res = await authService.updateAvatar(file)
     avatarSuccess.value = res.data?.message || 'Foto profil berhasil diperbarui.'
-    await authStore.fetchUser() // segarkan avatar di kartu & navbar
+    await authStore.fetchUser()
   } catch (err) {
     avatarError.value = extractError(err)
   } finally {
     avatarLoading.value = false
-    event.target.value = '' // reset agar file sama bisa dipilih ulang
+    event.target.value = ''
   }
 }
 
+// --- Password ---
+const currentPassword = ref('')
+const newPassword = ref('')
+const confirmPassword = ref('')
+const loading = ref(false)
+const error = ref('')
+const success = ref('')
 async function submitPassword() {
   error.value = ''
   success.value = ''
-
-  // Validasi ringan di sisi klien sebelum kirim
   if (newPassword.value !== confirmPassword.value) {
     error.value = 'Konfirmasi password tidak cocok.'
     return
   }
-
   loading.value = true
   try {
     const res = hasPassword.value
       ? await authService.changePassword(currentPassword.value, newPassword.value, confirmPassword.value)
       : await authService.setPassword(newPassword.value, confirmPassword.value)
-
     success.value = res.data?.message || 'Password berhasil disimpan.'
-
-    // Bersihkan form & segarkan data user (flag has_password ikut diperbarui)
     currentPassword.value = ''
     newPassword.value = ''
     confirmPassword.value = ''
@@ -523,7 +412,6 @@ async function submitPassword() {
   }
 }
 
-// Ambil pesan error yang ramah dari respons Laravel (422 ValidationException)
 function extractError(err) {
   const res = err.response?.data
   if (res?.errors) {
@@ -532,44 +420,35 @@ function extractError(err) {
   }
   return res?.message || 'Terjadi kesalahan. Silakan coba lagi.'
 }
+
+onMounted(() => {
+  if (user.value?.role === 'dosen') loadBidangOptions()
+})
 </script>
 
 <style scoped>
-.avatar-block {
-  flex-shrink: 0;
+.id-head {
+  display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 18px;
 }
-
-.btn-link-avatar {
-  background: none;
-  border: none;
-  cursor: pointer;
+.id-name {
   color: var(--bs-navy);
-  font-weight: 600;
-  font-size: 0.9em;
-  padding: 2px 4px;
 }
-
-.btn-link-avatar:hover:not(:disabled) {
-  text-decoration: underline;
+.role-badge {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 12px;
+  border-radius: 20px;
+  background-color: #eef1f7;
+  color: var(--bs-navy);
+  font-size: 0.78em;
+  font-weight: 700;
 }
-
-.btn-link-avatar:disabled {
-  color: #9aa0a6;
-  cursor: default;
-}
-
-.avatar-msg {
-  max-width: 140px;
-  text-align: center;
-  font-size: 0.8em;
-}
-
 .profil-avatar {
   flex-shrink: 0;
-  width: 120px;
-  height: 120px;
+  width: 88px;
+  height: 88px;
   border-radius: 50%;
   overflow: hidden;
   background-color: var(--bs-navy);
@@ -577,76 +456,121 @@ function extractError(err) {
   align-items: center;
   justify-content: center;
 }
-
+.profil-avatar.big {
+  width: 140px;
+  height: 140px;
+  margin: 8px 0;
+}
 .profil-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
 .profil-avatar span {
   color: white;
-  font-size: 2.5em;
+  font-size: 2em;
+  font-weight: 600;
+}
+
+.tab-bar {
+  display: flex;
+  gap: 8px;
+  border-bottom: 2px solid var(--bs-grey2);
+}
+.tab {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  padding: 10px 22px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #9aa0a6;
+}
+.tab.active {
+  color: var(--bs-navy);
+  border-bottom-color: var(--bs-navy);
+}
+
+.panel-title {
+  color: var(--bs-navy);
+}
+.hint {
+  margin-top: 6px;
+  font-size: 0.85em;
+  color: #5f6368;
+}
+
+.akun-layout {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 30px;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .akun-layout {
+    grid-template-columns: 1fr;
+  }
+}
+.akun-side {
+  background-color: var(--bs-grey1);
+  border: 1px solid var(--bs-grey2);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.akun-side h4 {
+  color: var(--bs-navy);
+}
+
+.info-row {
+  display: flex;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--bs-grey2);
+  align-items: flex-start;
+}
+.info-label {
+  flex-shrink: 0;
+  width: 170px;
+  color: #5f6368;
+  font-size: 0.95em;
+}
+.info-value {
+  color: var(--bs-black);
   font-weight: 600;
 }
 
 .profile-form {
-  max-width: 520px;
-  padding: 24px;
-  background-color: var(--bs-grey1);
-  border-radius: 8px;
+  max-width: 560px;
 }
-
 .profile-form .form-row {
   margin-bottom: 16px;
 }
-
 .profile-form .form-row label {
   display: block;
   margin-bottom: 6px;
   font-weight: 600;
 }
-
 .profile-form .form-ctrl {
   width: 100%;
 }
-
 .password-form {
   max-width: 420px;
 }
-
 .password-form label {
   display: block;
   margin-bottom: 6px;
 }
-
 .password-input {
   width: 100%;
 }
-
-.bio-table {
-  width: 100%;
-  margin-top: 16px;
-  border-collapse: collapse;
-}
-
-/* Padding atas/bawah saja (jangan shorthand) agar tak menimpa padding-right kolom.
-   Selector .bio-table .bio-label/.bio-sep dibuat lebih spesifik dari .bio-table td. */
-.bio-table td {
-  vertical-align: top;
-  padding-top: 3px;
-  padding-bottom: 3px;
-  line-height: 1.5;
-}
-
-.bio-table .bio-label {
-  width: 1px;
-  white-space: nowrap;
-  padding-right: 32px;
-}
-
-.bio-table .bio-sep {
-  width: 1px;
-  padding-right: 8px;
+.avatar-msg {
+  max-width: 180px;
+  text-align: center;
+  font-size: 0.8em;
 }
 </style>

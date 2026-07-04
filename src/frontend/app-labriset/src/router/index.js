@@ -101,6 +101,13 @@ const routes = [
     meta: { requiresAuth: true, roles: ['admin'] }
   },
   {
+    path: '/admin/aslab',
+    name: 'admin-aslab',
+    // Delegasi Asisten Lab (mahasiswa → supervisor) — khusus Admin
+    component: () => import('../views/admin-aslab.vue'),
+    meta: { requiresAuth: true, roles: ['admin'] }
+  },
+  {
     path: '/admin/data-master',
     name: 'admin-data-master',
     // Kelola Data Master (Ruangan & Mata Kuliah) — Admin & Supervisor (Gate manage-master-data)

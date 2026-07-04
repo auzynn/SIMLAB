@@ -343,6 +343,36 @@ class KelasLabTest extends TestCase
         $this->getJson('/api/kelas-lab/pendaftaran')->assertOk()->assertJsonCount(2, 'data');
     }
 
+    public function test_mahasiswa_tidak_bisa_batalkan_pendaftaran_disetujui(): void
+    {
+        [$dosenUser, $dosen] = $this->dosen();
+        $kelas = KelasLab::create(array_merge($this->payload(), ['dosen_id' => $dosen->id, 'dibuat_oleh' => $dosenUser->id]));
+        [$mhsUser, $mhs] = $this->mahasiswa('220030');
+        $peserta = KelasLabPeserta::create(['kelas_lab_id' => $kelas->id, 'mahasiswa_id' => $mhs->id, 'status' => 'disetujui']);
+
+        Sanctum::actingAs($mhsUser);
+        $this->deleteJson("/api/kelas-lab/{$kelas->id}/daftar")->assertStatus(422);
+        $this->assertDatabaseHas('kelas_lab_peserta', ['id' => $peserta->id]);
+    }
+
+    public function test_pemilik_kelas_dapat_mengeluarkan_peserta(): void
+    {
+        [$dosenUser, $dosen] = $this->dosen();
+        $kelas = KelasLab::create(array_merge($this->payload(), ['dosen_id' => $dosen->id, 'dibuat_oleh' => $dosenUser->id]));
+        [, $mhs] = $this->mahasiswa('220031');
+        $peserta = KelasLabPeserta::create(['kelas_lab_id' => $kelas->id, 'mahasiswa_id' => $mhs->id, 'status' => 'disetujui']);
+
+        // Dosen lain tidak boleh
+        [$dosenLainUser] = $this->dosen();
+        Sanctum::actingAs($dosenLainUser);
+        $this->deleteJson("/api/kelas-lab/pendaftaran/{$peserta->id}")->assertForbidden();
+
+        // Pemilik kelas boleh mengeluarkan
+        Sanctum::actingAs($dosenUser);
+        $this->deleteJson("/api/kelas-lab/pendaftaran/{$peserta->id}")->assertOk();
+        $this->assertDatabaseMissing('kelas_lab_peserta', ['id' => $peserta->id]);
+    }
+
     public function test_detail_kelas_menyertakan_sisa_kuota(): void
     {
         [$dosenUser, $dosen] = $this->dosen();

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AslabController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BidangMinatController;
 use App\Http\Controllers\DosenController;
@@ -59,6 +60,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Kelola user & role — khusus Admin (3_SDD.md 5.2, otorisasi via Gate manage-users)
     Route::apiResource('users', UserController::class)->only(['index', 'store', 'update', 'destroy']);
 
+    // Delegasi Asisten Lab — Admin menetapkan mahasiswa jadi Supervisor (Gate manage-users)
+    Route::get('/aslab', [AslabController::class, 'index']);
+    Route::post('/aslab/{user}', [AslabController::class, 'promote']);
+    Route::delete('/aslab/{user}', [AslabController::class, 'demote']);
+
     // Data Master (3_SDD.md 5.5, 5.6): read terbuka untuk semua role login,
     // CUD via Gate manage-master-data (Admin/Supervisor) di masing-masing controller.
     Route::apiResource('ruangan', RuanganController::class)
@@ -82,6 +88,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/kelas-lab/pendaftaran', [KelasLabController::class, 'pendaftaran']);
     Route::patch('/kelas-lab/pendaftaran/{kelasLabPeserta}/approve', [KelasLabController::class, 'approvePendaftaran']);
     Route::patch('/kelas-lab/pendaftaran/{kelasLabPeserta}/reject', [KelasLabController::class, 'rejectPendaftaran']);
+    Route::delete('/kelas-lab/pendaftaran/{kelasLabPeserta}', [KelasLabController::class, 'hapusPeserta']);
     Route::get('/kelas-lab/{kelasLab}/peserta', [KelasLabController::class, 'peserta']);
     Route::post('/kelas-lab/{kelasLab}/daftar', [KelasLabController::class, 'daftar']);
     Route::delete('/kelas-lab/{kelasLab}/daftar', [KelasLabController::class, 'batalDaftar']);
