@@ -160,14 +160,24 @@ class PeminjamanRuanganController extends Controller
     }
 
     /**
-     * Hapus pengajuan peminjaman (Admin/Supervisor) — mis. membersihkan riwayat yang sudah diproses.
+     * Hapus/batalkan pengajuan peminjaman.
+     * - Pemilik boleh membatalkan miliknya selama masih 'menunggu' (SRS UC-02).
+     * - Admin/Supervisor boleh menghapus kapan saja (mis. membersihkan riwayat).
      */
     public function destroy(PeminjamanRuangan $peminjamanRuangan): JsonResponse
     {
-        Gate::authorize('approve-peminjaman-ruangan');
+        $user = request()->user();
+        $pemilikMenunggu = $peminjamanRuangan->user_id === $user->id
+            && $peminjamanRuangan->status === 'menunggu';
+
+        if (! $pemilikMenunggu && ! Gate::allows('approve-peminjaman-ruangan')) {
+            return response()->json([
+                'message' => 'Anda tidak berhak membatalkan pengajuan ini.',
+            ], 403);
+        }
 
         $peminjamanRuangan->delete();
 
-        return response()->json(['message' => 'Pengajuan peminjaman dihapus.']);
+        return response()->json(['message' => 'Pengajuan peminjaman dibatalkan.']);
     }
 }

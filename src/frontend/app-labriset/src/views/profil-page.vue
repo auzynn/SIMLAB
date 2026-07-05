@@ -44,15 +44,19 @@
             </div>
           </div>
 
-          <h3 class="panel-title mt-30">{{ hasPassword ? 'Ubah Password' : 'Atur Password Login' }}</h3>
+          <h3 class="panel-title mt-30">{{ passwordPanelTitle }}</h3>
           <p class="hint">
-            <template v-if="hasPassword">Masukkan password lama untuk mengubah password login.</template>
+            <template v-if="resetMode">Anda masuk lewat akun Google UNSIL, jadi bisa mengatur password baru tanpa password lama.</template>
+            <template v-else-if="hasPassword">Masukkan password lama untuk mengubah password login.</template>
             <template v-else>Atur password agar bisa login manual (email + password).</template>
           </p>
           <form class="password-form mt-10" @submit.prevent="submitPassword">
-            <div v-if="hasPassword" class="mb-20">
+            <div v-if="hasPassword && !resetMode" class="mb-20">
               <label>Password Lama</label>
               <input type="password" class="form-ctrl input-border password-input" v-model="currentPassword" autocomplete="current-password" required />
+              <p v-if="canSelfReset" class="hint mt-10">
+                Lupa password lama? <a class="reset-link" @click="enterResetMode">Atur ulang tanpa password lama</a>
+              </p>
             </div>
             <div class="mb-20">
               <label>Password Baru</label>
@@ -64,9 +68,12 @@
             </div>
             <p v-if="error" style="color: #c0392b">{{ error }}</p>
             <p v-if="success" style="color: #2e7d32">{{ success }}</p>
-            <button type="submit" class="btn btn-navy-solid" style="width: auto; padding: 8px 24px" :disabled="loading">
-              {{ loading ? 'Menyimpan...' : hasPassword ? 'Ubah Password' : 'Atur Password' }}
-            </button>
+            <div class="flex-h" style="gap: 10px; align-items: center">
+              <button type="submit" class="btn btn-navy-solid" style="width: auto; padding: 8px 24px" :disabled="loading">
+                {{ loading ? 'Menyimpan...' : passwordSubmitLabel }}
+              </button>
+              <a v-if="resetMode" class="reset-link" @click="exitResetMode">Batal</a>
+            </div>
           </form>
         </div>
 
@@ -212,6 +219,16 @@ import MultiSelectDropdown from '@/components/multi-select-dropdown.vue'
 const authStore = useAuthStore()
 const user = computed(() => authStore.user)
 const hasPassword = computed(() => !!user.value?.has_password)
+
+// "Lupa password lama": reset tanpa password lama, hanya untuk akun tertaut Google UNSIL.
+const resetMode = ref(false)
+const canSelfReset = computed(() => hasPassword.value && !!user.value?.google_id)
+const passwordPanelTitle = computed(() =>
+  resetMode.value ? 'Atur Ulang Password' : hasPassword.value ? 'Ubah Password' : 'Atur Password Login',
+)
+const passwordSubmitLabel = computed(() =>
+  resetMode.value ? 'Atur Ulang Password' : hasPassword.value ? 'Ubah Password' : 'Atur Password',
+)
 
 const tab = ref('akun')
 
@@ -388,6 +405,19 @@ const confirmPassword = ref('')
 const loading = ref(false)
 const error = ref('')
 const success = ref('')
+function enterResetMode() {
+  resetMode.value = true
+  error.value = ''
+  success.value = ''
+  currentPassword.value = ''
+}
+
+function exitResetMode() {
+  resetMode.value = false
+  error.value = ''
+  success.value = ''
+}
+
 async function submitPassword() {
   error.value = ''
   success.value = ''
@@ -397,13 +427,19 @@ async function submitPassword() {
   }
   loading.value = true
   try {
-    const res = hasPassword.value
-      ? await authService.changePassword(currentPassword.value, newPassword.value, confirmPassword.value)
-      : await authService.setPassword(newPassword.value, confirmPassword.value)
+    let res
+    if (resetMode.value) {
+      res = await authService.resetPassword(newPassword.value, confirmPassword.value)
+    } else if (hasPassword.value) {
+      res = await authService.changePassword(currentPassword.value, newPassword.value, confirmPassword.value)
+    } else {
+      res = await authService.setPassword(newPassword.value, confirmPassword.value)
+    }
     success.value = res.data?.message || 'Password berhasil disimpan.'
     currentPassword.value = ''
     newPassword.value = ''
     confirmPassword.value = ''
+    resetMode.value = false
     await authStore.fetchUser()
   } catch (err) {
     error.value = extractError(err)
@@ -499,6 +535,13 @@ onMounted(() => {
   margin-top: 6px;
   font-size: 0.85em;
   color: #5f6368;
+}
+
+.reset-link {
+  color: var(--bs-navy);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
 .akun-layout {

@@ -245,7 +245,7 @@ class PeminjamanRuanganTest extends TestCase
         $this->assertDatabaseMissing('peminjaman_ruangan', ['id' => $peminjaman->id]);
     }
 
-    public function test_mahasiswa_tidak_dapat_menghapus_pengajuan(): void
+    public function test_mahasiswa_lain_tidak_dapat_menghapus_pengajuan_bukan_miliknya(): void
     {
         $ruangan = $this->ruangan();
         $peminjaman = PeminjamanRuangan::create([
@@ -260,6 +260,45 @@ class PeminjamanRuanganTest extends TestCase
 
         Sanctum::actingAs(User::factory()->create(['role' => 'mahasiswa']));
         $this->deleteJson("/api/peminjaman-ruangan/{$peminjaman->id}")->assertForbidden();
+        $this->assertDatabaseHas('peminjaman_ruangan', ['id' => $peminjaman->id]);
+    }
+
+    public function test_pemilik_dapat_membatalkan_pengajuan_menunggu(): void
+    {
+        $ruangan = $this->ruangan();
+        $saya = User::factory()->create(['role' => 'mahasiswa']);
+        $peminjaman = PeminjamanRuangan::create([
+            'ruangan_id' => $ruangan->id,
+            'user_id' => $saya->id,
+            'tanggal' => Carbon::tomorrow()->format('Y-m-d'),
+            'jam_mulai' => '08:00:00',
+            'jam_selesai' => '10:00:00',
+            'keperluan' => 'x',
+            'status' => 'menunggu',
+        ]);
+
+        Sanctum::actingAs($saya);
+        $this->deleteJson("/api/peminjaman-ruangan/{$peminjaman->id}")->assertOk();
+        $this->assertDatabaseMissing('peminjaman_ruangan', ['id' => $peminjaman->id]);
+    }
+
+    public function test_pemilik_tidak_dapat_membatalkan_pengajuan_yang_sudah_disetujui(): void
+    {
+        $ruangan = $this->ruangan();
+        $saya = User::factory()->create(['role' => 'mahasiswa']);
+        $peminjaman = PeminjamanRuangan::create([
+            'ruangan_id' => $ruangan->id,
+            'user_id' => $saya->id,
+            'tanggal' => Carbon::tomorrow()->format('Y-m-d'),
+            'jam_mulai' => '08:00:00',
+            'jam_selesai' => '10:00:00',
+            'keperluan' => 'x',
+            'status' => 'disetujui',
+        ]);
+
+        Sanctum::actingAs($saya);
+        $this->deleteJson("/api/peminjaman-ruangan/{$peminjaman->id}")->assertForbidden();
+        $this->assertDatabaseHas('peminjaman_ruangan', ['id' => $peminjaman->id]);
     }
 
     public function test_approve_menjalankan_ulang_validasi_bentrok(): void

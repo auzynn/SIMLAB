@@ -26,9 +26,11 @@
           <router-link to="/kelaslab">Kelas Lab</router-link>
         </li>
 
+        <!-- Perangkat kini diakses dari halaman Jadwal Lab (kartu "Perangkat Lab") — tidak lagi di navbar. -->
+
         <!-- Belum login: tombol Login -->
         <li v-if="!auth.isAuthenticated">
-          <router-link to="/login" class="btn btn-navy-border btn-width-80" style="font-weight: bold">Login</router-link>
+          <router-link to="/login" class="btn-nav-login">Login</router-link>
         </li>
 
         <!-- Sudah login: avatar (klik → Profil Saya) dengan dropdown saat di-hover -->
@@ -42,10 +44,12 @@
             <li v-if="auth.user?.role === 'admin'"><router-link to="/admin">Panel Admin</router-link></li>
             <!-- Persetujuan Peminjaman kini diakses dari halaman Jadwal Lab;
                  Kelola Kelas Lab dari halaman Kelas Lab — tidak lagi di dropdown ini. -->
-            <!-- Peminjaman Saya — Mahasiswa (Dosen tidak meminjam ruangan) -->
+            <!-- Peminjaman Saya — Mahasiswa: gabungan ruangan + perangkat (tab) -->
             <li v-if="auth.user?.role === 'mahasiswa'">
               <router-link to="/peminjaman-saya">Peminjaman Saya</router-link>
             </li>
+            <!-- Persetujuan Perangkat (Admin/Supervisor) kini diakses dari halaman Jadwal Lab,
+                 di bawah kartu Persetujuan Peminjaman Ruangan — tidak lagi di dropdown ini. -->
             <li><router-link to="/profil">Profil Saya</router-link></li>
             <li><a class="logout-link" @click="handleLogout">Logout</a></li>
           </ul>
@@ -74,7 +78,8 @@ const profilPaths = [
 const activeMenu = computed(() => {
   const path = route.path
   if (path === '/') return 'home'
-  if (path === '/jadwallab') return 'jadwal'
+  // Perangkat kini bagian dari Jadwal Lab → sorot menu Jadwal Lab saat di halaman terkait perangkat.
+  if (path === '/jadwallab' || path === '/perangkat') return 'jadwal'
   if (path === '/kelaslab' || path.startsWith('/kelaslab/')) return 'kelaslab'
   // startsWith agar path berparameter (mis. /detaildosen/2) tetap ter-highlight
   if (profilPaths.some((p) => path === p || path.startsWith(p + '/'))) return 'profil'
@@ -96,6 +101,31 @@ async function handleLogout() {
 </script>
 
 <style scoped>
+/* Tombol Login navbar — pil navy dengan isian saat hover + sedikit terangkat. */
+.btn-nav-login {
+  display: inline-block;
+  padding: 8px 24px;
+  border: 2px solid var(--bs-navy);
+  border-radius: 999px;
+  color: var(--bs-navy);
+  font-weight: 700;
+  line-height: 1;
+  background-color: transparent;
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.btn-nav-login:hover {
+  color: #fff;
+  background-color: var(--bs-navy);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(24, 56, 97, 0.25);
+}
+
+.btn-nav-login:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 8px rgba(24, 56, 97, 0.22);
+}
+
 .user-menu {
   position: relative;
   display: flex;

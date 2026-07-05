@@ -34,6 +34,14 @@ export const authService = {
     })
   },
 
+  // Atur ulang password tanpa password lama (jalur "lupa password", khusus akun Google UNSIL)
+  async resetPassword(password, passwordConfirmation) {
+    return api.post('/api/auth/reset-password', {
+      password,
+      password_confirmation: passwordConfirmation,
+    })
+  },
+
   // Edit profil sendiri (name, no_telp; +nidn & bidang_minat_ids[] khusus dosen).
   // Email & status tidak boleh diubah (immutable di backend).
   async updateProfile(payload) {

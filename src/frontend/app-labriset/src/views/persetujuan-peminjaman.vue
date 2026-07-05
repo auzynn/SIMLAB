@@ -5,80 +5,181 @@
     <div class="main-container">
       <div class="flex-h between" style="align-items: flex-start; gap: 12px; flex-wrap: wrap">
         <div>
-          <h1>Persetujuan Peminjaman Ruangan</h1>
+          <h1>Persetujuan Peminjaman</h1>
           <div class="profil-title"></div>
         </div>
         <router-link to="/jadwallab" class="btn btn-navy-border" style="width: auto; padding: 8px 20px">
           &larr; Kembali ke Jadwal Lab
         </router-link>
       </div>
-      <p class="mt-30" style="max-width: 640px">
-        Tinjau pengajuan peminjaman ruangan. Saat menyetujui, sistem memeriksa ulang bentrok jadwal &amp; status ruangan.
+      <p class="mt-30" style="max-width: 680px">
+        Tinjau dan proses pengajuan peminjaman <strong>ruangan</strong> dan <strong>perangkat</strong>,
+        termasuk perpanjangan perangkat, dalam satu tempat.
       </p>
 
+      <!-- Tab entitas -->
       <div class="tab-bar mt-30">
-        <button :class="['tab', { active: filter === 'menunggu' }]" @click="filter = 'menunggu'">
-          Menunggu ({{ countByStatus.menunggu }})
+        <button :class="['tab', { active: tab === 'ruangan' }]" @click="tab = 'ruangan'">
+          Peminjaman Ruangan ({{ roomMenunggu }})
         </button>
-        <button :class="['tab', { active: filter === 'semua' }]" @click="filter = 'semua'">Semua</button>
+        <button :class="['tab', { active: tab === 'perangkat' }]" @click="tab = 'perangkat'">
+          Peminjaman Perangkat ({{ devMenunggu }})
+        </button>
+        <button :class="['tab', { active: tab === 'perpanjangan' }]" @click="tab = 'perpanjangan'">
+          Perpanjangan Perangkat ({{ perpMenunggu.length }})
+        </button>
       </div>
 
-      <p v-if="loading" class="mt-30">Memuat data...</p>
-      <p v-else-if="listError" class="mt-30" style="color: #c0392b">{{ listError }}</p>
-      <table v-else class="data-table mt-20">
-        <thead>
-          <tr>
-            <th>Pengaju</th>
-            <th>Ruangan</th>
-            <th>Tanggal</th>
-            <th>Waktu</th>
-            <th>Keperluan</th>
-            <th>Status</th>
-            <th style="text-align: right">Aksi</th>
-          </tr>
-          <tr class="filter-row">
-            <th>
-              <div class="filter-pengaju">
-                <select v-model="filters.pengajuField" class="filter-select">
-                  <option value="nama">Nama</option>
-                  <option value="npm">NPM</option>
-                </select>
-                <input v-model="filters.pengaju" class="filter-input" :placeholder="filters.pengajuField === 'npm' ? 'Cari NPM' : 'Cari nama'" />
-              </div>
-            </th>
-            <th><input v-model="filters.ruangan" class="filter-input" placeholder="Cari ruangan" /></th>
-            <th><input v-model="filters.tanggal" class="filter-input" placeholder="Cari tanggal" /></th>
-            <th><input v-model="filters.waktu" class="filter-input" placeholder="Cari jam" /></th>
-            <th><input v-model="filters.keperluan" class="filter-input" placeholder="Cari keperluan" /></th>
-            <th></th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="p in pagedItems" :key="p.id">
-            <td>
-              <div>{{ p.user?.name }}</div>
-              <div v-if="p.user?.mahasiswa?.npm" class="pengaju-npm">{{ p.user.mahasiswa.npm }}</div>
-            </td>
-            <td>{{ p.ruangan?.nama_ruangan }}</td>
-            <td>{{ namaHari(p.tanggal) }}, {{ formatTanggalId(p.tanggal) }}</td>
-            <td>{{ formatJam(p.jam_mulai) }}–{{ formatJam(p.jam_selesai) }}</td>
-            <td>{{ p.keperluan }}</td>
-            <td><span :class="['status-badge', `status-${p.status}`]">{{ statusLabel(p.status) }}</span></td>
-            <td style="text-align: right; white-space: nowrap">
-              <template v-if="p.status === 'menunggu'">
-                <button class="btn-link" :disabled="busyId === p.id" @click="setuju(p)">Setujui</button>
-                <button class="btn-link btn-link-danger" :disabled="busyId === p.id" @click="tolak(p)">Tolak</button>
-              </template>
-              <button class="btn-link btn-link-danger" :disabled="busyId === p.id" @click="hapus(p)">Hapus</button>
-            </td>
-          </tr>
-          <tr v-if="!filtered.length">
-            <td colspan="7" style="text-align: center; color: #9aa0a6">Tidak ada pengajuan.</td>
-          </tr>
-        </tbody>
-      </table>
-      <PaginationBar v-model:page="page" :total-pages="totalPages" />
+      <!-- ============ TAB RUANGAN ============ -->
+      <template v-if="tab === 'ruangan'">
+        <div class="subfilter mt-20">
+          <button :class="['chip', { active: roomStatus === 'menunggu' }]" @click="roomStatus = 'menunggu'">
+            Menunggu ({{ roomMenunggu }})
+          </button>
+          <button :class="['chip', { active: roomStatus === 'semua' }]" @click="roomStatus = 'semua'">Semua</button>
+        </div>
+
+        <p v-if="loadingRoom" class="mt-20">Memuat data...</p>
+        <p v-else-if="errorRoom" class="mt-20" style="color: #c0392b">{{ errorRoom }}</p>
+        <table v-else class="data-table mt-10">
+          <thead>
+            <tr>
+              <th>Pengaju</th>
+              <th>Ruangan</th>
+              <th>Tanggal</th>
+              <th>Waktu</th>
+              <th>Keperluan</th>
+              <th>Status</th>
+              <th style="text-align: right">Aksi</th>
+            </tr>
+            <tr class="filter-row">
+              <th>
+                <div class="filter-pengaju">
+                  <select v-model="roomSearch.pengajuField" class="filter-select">
+                    <option value="nama">Nama</option>
+                    <option value="npm">NPM</option>
+                  </select>
+                  <input v-model="roomSearch.pengaju" class="filter-input" :placeholder="roomSearch.pengajuField === 'npm' ? 'Cari NPM' : 'Cari nama'" />
+                </div>
+              </th>
+              <th><input v-model="roomSearch.ruangan" class="filter-input" placeholder="Cari ruangan" /></th>
+              <th><input v-model="roomSearch.tanggal" class="filter-input" placeholder="Cari tanggal" /></th>
+              <th><input v-model="roomSearch.waktu" class="filter-input" placeholder="Cari jam" /></th>
+              <th><input v-model="roomSearch.keperluan" class="filter-input" placeholder="Cari keperluan" /></th>
+              <th></th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="p in pagedRoom" :key="p.id">
+              <td>
+                <div>{{ p.user?.name }}</div>
+                <div v-if="p.user?.mahasiswa?.npm" class="pengaju-npm">{{ p.user.mahasiswa.npm }}</div>
+              </td>
+              <td>{{ p.ruangan?.nama_ruangan }}</td>
+              <td>{{ namaHari(p.tanggal) }}, {{ formatTanggalId(p.tanggal) }}</td>
+              <td>{{ formatJam(p.jam_mulai) }}–{{ formatJam(p.jam_selesai) }}</td>
+              <td>{{ p.keperluan }}</td>
+              <td><span :class="['status-badge', `status-${p.status}`]">{{ statusLabel(p.status) }}</span></td>
+              <td style="text-align: right; white-space: nowrap">
+                <template v-if="p.status === 'menunggu'">
+                  <button class="btn-link" :disabled="roomBusy === p.id" @click="approveRoom(p)">Setujui</button>
+                  <button class="btn-link btn-link-danger" :disabled="roomBusy === p.id" @click="rejectRoom(p)">Tolak</button>
+                </template>
+                <button class="btn-link btn-link-danger" :disabled="roomBusy === p.id" @click="deleteRoom(p)">Hapus</button>
+              </td>
+            </tr>
+            <tr v-if="!roomFiltered.length">
+              <td colspan="7" style="text-align: center; color: #9aa0a6">Tidak ada pengajuan.</td>
+            </tr>
+          </tbody>
+        </table>
+        <PaginationBar v-model:page="pageR" :total-pages="totalPagesR" />
+      </template>
+
+      <!-- ============ TAB PERANGKAT ============ -->
+      <template v-else-if="tab === 'perangkat'">
+        <p v-if="loadingDev" class="mt-20">Memuat data...</p>
+        <p v-else-if="errorDev" class="mt-20" style="color: #c0392b">{{ errorDev }}</p>
+        <table v-else class="data-table mt-20">
+          <thead>
+            <tr>
+              <th>Pengaju</th>
+              <th>Perangkat</th>
+              <th>Tanggal Pinjam</th>
+              <th>Rencana Kembali</th>
+              <th>Status</th>
+              <th style="text-align: right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="p in pagedDev" :key="p.id">
+              <td>
+                <div>{{ p.user?.name }}</div>
+                <div v-if="p.user?.mahasiswa?.npm" class="pengaju-npm">{{ p.user.mahasiswa.npm }}</div>
+              </td>
+              <td>{{ p.perangkat?.nama_perangkat }}</td>
+              <td>{{ formatTanggalId(p.tanggal_pinjam) }}</td>
+              <td>{{ formatTanggalId(p.tanggal_kembali_rencana) }}</td>
+              <td><span :class="['status-badge', `status-${p.status}`]">{{ statusLabel(p.status) }}</span></td>
+              <td style="text-align: right; white-space: nowrap">
+                <template v-if="p.status === 'menunggu'">
+                  <button class="btn-link" :disabled="devBusy === p.id" @click="approveDev(p)">Setujui</button>
+                  <button class="btn-link btn-link-danger" :disabled="devBusy === p.id" @click="rejectDev(p)">Tolak</button>
+                </template>
+                <button
+                  v-else-if="p.status === 'disetujui'"
+                  class="btn-link"
+                  :disabled="devBusy === p.id"
+                  @click="kembalikanDev(p)"
+                >
+                  Konfirmasi Kembali
+                </button>
+                <span v-else style="color: #9aa0a6">—</span>
+              </td>
+            </tr>
+            <tr v-if="!devFiltered.length">
+              <td colspan="6" style="text-align: center; color: #9aa0a6">Tidak ada pengajuan.</td>
+            </tr>
+          </tbody>
+        </table>
+        <PaginationBar v-model:page="pageP" :total-pages="totalPagesP" />
+      </template>
+
+      <!-- ============ TAB PERPANJANGAN ============ -->
+      <template v-else>
+        <p v-if="loadingDev" class="mt-20">Memuat data...</p>
+        <p v-else-if="errorDev" class="mt-20" style="color: #c0392b">{{ errorDev }}</p>
+        <table v-else class="data-table mt-20">
+          <thead>
+            <tr>
+              <th>Pengaju</th>
+              <th>Perangkat</th>
+              <th>Rencana Kembali Saat Ini</th>
+              <th>Usulan Tanggal Baru</th>
+              <th style="text-align: right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="x in perpMenunggu" :key="x.id">
+              <td>
+                <div>{{ x.peminjaman?.user?.name }}</div>
+                <div v-if="x.peminjaman?.user?.mahasiswa?.npm" class="pengaju-npm">{{ x.peminjaman.user.mahasiswa.npm }}</div>
+              </td>
+              <td>{{ x.peminjaman?.perangkat?.nama_perangkat }}</td>
+              <td>{{ formatTanggalId(x.peminjaman?.tanggal_kembali_rencana) }}</td>
+              <td>{{ formatTanggalId(x.tanggal_kembali_baru) }}</td>
+              <td style="text-align: right; white-space: nowrap">
+                <button class="btn-link" :disabled="devBusy === 'pp-' + x.id" @click="approvePerp(x)">Setujui</button>
+                <button class="btn-link btn-link-danger" :disabled="devBusy === 'pp-' + x.id" @click="rejectPerp(x)">Tolak</button>
+              </td>
+            </tr>
+            <tr v-if="!perpMenunggu.length">
+              <td colspan="5" style="text-align: center; color: #9aa0a6">Tidak ada pengajuan perpanjangan.</td>
+            </tr>
+          </tbody>
+        </table>
+      </template>
     </div>
 
     <FooterComponent />
@@ -86,27 +187,34 @@
 </template>
 
 <script setup>
-// Daftar pengajuan peminjaman + approve/reject (Admin/Supervisor).
+// Persetujuan terpadu (Admin/Supervisor): peminjaman ruangan (UC-02), peminjaman perangkat &
+// perpanjangan (UC-03) dalam satu halaman bertab. Masing-masing entitas memuat datanya sendiri.
 import { ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { peminjamanRuanganService } from '@/services/peminjaman-ruangan'
+import { peminjamanPerangkatService } from '@/services/peminjaman-perangkat'
 import { usePagination } from '@/composables/use-pagination'
 import { formatTanggalId, formatJam, statusLabel, namaHari } from '@/utils/format'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 import PaginationBar from '@/components/pagination-bar.vue'
 
-const items = ref([])
-const loading = ref(false)
-const listError = ref('')
-const filter = ref('menunggu')
-const busyId = ref(null)
-const filters = ref({ pengajuField: 'nama', pengaju: '', ruangan: '', tanggal: '', waktu: '', keperluan: '' })
+const route = useRoute()
+const tab = ref('ruangan')
 
 const cocok = (val, q) => !q || String(val ?? '').toLowerCase().includes(q.toLowerCase())
 
-const filtered = computed(() => {
-  const base = filter.value === 'semua' ? items.value : items.value.filter((p) => p.status === 'menunggu')
-  const f = filters.value
+// ---------- Ruangan (UC-02) ----------
+const roomItems = ref([])
+const loadingRoom = ref(false)
+const errorRoom = ref('')
+const roomBusy = ref(null)
+const roomStatus = ref('menunggu')
+const roomSearch = ref({ pengajuField: 'nama', pengaju: '', ruangan: '', tanggal: '', waktu: '', keperluan: '' })
+
+const roomFiltered = computed(() => {
+  const base = roomStatus.value === 'semua' ? roomItems.value : roomItems.value.filter((p) => p.status === 'menunggu')
+  const f = roomSearch.value
   return base.filter((p) => {
     const pengajuVal = f.pengajuField === 'npm' ? p.user?.mahasiswa?.npm : p.user?.name
     return (
@@ -118,64 +226,107 @@ const filtered = computed(() => {
     )
   })
 })
-const { page, totalPages, pagedItems } = usePagination(filtered, 10)
+const { page: pageR, totalPages: totalPagesR, pagedItems: pagedRoom } = usePagination(roomFiltered, 10)
+const roomMenunggu = computed(() => roomItems.value.filter((p) => p.status === 'menunggu').length)
 
-const countByStatus = computed(() => ({
-  menunggu: items.value.filter((p) => p.status === 'menunggu').length,
-}))
-
-async function load() {
-  loading.value = true
-  listError.value = ''
+async function loadRoom() {
+  loadingRoom.value = true
+  errorRoom.value = ''
   try {
     const res = await peminjamanRuanganService.list()
-    items.value = res.data.data
+    roomItems.value = res.data.data
   } catch (err) {
-    listError.value = err.response?.data?.message || 'Gagal memuat data.'
+    errorRoom.value = err.response?.data?.message || 'Gagal memuat data.'
   } finally {
-    loading.value = false
+    loadingRoom.value = false
   }
 }
 
-async function setuju(p) {
-  busyId.value = p.id
+async function roomAksi(id, fn) {
+  roomBusy.value = id
   try {
-    await peminjamanRuanganService.approve(p.id)
-    await load()
+    await fn()
+    await loadRoom()
   } catch (err) {
-    alert(err.response?.data?.message || 'Gagal menyetujui.')
+    alert(err.response?.data?.message || 'Operasi gagal.')
   } finally {
-    busyId.value = null
+    roomBusy.value = null
   }
 }
-
-async function tolak(p) {
+const approveRoom = (p) => roomAksi(p.id, () => peminjamanRuanganService.approve(p.id))
+const rejectRoom = (p) => {
   if (!confirm('Tolak pengajuan ini?')) return
-  busyId.value = p.id
-  try {
-    await peminjamanRuanganService.reject(p.id)
-    await load()
-  } catch (err) {
-    alert(err.response?.data?.message || 'Gagal menolak.')
-  } finally {
-    busyId.value = null
-  }
+  return roomAksi(p.id, () => peminjamanRuanganService.reject(p.id))
 }
-
-async function hapus(p) {
+const deleteRoom = (p) => {
   if (!confirm('Hapus pengajuan ini dari daftar? Tindakan ini permanen.')) return
-  busyId.value = p.id
+  return roomAksi(p.id, () => peminjamanRuanganService.remove(p.id))
+}
+
+// ---------- Perangkat + Perpanjangan (UC-03) ----------
+const devItems = ref([])
+const loadingDev = ref(false)
+const errorDev = ref('')
+const devBusy = ref(null)
+
+// Menunggu di atas, lalu sisanya.
+const devFiltered = computed(() =>
+  [...devItems.value].sort((a, b) => (a.status === 'menunggu' ? -1 : 0) - (b.status === 'menunggu' ? -1 : 0)),
+)
+const { page: pageP, totalPages: totalPagesP, pagedItems: pagedDev } = usePagination(devFiltered, 10)
+const devMenunggu = computed(() => devItems.value.filter((p) => p.status === 'menunggu').length)
+
+const perpMenunggu = computed(() =>
+  devItems.value.flatMap((p) =>
+    (p.perpanjangan ?? []).filter((x) => x.status === 'menunggu').map((x) => ({ ...x, peminjaman: p })),
+  ),
+)
+
+async function loadDev() {
+  loadingDev.value = true
+  errorDev.value = ''
   try {
-    await peminjamanRuanganService.remove(p.id)
-    await load()
+    const res = await peminjamanPerangkatService.list()
+    devItems.value = res.data.data
   } catch (err) {
-    alert(err.response?.data?.message || 'Gagal menghapus.')
+    errorDev.value = err.response?.data?.message || 'Gagal memuat data.'
   } finally {
-    busyId.value = null
+    loadingDev.value = false
   }
 }
 
-onMounted(load)
+async function devAksi(id, fn) {
+  devBusy.value = id
+  try {
+    await fn()
+    await loadDev()
+  } catch (err) {
+    alert(err.response?.data?.message || 'Operasi gagal.')
+  } finally {
+    devBusy.value = null
+  }
+}
+const approveDev = (p) => devAksi(p.id, () => peminjamanPerangkatService.approve(p.id))
+const rejectDev = (p) => {
+  if (!confirm('Tolak pengajuan ini?')) return
+  return devAksi(p.id, () => peminjamanPerangkatService.reject(p.id))
+}
+const kembalikanDev = (p) => {
+  if (!confirm('Konfirmasi bahwa perangkat sudah dikembalikan?')) return
+  return devAksi(p.id, () => peminjamanPerangkatService.kembalikan(p.id))
+}
+const approvePerp = (x) => devAksi('pp-' + x.id, () => peminjamanPerangkatService.approvePerpanjangan(x.id))
+const rejectPerp = (x) => {
+  if (!confirm('Tolak perpanjangan ini?')) return
+  return devAksi('pp-' + x.id, () => peminjamanPerangkatService.rejectPerpanjangan(x.id))
+}
+
+onMounted(() => {
+  if (route.query.tab === 'perangkat') tab.value = 'perangkat'
+  else if (route.query.tab === 'perpanjangan') tab.value = 'perpanjangan'
+  loadRoom()
+  loadDev()
+})
 </script>
 
 <style scoped>
@@ -183,6 +334,8 @@ onMounted(load)
   display: flex;
   gap: 8px;
   border-bottom: 2px solid var(--bs-grey2);
+  flex-wrap: wrap;
+  margin-bottom: 14px;
 }
 .tab {
   background: none;
@@ -198,6 +351,28 @@ onMounted(load)
   color: var(--bs-navy);
   border-bottom-color: var(--bs-navy);
 }
+
+/* Sub-filter status (khusus tab Ruangan) */
+.subfilter {
+  display: flex;
+  gap: 8px;
+}
+.chip {
+  background: none;
+  border: 1px solid var(--bs-grey2);
+  border-radius: 20px;
+  padding: 5px 16px;
+  cursor: pointer;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: #5f6368;
+}
+.chip.active {
+  border-color: var(--bs-navy);
+  background-color: var(--bs-navy);
+  color: #fff;
+}
+
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -258,6 +433,10 @@ onMounted(load)
 .status-ditolak {
   color: #c0392b;
   background-color: #f8d7da;
+}
+.status-dikembalikan {
+  color: #383d41;
+  background-color: #e2e3e5;
 }
 .btn-link {
   background: none;

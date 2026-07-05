@@ -11,4 +11,13 @@ export const infoLabService = {
   update(tipe, payload) {
     return api.patch(`/api/info-lab/${tipe}`, payload)
   },
+
+  // Unggah lampiran pengumuman (Admin, multipart). Balas { url, name }.
+  upload(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/api/info-lab/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 }

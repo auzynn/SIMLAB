@@ -8,7 +8,10 @@ use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\InfoLabController;
 use App\Http\Controllers\KelasLabController;
 use App\Http\Controllers\MataKuliahController;
+use App\Http\Controllers\PeminjamanPerangkatController;
 use App\Http\Controllers\PeminjamanRuanganController;
+use App\Http\Controllers\PerangkatController;
+use App\Http\Controllers\PerpanjanganController;
 use App\Http\Controllers\RuanganController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +45,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Atur/ubah password untuk mengaktifkan login manual (3_SDD.md 2.1, SRS UC-01b)
     Route::post('/auth/set-password', [AuthController::class, 'setPassword']);
     Route::patch('/auth/change-password', [AuthController::class, 'changePassword']);
+    // Atur ulang password tanpa password lama (jalur "lupa password") — khusus akun tertaut Google UNSIL
+    Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
     // Unggah/ganti foto avatar akun sendiri (multipart) — Profil Saya
     Route::post('/auth/avatar', [AuthController::class, 'updateAvatar']);
@@ -82,6 +87,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/peminjaman-ruangan/{peminjamanRuangan}/reject', [PeminjamanRuanganController::class, 'reject']);
     Route::delete('/peminjaman-ruangan/{peminjamanRuangan}', [PeminjamanRuanganController::class, 'destroy']);
 
+    // Inventaris Perangkat (3_SDD.md 5.9): read terbuka untuk semua role login,
+    // CUD via Gate manage-master-data (Admin/Supervisor) di controller.
+    Route::apiResource('perangkat', PerangkatController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+
+    // Peminjaman Perangkat (3_SDD.md 5.9, SRS UC-03). Ajukan: Mahasiswa;
+    // approve/reject/kembalikan & perpanjangan: Admin/Supervisor (Gate approve-peminjaman-perangkat).
+    Route::get('/peminjaman-perangkat', [PeminjamanPerangkatController::class, 'index']);
+    Route::post('/peminjaman-perangkat', [PeminjamanPerangkatController::class, 'store']);
+    // Batalkan pengajuan sendiri saat masih menunggu (pemilik) / hapus (Admin/Supervisor).
+    Route::delete('/peminjaman-perangkat/{peminjamanPerangkat}', [PeminjamanPerangkatController::class, 'destroy']);
+    Route::patch('/peminjaman-perangkat/{peminjamanPerangkat}/approve', [PeminjamanPerangkatController::class, 'approve']);
+    Route::patch('/peminjaman-perangkat/{peminjamanPerangkat}/reject', [PeminjamanPerangkatController::class, 'reject']);
+    Route::patch('/peminjaman-perangkat/{peminjamanPerangkat}/kembalikan', [PeminjamanPerangkatController::class, 'kembalikan']);
+    Route::post('/peminjaman-perangkat/{peminjamanPerangkat}/perpanjangan', [PeminjamanPerangkatController::class, 'ajukanPerpanjangan']);
+    Route::patch('/perpanjangan/{perpanjanganPeminjaman}/approve', [PerpanjanganController::class, 'approve']);
+    Route::patch('/perpanjangan/{perpanjanganPeminjaman}/reject', [PerpanjanganController::class, 'reject']);
+
     // Kelas Lab/Praktikum (3_SDD.md 5.7, SRS UC-02a). Aksi peserta & pendaftaran
     // didefinisikan sebelum apiResource agar tidak terbaca sebagai {kelasLab}.
     // Persetujuan pendaftaran — Dosen (kelas miliknya) / Supervisor.
@@ -99,4 +122,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Update konten info lab — khusus Admin (3_SDD.md 5.12, otorisasi via Gate manage-info-lab)
     Route::patch('/info-lab/{tipe}', [InfoLabController::class, 'update'])
         ->whereIn('tipe', ['beranda', 'visi_misi', 'kepala_lab', 'roadmap_kk']);
+
+    // Unggah lampiran pengumuman (Admin) — dipakai opsi "File" pada editor Pengumuman
+    Route::post('/info-lab/upload', [InfoLabController::class, 'uploadLampiran']);
 });

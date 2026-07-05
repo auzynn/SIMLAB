@@ -135,6 +135,34 @@ class AuthController extends Controller
     }
 
     /**
+     * Atur ulang password TANPA password lama — jalur "lupa password" ringan.
+     * Hanya untuk akun tertaut Google UNSIL: pengguna selalu bisa masuk lewat Google,
+     * jadi sesi login aktif sudah cukup membuktikan kepemilikan akun (tanpa email reset).
+     */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Akun tanpa google_id tak punya jalur pemulihan Google → tolak reset tanpa password lama.
+        if (is_null($user->google_id)) {
+            throw ValidationException::withMessages([
+                'password' => ['Atur ulang tanpa password lama hanya untuk akun yang tertaut Google UNSIL. Gunakan Ubah Password atau hubungi Admin.'],
+            ]);
+        }
+
+        $validated = $request->validate([
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        // Cast 'hashed' pada model meng-hash otomatis saat disimpan.
+        $user->update(['password' => $validated['password']]);
+
+        return response()->json([
+            'message' => 'Password berhasil diatur ulang. Silakan gunakan password baru untuk login manual.',
+        ]);
+    }
+
+    /**
      * Unggah/ganti foto avatar milik akun sendiri. Disimpan di disk publik
      * (storage/app/public/avatars), kolom `avatar` menyimpan URL absolut.
      */

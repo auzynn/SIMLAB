@@ -49,6 +49,9 @@ class DatabaseSeeder extends Seeder
         $this->call(RuanganSeeder::class);
         $this->call(MataKuliahSeeder::class);
 
+        // Data Master FASE 4 (perangkat lab) — 3_SDD.md 3.9, SRS UC-03
+        $this->call(PerangkatSeeder::class);
+
         // Demo Kelas Lab/Praktikum (butuh dosen + ruangan + mata kuliah) — 3_SDD.md 3.7
         $this->call(KelasLabSeeder::class);
     }

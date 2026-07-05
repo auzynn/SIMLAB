@@ -63,7 +63,6 @@
                   <div class="mini-title">{{ k.mata_kuliah?.nama_mk }} — {{ k.nama_sesi }}</div>
                   <div class="mini-sub">{{ hariLabel(k.hari) }}, {{ formatJam(k.jam_mulai) }}–{{ formatJam(k.jam_selesai) }}</div>
                 </div>
-                <span :class="['kuota-badge', { penuh: k.sisa_kuota <= 0 }]">{{ k.sisa_kuota }}/{{ k.kuota }}</span>
               </li>
             </ul>
             <p v-else class="mini-empty mt-10">{{ kelasEmptyMsg }}</p>
@@ -85,7 +84,7 @@
                   <div class="kepala-jabatan">{{ kepala.jabatan_fungsional }}<span v-if="kepala.nidn"> · NIDN {{ kepala.nidn }}</span></div>
                 </div>
               </div>
-              <div v-if="kepalaBidang.length" class="kepala-chips mt-10">
+              <div v-if="kepalaBidang.length" class="kepala-chips">
                 <span v-for="b in kepalaBidang" :key="b" class="chip">{{ b }}</span>
               </div>
             </template>
@@ -97,15 +96,19 @@
         <div class="dash-2">
           <section class="card">
             <div class="card-head"><h3>Pengumuman</h3></div>
-            <ul class="mini-list mt-10">
-              <li v-for="p in pengumuman" :key="p.judul" class="mini-item info">
+            <ul v-if="pengumuman.length" class="mini-list mt-10">
+              <li v-for="(p, i) in pengumuman" :key="i" class="mini-item info">
                 <div>
                   <div class="mini-title">{{ p.judul }}</div>
                   <div class="mini-sub">{{ p.isi }}</div>
-                  <div class="mini-meta">{{ p.tanggal }}</div>
+                  <a v-if="p.lampiran && p.lampiran.url" :href="p.lampiran.url" target="_blank" rel="noopener" class="peng-attach">
+                    &#128206; {{ p.lampiran.label || p.lampiran.url }}
+                  </a>
+                  <div v-if="p.tanggal" class="mini-meta">{{ formatTanggalId(p.tanggal) }}</div>
                 </div>
               </li>
             </ul>
+            <p v-else class="mini-empty mt-10">Belum ada pengumuman.</p>
           </section>
 
           <section class="card">
@@ -236,12 +239,21 @@ const kepalaFoto = computed(() => kepala.value?.foto || kepala.value?.user?.avat
 const kepalaInisial = computed(() =>
   (kepala.value?.user?.name || '?').split(' ').filter(Boolean).slice(0, 2).map((s) => s[0]).join('').toUpperCase(),
 )
-const kepalaBidang = computed(() => (kepala.value?.bidang_minat || []).map((b) => b.nama).slice(0, 4))
+const kepalaBidang = computed(() => (kepala.value?.bidang_minat || []).map((b) => b.nama).slice(0, 7))
 
-const pengumuman = [
-  { judul: 'Jadwal UAS Praktikum Genap 2025/2026', isi: 'UAS dilaksanakan 16–23 Juli 2026. Cek jadwal masing-masing di menu Kelas Lab.', tanggal: '25 Juni 2026' },
-  { judul: 'Pemeliharaan Lab Forensik Digital', isi: 'Lab tidak dapat dipinjam 20–23 Juni 2026, pukul 08.00–12.00.', tanggal: '23 Juni 2026' },
-]
+// Pengumuman disunting Admin lewat panel Konten Info Lab (tipe `beranda`),
+// disimpan sebagai JSON array [{judul, isi, tanggal}]. Dimuat publik saat halaman dibuka.
+const pengumuman = ref([])
+function parsePengumuman(raw) {
+  if (!raw) return []
+  try {
+    const arr = JSON.parse(raw)
+    return Array.isArray(arr) ? arr.filter((x) => x && (x.judul || x.isi)) : []
+  } catch {
+    return []
+  }
+}
+
 const mitra = ['Microsoft', 'Oracle', 'Mikrotik', 'Pearson VUE', 'Red Hat', 'Cisco']
 
 async function safe(promise) {
@@ -253,8 +265,12 @@ async function safe(promise) {
 }
 
 onMounted(async () => {
-  const kepalaRes = await safe(infoLabService.get('kepala_lab'))
+  const [kepalaRes, pengRes] = await Promise.all([
+    safe(infoLabService.get('kepala_lab')),
+    safe(infoLabService.get('beranda')),
+  ])
   if (kepalaRes) kepala.value = kepalaRes.data.data?.dosen ?? null
+  if (pengRes) pengumuman.value = parsePengumuman(pengRes.data.data?.konten)
 
   if (auth.isAuthenticated) {
     const [kalRes, kelasRes] = await Promise.all([
@@ -452,6 +468,15 @@ onMounted(async () => {
   color: #9aa0a6;
   margin-top: 4px;
 }
+.peng-attach {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.8em;
+  font-weight: 600;
+  color: var(--bs-navy);
+  text-decoration: underline;
+  word-break: break-all;
+}
 .mini-empty {
   color: #9aa0a6;
   font-size: 0.9em;
@@ -538,6 +563,10 @@ onMounted(async () => {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+/* Jarak jelas antara blok profil (nama/jabatan/NIDN) dan chip bidang minat. */
+.kepala-chips {
+  margin-top: 24px;
 }
 .chip {
   padding: 3px 12px;

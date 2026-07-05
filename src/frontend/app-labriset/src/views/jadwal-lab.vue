@@ -83,7 +83,9 @@
           </template>
         </div>
 
-        <!-- ===== Form Pengajuan (Mahasiswa saja) — kolom aksi ===== -->
+        <!-- ===== Kolom aksi: form/persetujuan sesuai role + entri Perangkat (semua role login) ===== -->
+        <div class="action-col">
+        <!-- ===== Form Pengajuan (Mahasiswa saja) ===== -->
         <div v-if="bisaMengajukan" class="card form-card">
           <h3>Formulir Peminjaman Ruangan</h3>
           <p class="form-kategori">Untuk meminjam ruangan/lab.</p>
@@ -180,21 +182,36 @@
           </form>
         </div>
 
-        <!-- ===== Persetujuan Peminjaman (Admin/Supervisor) — mengisi kolom aksi ===== -->
+        <!-- ===== Persetujuan (Admin/Supervisor) — satu kartu terpadu ruangan + perangkat ===== -->
         <div v-else-if="bisaApprove" class="card form-card approval-card">
-          <h3>Persetujuan Peminjaman Ruangan</h3>
+          <h3>Persetujuan Peminjaman</h3>
           <p class="mt-10" style="color: #5f6368">
-            Tinjau dan setujui/tolak pengajuan peminjaman ruangan dari mahasiswa.
+            Tinjau dan setujui/tolak pengajuan peminjaman ruangan & perangkat serta perpanjangan.
           </p>
 
           <div class="approval-count mt-30">
-            <span class="approval-num">{{ menungguCount }}</span>
+            <span class="approval-num">{{ menungguCount + menungguPerangkatCount }}</span>
             pengajuan menunggu persetujuan
           </div>
+          <p class="approval-breakdown">
+            Ruangan: <strong>{{ menungguCount }}</strong> · Perangkat: <strong>{{ menungguPerangkatCount }}</strong>
+          </p>
 
-          <router-link to="/persetujuan-peminjaman" class="btn btn-navy-solid" style="width: 100%; padding: 10px; text-align: center; margin-top: 28px">
+          <router-link to="/persetujuan-peminjaman" class="btn btn-navy-solid" style="width: 100%; padding: 10px; text-align: center; margin-top: 20px">
             Tinjau Pengajuan
           </router-link>
+        </div>
+
+        <!-- ===== Perangkat Lab — entri untuk semua role login (menggantikan menu navbar) ===== -->
+        <div class="card perangkat-entry-card">
+          <h3>Perangkat Lab</h3>
+          <p class="mt-10" style="color: #5f6368">
+            Inventaris perangkat lab (PC, Router, Switch, IoT Kit, dll). Lihat ketersediaan & ajukan peminjaman.
+          </p>
+          <router-link to="/perangkat" class="btn btn-navy-solid" style="width: 100%; padding: 10px; text-align: center; margin-top: 20px">
+            Lihat &amp; Pinjam Perangkat
+          </router-link>
+        </div>
         </div>
       </div>
     </div>
@@ -209,6 +226,7 @@
 import { ref, computed, onMounted, nextTick, h } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { peminjamanRuanganService } from '@/services/peminjaman-ruangan'
+import { peminjamanPerangkatService } from '@/services/peminjaman-perangkat'
 import { ruanganService } from '@/services/ruangan'
 import { formatTanggalId, formatJam, hariLabel, namaHari } from '@/utils/format'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
@@ -220,6 +238,7 @@ const bisaApprove = computed(() => ['admin', 'supervisor'].includes(auth.user?.r
 const hariIni = new Date().toISOString().slice(0, 10)
 
 const menungguCount = ref(0)
+const menungguPerangkatCount = ref(0)
 
 const loading = ref(false)
 const peminjaman = ref([])
@@ -318,6 +337,19 @@ async function loadMenunggu() {
   }
 }
 
+// Hitung pengajuan perangkat menunggu: peminjaman + perpanjangan (untuk kartu Persetujuan Perangkat)
+async function loadMenungguPerangkat() {
+  try {
+    const res = await peminjamanPerangkatService.list()
+    const data = res.data.data
+    const pinjam = data.filter((p) => p.status === 'menunggu').length
+    const perpanjang = data.flatMap((p) => p.perpanjangan ?? []).filter((x) => x.status === 'menunggu').length
+    menungguPerangkatCount.value = pinjam + perpanjang
+  } catch {
+    menungguPerangkatCount.value = 0
+  }
+}
+
 async function submit() {
   formError.value = ''
   formSukses.value = ''
@@ -383,7 +415,10 @@ function extractError(err) {
 onMounted(() => {
   loadKalender()
   if (bisaMengajukan.value) loadRuangan()
-  if (bisaApprove.value) loadMenunggu()
+  if (bisaApprove.value) {
+    loadMenunggu()
+    loadMenungguPerangkat()
+  }
 })
 </script>
 
@@ -410,6 +445,14 @@ onMounted(() => {
   box-shadow: 5px 5px 8px 0px rgba(0, 0, 0, 0.1);
 }
 
+/* Kolom aksi: konten per-role + kartu Perangkat bertumpuk vertikal */
+.action-col,
+.approval-col {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
 .approval-count {
   display: flex;
   align-items: center;
@@ -425,6 +468,11 @@ onMounted(() => {
   font-weight: 700;
   line-height: 1;
   color: var(--bs-navy);
+}
+.approval-breakdown {
+  margin-top: 10px;
+  font-size: 0.9em;
+  color: #5f6368;
 }
 
 .schedule-sub {

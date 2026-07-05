@@ -22,31 +22,33 @@
       <template v-else>
         <div v-for="grup in grouped" :key="grup.mataKuliahId" class="mk-group mt-30">
           <h3>{{ grup.namaMk }}</h3>
-          <div class="sesi-grid mt-10">
-            <div v-for="k in grup.sesi" :key="k.id" class="sesi-card">
-              <div class="flex-h between">
-                <strong>{{ k.nama_sesi }}</strong>
-                <span :class="['kuota-badge', { penuh: k.sisa_kuota <= 0 }]">Sisa {{ k.sisa_kuota }}/{{ k.kuota }}</span>
+          <div class="sesi-list mt-10">
+            <div v-for="k in grup.sesi" :key="k.id" class="sesi-row">
+              <div class="sesi-main">
+                <div class="sesi-title-line">
+                  <strong class="sesi-title">{{ k.nama_sesi }}</strong>
+                  <span :class="['kuota-badge', { penuh: k.sisa_kuota <= 0 }]">Sisa {{ k.sisa_kuota }}/{{ k.kuota }}</span>
+                  <span v-if="k.status_pendaftaran" :class="['status-badge', `status-${k.status_pendaftaran}`]">{{ statusLabel(k.status_pendaftaran) }}</span>
+                </div>
+                <div class="sesi-meta">
+                  <span>{{ hariLabel(k.hari) }} {{ formatJam(k.jam_mulai) }}–{{ formatJam(k.jam_selesai) }}</span>
+                  <span class="meta-sep">·</span>
+                  <span>{{ k.ruangan?.nama_ruangan }}</span>
+                  <span class="meta-sep">·</span>
+                  <span>{{ k.dosen?.user?.name ?? '-' }}</span>
+                </div>
               </div>
-              <p class="sesi-info"><span class="sesi-label">Jadwal:</span> {{ hariLabel(k.hari) }}, {{ formatJam(k.jam_mulai) }}–{{ formatJam(k.jam_selesai) }}</p>
-              <p class="sesi-info"><span class="sesi-label">Ruangan:</span> {{ k.ruangan?.nama_ruangan }}</p>
-              <p class="sesi-info"><span class="sesi-label">Pengampu:</span> {{ k.dosen?.user?.name ?? '-' }}</p>
-
-              <p v-if="k.status_pendaftaran" class="sesi-status">
-                Status pendaftaran:
-                <span :class="['status-badge', `status-${k.status_pendaftaran}`]">{{ statusLabel(k.status_pendaftaran) }}</span>
-              </p>
-
-              <button
-                v-if="isMahasiswa"
-                class="btn sesi-btn"
-                :class="terdaftar.has(k.id) ? 'btn-navy-border' : 'btn-navy-solid'"
-                style="width: 100%; padding: 8px"
-                :disabled="busyId === k.id || terkunci(k) || (terdaftar.has(k.id) && k.status_pendaftaran === 'disetujui')"
-                @click="toggleDaftar(k)"
-              >
-                {{ daftarLabel(k) }}
-              </button>
+              <div class="sesi-action">
+                <button
+                  v-if="isMahasiswa"
+                  class="btn sesi-btn-sm"
+                  :class="terdaftar.has(k.id) ? 'btn-navy-border' : 'btn-navy-solid'"
+                  :disabled="busyId === k.id || terkunci(k) || (terdaftar.has(k.id) && k.status_pendaftaran === 'disetujui')"
+                  @click="toggleDaftar(k)"
+                >
+                  {{ daftarLabel(k) }}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -151,41 +153,63 @@ onMounted(load)
 <style scoped>
 .mk-group h3 {
   color: var(--bs-navy);
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+  font-size: 1.02em;
 }
-.sesi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+
+/* Baris daftar sesi: ringkas namun tetap detail & mudah dipindai */
+.sesi-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sesi-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 16px;
-}
-.sesi-card {
-  padding: 18px 18px 14px;
+  padding: 12px 16px;
   background-color: white;
   border-radius: 8px;
-  border-left: 5px solid var(--bs-navy);
-  box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid var(--bs-navy);
+  box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.06);
 }
-.sesi-card > .flex-h {
-  margin-bottom: 10px;
+.sesi-main {
+  min-width: 0;
+  flex: 1;
 }
-.sesi-btn {
-  margin-top: 18px;
+.sesi-title-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
-.sesi-info {
-  font-size: 0.9em;
-  color: #3c4043;
-  margin-top: 6px;
-  line-height: 1.4;
-}
-.sesi-label {
-  font-weight: 600;
+.sesi-title {
   color: var(--bs-navy);
-  margin-right: 2px;
+  font-size: 0.98em;
 }
-.sesi-status {
-  margin-top: 10px;
+.sesi-meta {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
   font-size: 0.85em;
   color: #5f6368;
+}
+.meta-sep {
+  color: #cbd0d6;
+}
+.sesi-action {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 180px;
+}
+.sesi-btn-sm {
+  width: auto;
+  padding: 6px 16px;
 }
 .kuota-badge {
   font-size: 0.8em;
@@ -194,6 +218,7 @@ onMounted(load)
   border-radius: 20px;
   color: #1e7e34;
   background-color: #d4edda;
+  white-space: nowrap;
 }
 .kuota-badge.penuh {
   color: #c0392b;
@@ -203,7 +228,7 @@ onMounted(load)
   display: inline-block;
   padding: 2px 10px;
   border-radius: 20px;
-  font-size: 0.95em;
+  font-size: 0.8em;
   font-weight: 600;
 }
 .status-menunggu {
@@ -217,5 +242,17 @@ onMounted(load)
 .status-ditolak {
   color: #c0392b;
   background-color: #f8d7da;
+}
+
+/* Layar sempit: baris menumpuk vertikal */
+@media (max-width: 640px) {
+  .sesi-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .sesi-action {
+    justify-content: flex-start;
+    min-width: 0;
+  }
 }
 </style>

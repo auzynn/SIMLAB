@@ -10,7 +10,7 @@
 
 ---
 
-## Catatan Progres (per 2026-06-29)
+## Catatan Progres (per 2026-07-05)
 
 **Backend (`src/backend`)**:
 - Sanctum token auth fungsional: `POST /api/auth/login` (cek NULL password, pesan eksplisit sesuai SRS UC-01), `GET /api/auth/me`, `POST /api/auth/logout` — sudah sesuai SDD 5.1.
@@ -32,7 +32,8 @@
   - **Kalender** kini menampilkan peminjaman disetujui **dari awal minggu berjalan ke depan** (peminjaman minggu lalu otomatis rontok tiap pergantian minggu — tanpa cron).
   - **Persetujuan pendaftaran Kelas Lab**: migration `add_status_to_kelas_lab_peserta` (`status` enum menunggu/disetujui/ditolak + `disetujui_oleh`). `daftar` membuat status `menunggu`; kuota & aturan menghitung menunggu+disetujui. Endpoint baru `GET /api/kelas-lab/pendaftaran`, `PATCH …/pendaftaran/{peserta}/approve|reject` (Dosen pemilik / Supervisor). Aturan pendaftaran: **1 sesi per mata kuliah** + **tanpa bentrok jadwal** (boleh ambil >1 mata kuliah). Baris `ditolak` boleh diajukan ulang.
   - Suite backend **72 test lulus**.
-- **Belum ada**: Gate/Policy modul FASE 4–9, seluruh modul FASE 4–9.
+- **Inventaris & Peminjaman Perangkat (FASE 4, per 2026-07-05)**: migrasi + model `perangkat` (SDD 3.9), `peminjaman_perangkat` (SDD 3.10), `perpanjangan_peminjaman` (SDD 3.11) dengan relasi lengkap. Gate `approve-peminjaman-perangkat` (Admin/Supervisor); CRUD perangkat via `manage-master-data`. `PerangkatController` (apiResource — read terbuka, CUD via Gate; **destroy** ditolak bila status ≠ `tersedia` atau ada peminjaman aktif). `PeminjamanPerangkatController` (index filter-per-role; store **Mahasiswa saja** via `StorePeminjamanPerangkatRequest`; approve/reject; **kembalikan**; **destroy** = batalkan pengajuan sendiri saat `menunggu` / hapus oleh Admin/Supervisor; ajukanPerpanjangan). `PerpanjanganController` (approve/reject). **Aturan kunci UC-03**: approve peminjaman menandai perangkat `dipinjam` (DB transaction, re-validasi tersedia); kembalikan → `dikembalikan` + `tanggal_kembali_aktual` + perangkat `tersedia`; perpanjangan ditolak bila `tanggal_kembali_rencana` sudah lewat; approve perpanjangan otomatis memperbarui `tanggal_kembali_rencana` induk. Seeder `PerangkatSeeder` (10 perangkat contoh, idempotent) di `DatabaseSeeder`. Diuji `PerangkatTest` (7), `PeminjamanPerangkatTest` (14, termasuk batal/hapus), `PerpanjanganTest` (5). Suite backend **104 test lulus**.
+- **Belum ada**: Gate/Policy modul FASE 5–9, seluruh modul FASE 5–9.
 
 **Frontend (`src/frontend/app-labriset`)**:
 - Vue 3 + Vite, Vue Router 4, Pinia, Axios — semua terpasang. Struktur folder lengkap (`components/`, `views/`, `stores/`, `services/`, `router/`, `composables/`).
@@ -49,7 +50,8 @@
 - **Data Master (FASE 3)**: `views/admin-data-master.vue` (route `/admin/data-master`, guard `roles: ['admin','supervisor']`) — satu halaman dengan **tab Ruangan · Mata Kuliah · Bidang Minat** (Bidang Minat dipindah ke sini dari panel terpisah; `admin-bidang-minat.vue` dihapus, route `/admin/bidang-minat` dihapus), masing-masing CRUD penuh + paginasi lokal, via `services/ruangan.js`/`mata-kuliah.js`/`bidang-minat.js`. Status ruangan badge berwarna. Link "Data Master" di `sidemenu-admin.vue` & kartu hub `admin-page.vue`.
 - **Peminjaman Ruangan (FASE 3)**: `jadwal-lab.vue` (kartu **Informasi Jadwal Lab** = kelas mingguan + peminjaman disetujui dikelompokkan **Minggu ini / Mendatang** dgn pembatas & catatan auto-refresh mingguan; **form pengajuan Mahasiswa** mode Satu hari / Beberapa hari + jam 07–17; kolom kanan jadi kartu **Persetujuan Peminjaman Ruangan** utk Admin/Supervisor), `peminjaman-saya.vue` (status pengajuan sendiri), `persetujuan-peminjaman.vue` (tabel + **filter per kolom** Pengaju Nama/NPM dll + Approve/Reject/Hapus). Service `peminjaman-ruangan.js`.
 - **Kelas Lab (FASE 3)**: `kelas-lab.vue` (landing — Mahasiswa lihat "Kelas Lab Saya" + status, tombol ke katalog; Dosen/Supervisor lihat katalog + tombol Kelola & Persetujuan), `katalog-kelas-lab.vue` (pilih & daftar sesi), `persetujuan-kelas-lab.vue` (Dosen/Supervisor terima/tolak pendaftaran + filter kolom + tab Menunggu/Semua), `kelola-kelas-lab.vue` (buka/edit/hapus kelas + filter kolom, Nama Sesi dropdown A–F), `peserta-kelas-lab.vue` (halaman peserta terpisah: kolom NPM·Nama·Prodi). Service `kelas-lab.js` (+ pendaftaran/approve/reject). Nav header "Kelas Lab"; aksi dipindah ke tombol dalam halaman (bukan dropdown profil). Util `namaHari()` di `utils/format.js`.
-- **Belum ada**: modul admin lain (Katalog Sertifikasi, Rekap Presensi, Laporan), seluruh modul FASE 4–9.
+- **Inventaris & Peminjaman Perangkat (FASE 4)**: `views/perangkat.vue` (katalog perangkat + badge status; Mahasiswa tombol "Ajukan Pinjam"). Peminjaman & persetujuan perangkat **disatukan sebagai tab** ke halaman yang sudah ada agar UX konsisten: `views/peminjaman-saya.vue` (tab **Ruangan/Perangkat** — form pengajuan + riwayat + **Ajukan Perpanjangan** inline + **Batalkan** saat menunggu) dan `views/persetujuan-peminjaman.vue` (tab **Ruangan/Perangkat** — approve/reject + **Konfirmasi Kembali** + approve/reject perpanjangan), dibuka via query `?tab=perangkat`. Path lama `/peminjaman-perangkat` & `/persetujuan-perangkat` di-**redirect** ke tab tersebut. Kelola data perangkat sebagai **tab "Perangkat"** di `admin-data-master.vue`. Service `perangkat.js` & `peminjaman-perangkat.js`. Route `/perangkat` (semua login); nav header menu "Perangkat". Util `statusPerangkatLabel()` + status `dikembalikan` di `utils/format.js`. `vite build` hijau.
+- **Belum ada**: modul admin lain (Katalog Sertifikasi, Rekap Presensi, Laporan), seluruh modul FASE 5–9.
 
 ---
 
@@ -198,26 +200,28 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.15).
 (PRD 3.4, SRS UC-03, SDD 3.9, 3.10, 3.11)
 
 ### Backend
-- [ ] **T4.1** — Migration tabel `perangkat` (SDD 3.9)
-- [ ] **T4.2** — Migration tabel `peminjaman_perangkat` (SDD 3.10)
-- [ ] **T4.3** — Migration tabel `perpanjangan_peminjaman` (SDD 3.11)
-- [ ] **T4.4** — Model `Perangkat`, `PeminjamanPerangkat`, `PerpanjanganPeminjaman` + relasi
-- [ ] **T4.5** — Endpoint CRUD `/api/perangkat` (Admin/Supervisor)
-- [ ] **T4.6** — Endpoint `POST /api/peminjaman-perangkat` (Mahasiswa saja — SRS Bagian 1)
-- [ ] **T4.7** — Endpoint `PATCH /api/peminjaman-perangkat/{id}/approve` & `/reject`
-- [ ] **T4.8** — Endpoint `POST /api/peminjaman-perangkat/{id}/perpanjangan` — **wajib** validasi tanggal kembali rencana belum lewat (SRS UC-03 aturan validasi kunci)
-- [ ] **T4.9** — Endpoint `PATCH /api/perpanjangan/{id}/approve` & `/reject` — saat approve, backend wajib memperbarui `tanggal_kembali_rencana` pada `peminjaman_perangkat` induk secara otomatis
+- [x] **T4.1** — Migration tabel `perangkat` (SDD 3.9)
+- [x] **T4.2** — Migration tabel `peminjaman_perangkat` (SDD 3.10)
+- [x] **T4.3** — Migration tabel `perpanjangan_peminjaman` (SDD 3.11)
+- [x] **T4.4** — Model `Perangkat`, `PeminjamanPerangkat`, `PerpanjanganPeminjaman` + relasi
+- [x] **T4.5** — Endpoint CRUD `/api/perangkat` (Admin/Supervisor)
+- [x] **T4.6** — Endpoint `POST /api/peminjaman-perangkat` (Mahasiswa saja — SRS Bagian 1)
+- [x] **T4.7** — Endpoint `PATCH /api/peminjaman-perangkat/{id}/approve` & `/reject`
+- [x] **T4.8** — Endpoint `POST /api/peminjaman-perangkat/{id}/perpanjangan` — **wajib** validasi tanggal kembali rencana belum lewat (SRS UC-03 aturan validasi kunci)
+- [x] **T4.9** — Endpoint `PATCH /api/perpanjangan/{id}/approve` & `/reject` — saat approve, backend wajib memperbarui `tanggal_kembali_rencana` pada `peminjaman_perangkat` induk secara otomatis
+- [x] **T4.9a** — (tambahan) Endpoint `PATCH /api/peminjaman-perangkat/{id}/kembalikan` — konfirmasi pengembalian: status `dikembalikan`, isi `tanggal_kembali_aktual`, perangkat kembali `tersedia`. Approve peminjaman menandai perangkat `dipinjam` otomatis (DB transaction).
+- [x] **T4.9b** — (tambahan) Endpoint `DELETE /api/peminjaman-perangkat/{id}` — pemilik (Mahasiswa) membatalkan pengajuan sendiri selama masih `menunggu`; Admin/Supervisor menghapus kapan saja. Seeder `PerangkatSeeder` di `DatabaseSeeder`.
 
 ### Frontend
-- [ ] **T4.10** — Halaman Daftar Perangkat (status Tersedia/Dipinjam/Perbaikan)
-- [ ] **T4.11** — Form Pengajuan Peminjaman Perangkat (Mahasiswa)
-- [ ] **T4.12** — Halaman "Peminjaman Saya" — termasuk tombol Ajukan Perpanjangan
-- [ ] **T4.13** — Halaman Approve/Reject Peminjaman & Perpanjangan (Admin/Supervisor)
-- [ ] **T4.14** — Panel kelola data perangkat (Admin/Supervisor)
+- [x] **T4.10** — Halaman Daftar Perangkat (status Tersedia/Dipinjam/Perbaikan) — `views/perangkat.vue`
+- [x] **T4.11** — Form Pengajuan Peminjaman Perangkat (Mahasiswa) — tab **Perangkat** di `views/peminjaman-saya.vue` (`?tab=perangkat`)
+- [x] **T4.12** — Halaman "Peminjaman Saya" — termasuk tombol Ajukan Perpanjangan & Batalkan (tab Perangkat)
+- [x] **T4.13** — Halaman Approve/Reject Peminjaman & Perpanjangan (Admin/Supervisor) — tab **Perangkat** di `views/persetujuan-peminjaman.vue` (+ tombol Konfirmasi Kembali)
+- [x] **T4.14** — Panel kelola data perangkat (Admin/Supervisor) — tab "Perangkat" di `admin-data-master.vue`
 
 ### Testing
-- [ ] **T4.15** — Test: pengajuan perpanjangan ditolak jika diajukan setelah `tanggal_kembali_rencana` lewat
-- [ ] **T4.16** — Test: hanya Mahasiswa yang bisa mengajukan peminjaman perangkat (Dosen ditolak)
+- [x] **T4.15** — Test: pengajuan perpanjangan ditolak jika diajukan setelah `tanggal_kembali_rencana` lewat
+- [x] **T4.16** — Test: hanya Mahasiswa yang bisa mengajukan peminjaman perangkat (Dosen ditolak)
 
 ---
 

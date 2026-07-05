@@ -41,5 +41,15 @@ export function statusLabel(status) {
     menunggu: 'Menunggu',
     disetujui: 'Disetujui',
     ditolak: 'Ditolak',
+    dikembalikan: 'Dikembalikan',
+  }[status] ?? status
+}
+
+// Label status perangkat (data master inventaris).
+export function statusPerangkatLabel(status) {
+  return {
+    tersedia: 'Tersedia',
+    dipinjam: 'Dipinjam',
+    perbaikan: 'Perbaikan',
   }[status] ?? status
 }

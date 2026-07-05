@@ -11,12 +11,16 @@ const routes = [
   {
     path: '/login',
     name: 'login',
+    // Halaman login tampil penuh tanpa navbar (punya branding sendiri)
+    meta: { hideHeader: true },
     component: () => import('../views/login-page.vue')
   },
   {
     path: '/auth/callback',
     name: 'auth-callback',
     // Penerima token redirect Google OAuth dari backend (lihat GoogleAuthController@callback)
+    // Halaman transisi, tanpa navbar
+    meta: { hideHeader: true },
     component: () => import('../views/auth-callback.vue')
   },
   {
@@ -129,6 +133,24 @@ const routes = [
     meta: { requiresAuth: true, roles: ['admin', 'supervisor'] }
   },
   {
+    path: '/perangkat',
+    name: 'perangkat',
+    // Katalog inventaris perangkat lab — semua role yang login (Mahasiswa dapat mengajukan pinjam)
+    component: () => import('../views/perangkat.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    // Peminjaman perangkat kini menyatu ke "Peminjaman Saya" (tab Perangkat).
+    // Redirect menjaga tautan/bookmark lama tetap berfungsi.
+    path: '/peminjaman-perangkat',
+    redirect: '/peminjaman-saya?tab=perangkat'
+  },
+  {
+    // Persetujuan perangkat kini menyatu ke halaman Persetujuan Peminjaman (tab Perangkat).
+    path: '/persetujuan-perangkat',
+    redirect: '/persetujuan-peminjaman?tab=perangkat'
+  },
+  {
     path: '/kelaslab',
     name: 'kelaslab',
     // Daftar Kelas Lab/Praktikum + pendaftaran peserta — semua role yang login
@@ -167,7 +189,12 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes
+  routes,
+  // Navigasi baru selalu mulai dari atas; tombol back/forward memulihkan posisi tersimpan.
+  // Tanpa ini, scroll halaman lama "terbawa" ke halaman berikutnya.
+  scrollBehavior(to, from, savedPosition) {
+    return savedPosition || { top: 0 }
+  }
 })
 
 // Guard RBAC: cek autentikasi & role sebelum masuk halaman (acuan matriks SRS Bagian 1)

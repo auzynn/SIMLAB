@@ -46,9 +46,14 @@ class InfoLabSeeder extends Seeder
         MD;
 
         $defaults = [
+            // Tipe `beranda` menyimpan daftar Pengumuman (JSON) yang tampil di Beranda publik.
+            // Disunting Admin lewat panel Konten Info Lab (tab Pengumuman).
             'beranda' => [
-                'judul' => 'Beranda',
-                'konten' => 'Selamat datang di Laboratorium Riset KK JKF Prodi Informatika.',
+                'judul' => 'Pengumuman',
+                'konten' => json_encode([
+                    ['judul' => 'Jadwal UAS Praktikum Genap 2025/2026', 'isi' => 'UAS dilaksanakan 16–23 Juli 2026. Cek jadwal masing-masing di menu Kelas Lab.', 'tanggal' => '2026-06-25'],
+                    ['judul' => 'Pemeliharaan Lab Forensik Digital', 'isi' => 'Lab tidak dapat dipinjam 20–23 Juni 2026, pukul 08.00–12.00.', 'tanggal' => '2026-06-23'],
+                ], JSON_UNESCAPED_UNICODE),
                 'gambar' => null,
             ],
             'visi_misi' => [

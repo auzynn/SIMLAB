@@ -20,6 +20,7 @@
         <div class="tab-bar mt-30">
           <button :class="['tab', { active: tab === 'ruangan' }]" @click="tab = 'ruangan'">Ruangan</button>
           <button :class="['tab', { active: tab === 'mata-kuliah' }]" @click="tab = 'mata-kuliah'">Mata Kuliah</button>
+          <button :class="['tab', { active: tab === 'perangkat' }]" @click="tab = 'perangkat'">Perangkat</button>
           <button :class="['tab', { active: tab === 'bidang-minat' }]" @click="tab = 'bidang-minat'">Bidang Minat</button>
         </div>
 
@@ -153,6 +154,83 @@
           <PaginationBar v-model:page="mkPage" :total-pages="mkTotalPages" />
         </section>
 
+        <!-- ============ TAB PERANGKAT ============ -->
+        <section v-show="tab === 'perangkat'">
+          <div class="flex-h between mt-30">
+            <h3>Daftar Perangkat</h3>
+            <button class="btn btn-navy-solid" style="width: auto; padding: 8px 20px" @click="openCreatePerangkat">
+              + Tambah Perangkat
+            </button>
+          </div>
+          <p class="mt-10" style="max-width: 640px; color: #5f6368">
+            Inventaris perangkat lab. Status "dipinjam" diatur otomatis oleh alur peminjaman;
+            ubah manual hanya untuk perbaikan/pemeliharaan.
+          </p>
+
+          <form v-if="showPerangkatForm" class="master-form mt-20" @submit.prevent="submitPerangkat">
+            <h3 class="mb-20">{{ perangkatForm.id ? 'Edit Perangkat' : 'Tambah Perangkat' }}</h3>
+            <div class="form-row">
+              <label>Nama Perangkat</label>
+              <input type="text" class="form-ctrl input-border" v-model="perangkatForm.nama_perangkat" required maxlength="255" placeholder="mis. Router Mikrotik RB951" />
+            </div>
+            <div class="form-row">
+              <label>Nomor Seri</label>
+              <input type="text" class="form-ctrl input-border" v-model="perangkatForm.nomor_seri" required maxlength="255" placeholder="mis. SN-0012" />
+            </div>
+            <div class="form-row">
+              <label>Kategori (opsional)</label>
+              <input type="text" class="form-ctrl input-border" v-model="perangkatForm.kategori" maxlength="255" placeholder="mis. Router" />
+            </div>
+            <div class="form-row">
+              <label>Status</label>
+              <select class="form-ctrl input-border" v-model="perangkatForm.status" required>
+                <option value="tersedia">Tersedia</option>
+                <option value="dipinjam">Dipinjam</option>
+                <option value="perbaikan">Perbaikan</option>
+              </select>
+            </div>
+
+            <p v-if="perangkatError" style="color: #c0392b">{{ perangkatError }}</p>
+
+            <div class="flex-h mt-20" style="gap: 12px">
+              <button type="submit" class="btn btn-navy-solid" style="width: auto; padding: 8px 24px" :disabled="savingPerangkat">
+                {{ savingPerangkat ? 'Menyimpan...' : 'Simpan' }}
+              </button>
+              <button type="button" class="btn btn-navy-border" style="width: auto; padding: 8px 24px" @click="showPerangkatForm = false">Batal</button>
+            </div>
+          </form>
+
+          <p v-if="loadingPerangkat" class="mt-30">Memuat data...</p>
+          <p v-else-if="perangkatListError" class="mt-30" style="color: #c0392b">{{ perangkatListError }}</p>
+          <table v-else class="master-table mt-20">
+            <thead>
+              <tr>
+                <th>Nama Perangkat</th>
+                <th>Nomor Seri</th>
+                <th>Kategori</th>
+                <th>Status</th>
+                <th style="text-align: right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="p in pagedPerangkat" :key="p.id">
+                <td>{{ p.nama_perangkat }}</td>
+                <td>{{ p.nomor_seri }}</td>
+                <td>{{ p.kategori ?? '—' }}</td>
+                <td><span :class="['status-badge', `status-${p.status}`]">{{ statusPerangkatLabel(p.status) }}</span></td>
+                <td style="text-align: right">
+                  <button class="btn-link" @click="openEditPerangkat(p)">Edit</button>
+                  <button class="btn-link btn-link-danger" @click="removePerangkat(p)">Hapus</button>
+                </td>
+              </tr>
+              <tr v-if="!perangkatItems.length">
+                <td colspan="5" style="text-align: center; color: #9aa0a6">Belum ada perangkat.</td>
+              </tr>
+            </tbody>
+          </table>
+          <PaginationBar v-model:page="perangkatPage" :total-pages="perangkatTotalPages" />
+        </section>
+
         <!-- ============ TAB BIDANG MINAT ============ -->
         <section v-show="tab === 'bidang-minat'">
           <div class="flex-h between mt-30">
@@ -218,7 +296,9 @@
 import { ref, onMounted } from 'vue'
 import { ruanganService } from '@/services/ruangan'
 import { mataKuliahService } from '@/services/mata-kuliah'
+import { perangkatService } from '@/services/perangkat'
 import { bidangMinatService } from '@/services/bidang-minat'
+import { statusPerangkatLabel } from '@/utils/format'
 import { usePagination } from '@/composables/use-pagination'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import SidemenuAdmin from '@/components/sidemenu-admin.vue'
@@ -367,6 +447,75 @@ async function removeMk(m) {
   }
 }
 
+// ---------- Perangkat ----------
+const perangkatItems = ref([])
+const { page: perangkatPage, totalPages: perangkatTotalPages, pagedItems: pagedPerangkat } = usePagination(perangkatItems, 10)
+const loadingPerangkat = ref(false)
+const perangkatListError = ref('')
+const showPerangkatForm = ref(false)
+const perangkatForm = ref({ id: null, nama_perangkat: '', nomor_seri: '', kategori: '', status: 'tersedia' })
+const savingPerangkat = ref(false)
+const perangkatError = ref('')
+
+async function loadPerangkat() {
+  loadingPerangkat.value = true
+  perangkatListError.value = ''
+  try {
+    const res = await perangkatService.list()
+    perangkatItems.value = res.data.data
+  } catch (err) {
+    perangkatListError.value = extractError(err)
+  } finally {
+    loadingPerangkat.value = false
+  }
+}
+
+function openCreatePerangkat() {
+  perangkatForm.value = { id: null, nama_perangkat: '', nomor_seri: '', kategori: '', status: 'tersedia' }
+  perangkatError.value = ''
+  showPerangkatForm.value = true
+}
+
+function openEditPerangkat(p) {
+  perangkatForm.value = { id: p.id, nama_perangkat: p.nama_perangkat, nomor_seri: p.nomor_seri, kategori: p.kategori ?? '', status: p.status }
+  perangkatError.value = ''
+  showPerangkatForm.value = true
+}
+
+async function submitPerangkat() {
+  savingPerangkat.value = true
+  perangkatError.value = ''
+  const payload = {
+    nama_perangkat: perangkatForm.value.nama_perangkat,
+    nomor_seri: perangkatForm.value.nomor_seri,
+    kategori: perangkatForm.value.kategori === '' ? null : perangkatForm.value.kategori,
+    status: perangkatForm.value.status,
+  }
+  try {
+    if (perangkatForm.value.id) {
+      await perangkatService.update(perangkatForm.value.id, payload)
+    } else {
+      await perangkatService.create(payload)
+    }
+    showPerangkatForm.value = false
+    await loadPerangkat()
+  } catch (err) {
+    perangkatError.value = extractError(err)
+  } finally {
+    savingPerangkat.value = false
+  }
+}
+
+async function removePerangkat(p) {
+  if (!confirm(`Hapus perangkat "${p.nama_perangkat}"?`)) return
+  try {
+    await perangkatService.remove(p.id)
+    await loadPerangkat()
+  } catch (err) {
+    alert(extractError(err))
+  }
+}
+
 // ---------- Bidang Minat ----------
 const bidangItems = ref([])
 const { page: bidangPage, totalPages: bidangTotalPages, pagedItems: pagedBidang } = usePagination(bidangItems, 10)
@@ -442,6 +591,7 @@ function extractError(err) {
 onMounted(() => {
   loadRuangan()
   loadMk()
+  loadPerangkat()
   loadBidang()
 })
 </script>
@@ -518,7 +668,8 @@ onMounted(() => {
   background-color: #d4edda;
 }
 
-.status-dipakai {
+.status-dipakai,
+.status-dipinjam {
   color: #856404;
   background-color: #fff3cd;
 }

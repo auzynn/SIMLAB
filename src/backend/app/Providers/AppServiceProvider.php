@@ -46,6 +46,13 @@ class AppServiceProvider extends ServiceProvider
             fn (User $user) => in_array($user->role, ['admin', 'supervisor'], true),
         );
 
+        // Approve/reject/kembalikan peminjaman perangkat & perpanjangan: Admin & Supervisor
+        // (2_SRS.md Bagian 1, UC-03).
+        Gate::define(
+            'approve-peminjaman-perangkat',
+            fn (User $user) => in_array($user->role, ['admin', 'supervisor'], true),
+        );
+
         // Mendaftar sebagai peserta Kelas Lab: khusus Mahasiswa (2_SRS.md Bagian 1, UC-02a).
         Gate::define('daftar-kelas-lab', fn (User $user) => $user->role === 'mahasiswa');
     }
