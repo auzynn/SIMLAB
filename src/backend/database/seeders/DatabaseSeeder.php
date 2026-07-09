@@ -54,5 +54,8 @@ class DatabaseSeeder extends Seeder
 
         // Demo Kelas Lab/Praktikum (butuh dosen + ruangan + mata kuliah) — 3_SDD.md 3.7
         $this->call(KelasLabSeeder::class);
+
+        // Katalog Sertifikasi eksternal FASE 6 (informasional) — 3_SDD.md 3.13, SRS UC-05
+        $this->call(SertifikasiSeeder::class);
     }
 }

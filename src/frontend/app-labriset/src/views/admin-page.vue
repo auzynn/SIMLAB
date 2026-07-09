@@ -51,9 +51,8 @@ const areas = [
   { title: 'Data Master', desc: 'Kelola ruangan, mata kuliah/praktikum, dan bidang minat.', to: '/admin/data-master' },
   { title: 'Delegasi Aslab', desc: 'Tetapkan mahasiswa menjadi Asisten Lab (Supervisor).', to: '/admin/aslab' },
   { title: 'Persetujuan Peminjaman', desc: 'Setujui/tolak peminjaman ruangan & perangkat serta perpanjangan.', to: '/persetujuan-peminjaman' },
-  { title: 'Katalog Sertifikasi', desc: 'Kelola katalog sertifikasi eksternal untuk mahasiswa.' },
-  { title: 'Rekap Presensi', desc: 'Rekap kehadiran mahasiswa di laboratorium.' },
-  { title: 'Laporan', desc: 'Rekap aktivitas lab dan unduh laporan PDF.' },
+  { title: 'Katalog Sertifikasi', desc: 'Kelola katalog sertifikasi eksternal untuk mahasiswa.', to: '/admin/sertifikasi' },
+  { title: 'Laporan', desc: 'Rekap aktivitas lab dan unduh laporan PDF.', to: '/report' },
 ]
 </script>
 

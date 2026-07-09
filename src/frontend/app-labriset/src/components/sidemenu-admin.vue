@@ -16,7 +16,16 @@
       <router-link to="/admin/aslab" class="menu" style="display: block" active-class="activemenu">Delegasi Aslab</router-link>
     </div>
     <div class="menu-group">
+      <router-link to="/admin/sertifikasi" class="menu" style="display: block" active-class="activemenu">Katalog Sertifikasi</router-link>
+    </div>
+    <div class="menu-group">
       <router-link to="/persetujuan-peminjaman" class="menu" style="display: block" active-class="activemenu">Persetujuan Peminjaman</router-link>
+    </div>
+    <div class="menu-group">
+      <router-link to="/report" class="menu" style="display: block" active-class="activemenu">Laporan</router-link>
+    </div>
+    <div class="menu-group">
+      <router-link to="/rekap-tugas" class="menu" style="display: block" active-class="activemenu">Rekap Tugas</router-link>
     </div>
 
     <!-- Area kelola lain menyusul per fase — modul backend-nya belum dibuat -->
@@ -27,13 +36,9 @@
 </template>
 
 <script setup>
-// Menu samping Panel Admin. Hanya "Kelola User" yang aktif;
-// area lain ditandai disabled (segera hadir) sesuai matriks RBAC Admin (2_SRS.md Bagian 1).
-const segeraHadir = [
-  'Katalog Sertifikasi',
-  'Rekap Presensi',
-  'Laporan',
-]
+// Menu samping Panel Admin. Area yang modul backend-nya sudah ada ditautkan;
+// sisanya ditandai disabled (segera hadir) sesuai matriks RBAC Admin (2_SRS.md Bagian 1).
+const segeraHadir = []
 </script>
 
 <style scoped>
