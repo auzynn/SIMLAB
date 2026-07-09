@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -64,5 +65,21 @@ class User extends Authenticatable
     public function mahasiswa(): HasOne
     {
         return $this->hasOne(Mahasiswa::class);
+    }
+
+    /**
+     * Portofolio riset milik user (Mahasiswa) — 3_SDD.md 3.14.
+     */
+    public function portofolio(): HasMany
+    {
+        return $this->hasMany(Portofolio::class);
+    }
+
+    /**
+     * Notifikasi in-app milik user — 3_SDD.md 3.16, SRS UC-07.
+     */
+    public function notifikasi(): HasMany
+    {
+        return $this->hasMany(Notifikasi::class);
     }
 }
