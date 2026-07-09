@@ -68,7 +68,65 @@
             <p v-else class="mini-empty mt-10">{{ kelasEmptyMsg }}</p>
           </section>
 
-          <section class="card kepala-card">
+          <!-- Mahasiswa dengan tugas belum dikumpulkan → kartu Informasi Tugas; selain itu Kepala Lab. -->
+          <section v-if="tampilkanInfoTugas" class="card">
+            <div class="card-head">
+              <h3>Informasi Tugas</h3>
+              <router-link to="/tugas" class="card-link">Kirim</router-link>
+            </div>
+            <p class="tugas-sub mt-10">Tugas yang belum Anda kumpulkan:</p>
+            <ul class="mini-list mini-list-scroll mt-10">
+              <li v-for="t in tugasBelum" :key="t.key" :class="['mini-item', t.terlambat ? 'late' : 'info']">
+                <div style="flex: 1; min-width: 0">
+                  <div class="mini-title">{{ t.namaMk }} — Pertemuan {{ t.pertemuan }}</div>
+                  <div class="mini-sub">
+                    Deadline: {{ formatDeadline(t.deadline) }}
+                    <span v-if="t.terlambat" class="badge-late">Terlambat</span>
+                  </div>
+                </div>
+              </li>
+            </ul>
+          </section>
+
+          <!-- Mahasiswa: tahan tampilan hingga data tugas final agar tak berkedip ke Kepala Lab -->
+          <section v-else-if="infoTugasMemuat" class="card">
+            <div class="card-head"><h3>Informasi Tugas</h3></div>
+            <p class="mini-empty mt-10">Memuat...</p>
+          </section>
+
+          <!-- Dosen/Supervisor/Admin: kartu Kepala Lab diganti Informasi Pemberian Tugas -->
+          <section v-else-if="pemberianMemuat" class="card">
+            <div class="card-head"><h3>Informasi Pemberian Tugas</h3></div>
+            <p class="mini-empty mt-10">Memuat...</p>
+          </section>
+
+          <section v-else-if="isReviewer" class="card">
+            <div class="card-head">
+              <h3>Informasi Pemberian Tugas</h3>
+              <router-link to="/kelaslab" class="card-link">Kelas</router-link>
+            </div>
+            <p class="tugas-sub mt-10">Kelas Praktikum yang sudah diberi tugas:</p>
+            <ul v-if="pemberianTugas.length" class="mini-list mini-list-scroll mt-10">
+              <li v-for="k in pemberianTugas" :key="k.id" class="mini-item kelas">
+                <div style="flex: 1; min-width: 0">
+                  <div class="mini-title">{{ k.namaMk }} — {{ k.sesi }}</div>
+                  <div class="mini-sub">
+                    <strong>{{ k.bertugas }}/16</strong> diberi tugas · Pertemuan berjalan <strong>{{ k.berjalan }}/16</strong>
+                  </div>
+                  <div class="mini-sub" style="margin-top: 4px">terdekat {{ formatDeadline(k.terdekat) }}</div>
+                  <div style="margin-top: 4px">
+                    <span v-if="k.status === 'perhatian'" class="badge-perhatian">Perlu perhatian · {{ k.tunggakan }} belum</span>
+                    <span v-else-if="k.status === 'berjalan'" class="badge-berjalan">Berjalan</span>
+                    <span v-else class="badge-beres">Beres</span>
+                  </div>
+                </div>
+                <router-link :to="`/kelaslab/${k.id}/detail`" class="mini-link">Detail</router-link>
+              </li>
+            </ul>
+            <p v-else class="mini-empty mt-10">Belum ada tugas yang diberikan ke kelas mana pun.</p>
+          </section>
+
+          <section v-else class="card kepala-card">
             <div class="card-head">
               <h3>Kepala Lab</h3>
               <router-link to="/kepalalab" class="card-link">Profil</router-link>
@@ -133,7 +191,8 @@ import { useAuthStore } from '@/stores/auth'
 import { peminjamanRuanganService } from '@/services/peminjaman-ruangan'
 import { kelasLabService } from '@/services/kelas-lab'
 import { infoLabService } from '@/services/info-lab'
-import { formatJam, hariLabel, formatTanggalId } from '@/utils/format'
+import { tugasService } from '@/services/tugas'
+import { formatJam, hariLabel, formatTanggalId, formatDeadline, sudahLewatDeadline } from '@/utils/format'
 import JumbotronDefault from '@/components/jumbotron-default.vue'
 import FooterComponent from '@/components/footer-component.vue'
 
@@ -241,6 +300,20 @@ const kepalaInisial = computed(() =>
 )
 const kepalaBidang = computed(() => (kepala.value?.bidang_minat || []).map((b) => b.nama).slice(0, 7))
 
+// Tugas yang belum dikumpulkan mahasiswa (pertemuan ber-deadline yang belum ada tugasnya).
+const tugasBelum = ref([])
+const tugasDimuat = ref(false)
+const tampilkanInfoTugas = computed(() => auth.user?.role === 'mahasiswa' && tugasBelum.value.length > 0)
+// Selama data tugas mahasiswa belum selesai dimuat, tahan kartu (jangan tampilkan Kepala Lab dulu)
+// agar tidak "berkedip" dari Kepala Lab lalu berganti ke Informasi Tugas.
+const infoTugasMemuat = computed(() => auth.user?.role === 'mahasiswa' && !tugasDimuat.value)
+
+// Dosen/Supervisor/Admin: kartu Kepala Lab diganti "Informasi Pemberian Tugas".
+const isReviewer = computed(() => ['dosen', 'supervisor', 'admin'].includes(auth.user?.role))
+const pemberianTugas = ref([]) // [{ id, namaMk, sesi, jumlah, terdekat }]
+const pemberianDimuat = ref(false)
+const pemberianMemuat = computed(() => isReviewer.value && !pemberianDimuat.value)
+
 // Pengumuman disunting Admin lewat panel Konten Info Lab (tipe `beranda`),
 // disimpan sebagai JSON array [{judul, isi, tanggal}]. Dimuat publik saat halaman dibuka.
 const pengumuman = ref([])
@@ -286,8 +359,78 @@ onMounted(async () => {
       const pRes = await safe(peminjamanRuanganService.list())
       if (pRes) pendingCount.value = pRes.data.data.filter((p) => p.status === 'menunggu').length
     }
+    if (auth.user?.role === 'mahasiswa') await muatTugasBelum()
+    else if (isReviewer.value) await muatPemberianTugas()
   }
 })
+
+// Susun daftar kelas yang sudah diberi tugas + status kepatuhan (Opsi B) via satu endpoint
+// rekap-tugas (sudah ter-scope per role di backend). Digabung dengan kelasList untuk nama MK/sesi.
+// Diurutkan: yang "perlu perhatian" dulu, lalu terbanyak tugasnya.
+async function muatPemberianTugas() {
+  try {
+    const rk = await safe(kelasLabService.rekapTugas())
+    const rekap = rk?.data.data ?? []
+    const kelasById = Object.fromEntries(kelasList.value.map((k) => [k.id, k]))
+
+    pemberianTugas.value = rekap
+      .filter((r) => r.total_tugas > 0)
+      .map((r) => {
+        const k = kelasById[r.kelas_lab_id]
+        return {
+          id: r.kelas_lab_id,
+          namaMk: k?.mata_kuliah?.nama_mk ?? 'Kelas Lab',
+          sesi: k?.nama_sesi ?? '',
+          jumlah: r.total_tugas,
+          terdekat: r.deadline_terdekat,
+          perluPerhatian: r.perlu_perhatian,
+          status: r.status,
+          tunggakan: r.tunggakan,
+          bertugas: r.pertemuan_bertugas,
+          berjalan: r.pertemuan_berjalan,
+        }
+      })
+      .sort((a, b) => (b.perluPerhatian === a.perluPerhatian ? b.jumlah - a.jumlah : b.perluPerhatian - a.perluPerhatian))
+  } finally {
+    pemberianDimuat.value = true
+  }
+}
+
+// Susun daftar tugas belum: untuk tiap kelas yang diikuti (disetujui), ambil deadline pertemuan
+// yang belum ada tugas terkirimnya. Diurutkan berdasarkan deadline terdekat.
+async function muatTugasBelum() {
+  try {
+    const enrolled = kelasList.value.filter((k) => k.status_pendaftaran === 'disetujui')
+    if (!enrolled.length) return
+
+    const [tugasRes, ...deadlineRes] = await Promise.all([
+      safe(tugasService.list()),
+      ...enrolled.map((k) => safe(kelasLabService.deadlineList(k.id))),
+    ])
+
+    const terkirim = new Set((tugasRes?.data.data ?? []).map((t) => `${t.kelas_lab_id}-${t.pertemuan}`))
+
+    const daftar = []
+    enrolled.forEach((k, i) => {
+      const deadlines = deadlineRes[i]?.data.data ?? []
+      deadlines.forEach((d) => {
+        if (!terkirim.has(`${k.id}-${d.pertemuan}`)) {
+          daftar.push({
+            key: `${k.id}-${d.pertemuan}`,
+            namaMk: k.mata_kuliah?.nama_mk ?? 'Kelas Lab',
+            pertemuan: d.pertemuan,
+            deadline: d.deadline,
+            terlambat: sudahLewatDeadline(d.deadline),
+          })
+        }
+      })
+    })
+    daftar.sort((a, b) => String(a.deadline).localeCompare(String(b.deadline)))
+    tugasBelum.value = daftar
+  } finally {
+    tugasDimuat.value = true // apa pun hasilnya, keputusan kartu sudah final
+  }
+}
 </script>
 
 <style scoped>
@@ -331,8 +474,13 @@ onMounted(async () => {
   color: var(--bs-navy);
 }
 .card-date {
-  font-size: 0.8em;
-  color: #9aa0a6;
+  font-size: 0.82em;
+  font-weight: 600;
+  color: var(--bs-navy);
+  background-color: #eef1f7;
+  padding: 2px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
 }
 .card-link {
   font-size: 0.85em;
@@ -446,6 +594,61 @@ onMounted(async () => {
   border-left-color: var(--bs-yellow);
   background-color: #fffaf0;
 }
+.mini-item.late {
+  border-left-color: #c0392b;
+  background-color: #fdecec;
+}
+.tugas-sub {
+  font-size: 0.85em;
+  color: #5f6368;
+  margin-bottom: 6px;
+}
+/* Daftar bergulir agar semua kelas/tugas bisa dilihat tanpa memotong tampilan */
+.mini-list-scroll {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.badge-late {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 20px;
+  font-size: 0.9em;
+  font-weight: 700;
+  color: #fff;
+  background-color: #c0392b;
+}
+.badge-beres {
+  display: inline-block;
+  padding: 1px 10px;
+  border-radius: 20px;
+  font-size: 0.78em;
+  font-weight: 700;
+  color: #1e7e34;
+  background-color: #e6f4ea;
+}
+/* Peringatan lembut (amber) — sengaja tidak semencolok badge-late merah solid,
+   karena "ada yang belum kumpul" bukan kondisi kritis seperti "terlambat". */
+.badge-perhatian {
+  display: inline-block;
+  padding: 1px 10px;
+  border-radius: 20px;
+  font-size: 0.78em;
+  font-weight: 700;
+  color: #8a5a00;
+  background-color: #fdf0d5;
+}
+/* Netral/informasional — deadline masih berjalan (belum jatuh tempo), bukan "beres". */
+.badge-berjalan {
+  display: inline-block;
+  padding: 1px 10px;
+  border-radius: 20px;
+  font-size: 0.78em;
+  font-weight: 700;
+  color: #3a5a8c;
+  background-color: #e8eef7;
+}
 .mini-time {
   flex-shrink: 0;
   font-size: 0.82em;
@@ -467,6 +670,16 @@ onMounted(async () => {
   font-size: 0.75em;
   color: #9aa0a6;
   margin-top: 4px;
+}
+.mini-link {
+  flex-shrink: 0;
+  align-self: center;
+  font-size: 0.8em;
+  font-weight: 600;
+  color: var(--bs-navy);
+}
+.mini-link:hover {
+  text-decoration: underline;
 }
 .peng-attach {
   display: inline-block;

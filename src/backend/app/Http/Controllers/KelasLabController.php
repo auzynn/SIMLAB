@@ -7,6 +7,8 @@ use App\Http\Requests\UpdateKelasLabRequest;
 use App\Models\KelasLab;
 use App\Models\KelasLabPeserta;
 use App\Services\JadwalRuanganService;
+use App\Services\NotifikasiService;
+use App\Services\RekapTugasService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +21,10 @@ use Illuminate\Support\Facades\Gate;
  */
 class KelasLabController extends Controller
 {
-    public function __construct(private JadwalRuanganService $jadwal) {}
+    public function __construct(
+        private JadwalRuanganService $jadwal,
+        private NotifikasiService $notifikasi,
+    ) {}
 
     /**
      * List sesi (semua role). Filter ?mata_kuliah_id= untuk sesi paralel satu mata kuliah (T3.15).
@@ -29,6 +34,8 @@ class KelasLabController extends Controller
         $kelas = KelasLab::query()
             ->with(['mataKuliah', 'dosen.user', 'ruangan'])
             ->withCount(['peserta as peserta_count' => fn ($q) => $q->where('status', '!=', 'ditolak')])
+            // "Bertugas" = pertemuan yang punya deadline (materi tanpa deadline tidak dihitung tugas).
+            ->withCount(['deadlinePertemuan as tugas_count' => fn ($q) => $q->whereNotNull('deadline')])
             ->when($request->query('mata_kuliah_id'), fn ($q, $id) => $q->where('mata_kuliah_id', $id))
             ->orderBy('hari')
             ->orderBy('jam_mulai')
@@ -49,6 +56,25 @@ class KelasLabController extends Controller
         return response()->json([
             'data' => $kelas,
             'message' => 'Berhasil mengambil data Kelas Lab.',
+        ]);
+    }
+
+    /**
+     * Rekap kepatuhan pengumpulan tugas per kelas (untuk Dosen/Supervisor/Admin).
+     * "Perlu perhatian" bila ada pertemuan yang deadline-nya SUDAH lewat namun belum
+     * semua peserta disetujui mengumpulkan. Mahasiswa → array kosong.
+     */
+    public function rekapTugas(Request $request, RekapTugasService $rekap): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! in_array($user->role, ['dosen', 'supervisor', 'admin'], true)) {
+            return response()->json(['data' => [], 'message' => 'Tidak ada rekap untuk peran ini.']);
+        }
+
+        return response()->json([
+            'data' => $rekap->ringkasan($user),
+            'message' => 'Berhasil mengambil rekap tugas per kelas.',
         ]);
     }
 
@@ -160,8 +186,15 @@ class KelasLabController extends Controller
             ], 422);
         }
 
+        // Data penerima notifikasi disiapkan sebelum transaksi:
+        // - dosen pengampu sesi ini → diberi tahu ada pendaftaran baru yang menunggu persetujuannya;
+        // - nama mahasiswa pendaftar → dipakai pada pesan ke dosen.
+        $kelasLab->loadMissing('dosen', 'mataKuliah');
+        $dosenUserId = $kelasLab->dosen?->user_id;
+        $namaMahasiswa = $request->user()->name;
+
         // Transaksi + kunci baris kelas agar hitung kuota aman (slot = menunggu + disetujui).
-        $peserta = DB::transaction(function () use ($kelasLab, $mahasiswa, $existing) {
+        $peserta = DB::transaction(function () use ($kelasLab, $mahasiswa, $existing, $dosenUserId, $namaMahasiswa) {
             $kelas = KelasLab::lockForUpdate()->find($kelasLab->id);
 
             if ($kelas->peserta()->where('status', '!=', 'ditolak')->count() >= $kelas->kuota) {
@@ -171,15 +204,37 @@ class KelasLabController extends Controller
             // Ajukan ulang baris yang sebelumnya ditolak, atau buat baru.
             if ($existing) {
                 $existing->update(['status' => 'menunggu', 'disetujui_oleh' => null]);
-
-                return $existing;
+                $peserta = $existing;
+            } else {
+                $peserta = KelasLabPeserta::create([
+                    'kelas_lab_id' => $kelas->id,
+                    'mahasiswa_id' => $mahasiswa->id,
+                    'status' => 'menunggu',
+                ]);
             }
 
-            return KelasLabPeserta::create([
-                'kelas_lab_id' => $kelas->id,
-                'mahasiswa_id' => $mahasiswa->id,
-                'status' => 'menunggu',
-            ]);
+            // Notifikasi konfirmasi pendaftaran ke mahasiswa (SRS UC-07), transaksi yang sama.
+            $this->notifikasi->kirim(
+                $mahasiswa->user_id,
+                'Pendaftaran Kelas Lab terkirim',
+                'Pendaftaran Anda pada sesi "'.$kelasLab->nama_sesi.'" ('.$kelasLab->mataKuliah?->nama_mk.') terkirim, menunggu persetujuan.',
+                'pendaftaran',
+                $peserta->id,
+            );
+
+            // Notifikasi ke dosen pengampu bahwa ada pendaftaran baru menunggu persetujuannya.
+            // Dijaga null-safe: sesi tanpa dosen (data anomali) cukup dilewati tanpa error.
+            if ($dosenUserId) {
+                $this->notifikasi->kirim(
+                    $dosenUserId,
+                    'Pendaftaran Kelas Lab baru',
+                    $namaMahasiswa.' mendaftar pada sesi "'.$kelasLab->nama_sesi.'" ('.$kelasLab->mataKuliah?->nama_mk.'), menunggu persetujuan Anda.',
+                    'pengajuan_masuk',
+                    $peserta->id,
+                );
+            }
+
+            return $peserta;
         });
 
         if (! $peserta) {

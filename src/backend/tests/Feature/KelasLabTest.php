@@ -60,6 +60,7 @@ class KelasLabTest extends TestCase
             'tanggal_mulai_semester' => Carbon::today()->format('Y-m-d'),
             'tanggal_selesai_semester' => Carbon::today()->addDays(120)->format('Y-m-d'),
             'kuota' => 30,
+            'tautan_pengumpulan' => 'https://forms.gle/contoh',
         ], $override);
     }
 
@@ -145,7 +146,35 @@ class KelasLabTest extends TestCase
             'tanggal_mulai_semester' => Carbon::today()->format('Y-m-d'),
             'tanggal_selesai_semester' => Carbon::today()->addDays(120)->format('Y-m-d'),
             'kuota' => 30,
+            'tautan_pengumpulan' => 'https://forms.gle/contoh',
         ])->assertStatus(422);
+    }
+
+    public function test_pembukaan_kelas_tanpa_tautan_pengumpulan_ditolak(): void
+    {
+        [$user] = $this->dosen();
+        Sanctum::actingAs($user);
+
+        $payload = $this->payload();
+        unset($payload['tautan_pengumpulan']);
+
+        $this->postJson('/api/kelas-lab', $payload)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('tautan_pengumpulan');
+    }
+
+    public function test_pembukaan_kelas_menyimpan_tautan_pengumpulan(): void
+    {
+        [$user, $dosen] = $this->dosen();
+        Sanctum::actingAs($user);
+
+        $this->postJson('/api/kelas-lab', $this->payload(['tautan_pengumpulan' => 'https://drive.google.com/folder/abc']))
+            ->assertCreated();
+
+        $this->assertDatabaseHas('kelas_lab', [
+            'dosen_id' => $dosen->id,
+            'tautan_pengumpulan' => 'https://drive.google.com/folder/abc',
+        ]);
     }
 
     public function test_pembukaan_kelas_bentrok_dengan_peminjaman_disetujui_ditolak(): void
@@ -178,6 +207,7 @@ class KelasLabTest extends TestCase
             'tanggal_mulai_semester' => Carbon::today()->format('Y-m-d'),
             'tanggal_selesai_semester' => Carbon::today()->addDays(120)->format('Y-m-d'),
             'kuota' => 30,
+            'tautan_pengumpulan' => 'https://forms.gle/contoh',
         ])->assertStatus(422);
     }
 

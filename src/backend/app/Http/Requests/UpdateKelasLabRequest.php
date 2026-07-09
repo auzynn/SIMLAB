@@ -35,6 +35,7 @@ class UpdateKelasLabRequest extends FormRequest
             'tanggal_mulai_semester' => ['required', 'date'],
             'tanggal_selesai_semester' => ['required', 'date', 'after_or_equal:tanggal_mulai_semester'],
             'kuota' => ['required', 'integer', 'min:1', 'max:40'],
+            'tautan_pengumpulan' => ['required', 'url', 'max:2048'],
         ];
     }
 

@@ -42,27 +42,56 @@
             <th>Status</th>
             <th v-if="auth.user?.role === 'mahasiswa'" style="text-align: right">Aksi</th>
           </tr>
+          <tr class="filter-row">
+            <th><input v-model="filters.nama" class="filter-input" placeholder="Cari nama" /></th>
+            <th><input v-model="filters.nomor" class="filter-input" placeholder="Cari nomor seri" /></th>
+            <th><input v-model="filters.kategori" class="filter-input" placeholder="Cari kategori" /></th>
+            <th></th>
+            <th v-if="auth.user?.role === 'mahasiswa'"></th>
+          </tr>
         </thead>
         <tbody>
-          <tr v-for="p in pagedItems" :key="p.id">
-            <td>{{ p.nama_perangkat }}</td>
-            <td>{{ p.nomor_seri }}</td>
-            <td>{{ p.kategori ?? '—' }}</td>
-            <td><span :class="['status-badge', `status-${p.status}`]">{{ statusPerangkatLabel(p.status) }}</span></td>
-            <td v-if="auth.user?.role === 'mahasiswa'" style="text-align: right; white-space: nowrap">
-              <button
-                v-if="p.status === 'tersedia'"
-                class="btn-link"
-                @click="ajukan(p)"
-              >
-                Ajukan Pinjam
-              </button>
-              <span v-else style="color: #9aa0a6">—</span>
-            </td>
-          </tr>
+          <template v-for="p in pagedItems" :key="p.id">
+            <tr>
+              <td>{{ p.nama_perangkat }}</td>
+              <td>{{ p.nomor_seri }}</td>
+              <td>{{ p.kategori ?? '—' }}</td>
+              <td><span :class="['status-badge', `status-${p.status}`]">{{ statusPerangkatLabel(p.status) }}</span></td>
+              <td v-if="auth.user?.role === 'mahasiswa'" style="text-align: right; white-space: nowrap">
+                <button
+                  v-if="p.status === 'tersedia'"
+                  class="btn-link"
+                  @click="bukaAjukan(p)"
+                >
+                  Ajukan Pinjam
+                </button>
+                <span v-else style="color: #9aa0a6">—</span>
+              </td>
+            </tr>
+            <!-- Baris form pengajuan (inline) — muncul saat "Ajukan Pinjam" ditekan -->
+            <tr v-if="ajukanFor === p.id">
+              <td colspan="5" style="background-color: var(--bs-grey1)">
+                <form class="flex-h" style="gap: 12px; align-items: flex-end; flex-wrap: wrap" @submit.prevent="submitAjukan(p)">
+                  <div>
+                    <label style="display: block; margin-bottom: 6px">Tanggal Pinjam</label>
+                    <input type="date" class="form-ctrl input-border" v-model="ajukanForm.tanggal_pinjam" :min="today" required />
+                  </div>
+                  <div>
+                    <label style="display: block; margin-bottom: 6px">Rencana Tanggal Kembali</label>
+                    <input type="date" class="form-ctrl input-border" v-model="ajukanForm.tanggal_kembali_rencana" :min="ajukanForm.tanggal_pinjam || today" required />
+                  </div>
+                  <button type="submit" class="btn btn-navy-solid" style="width: auto; padding: 8px 20px" :disabled="savingAjukan">
+                    {{ savingAjukan ? 'Mengirim...' : 'Kirim Pengajuan' }}
+                  </button>
+                  <button type="button" class="btn btn-navy-border" style="width: auto; padding: 8px 20px" @click="ajukanFor = null">Batal</button>
+                  <span v-if="ajukanError" style="color: #c0392b">{{ ajukanError }}</span>
+                </form>
+              </td>
+            </tr>
+          </template>
           <tr v-if="!filtered.length">
             <td :colspan="auth.user?.role === 'mahasiswa' ? 5 : 4" style="text-align: center; color: #9aa0a6">
-              Belum ada perangkat.
+              {{ items.length ? 'Tidak ada perangkat yang cocok dengan filter.' : 'Belum ada perangkat.' }}
             </td>
           </tr>
         </tbody>
@@ -75,10 +104,10 @@
 </template>
 
 <script setup>
-// Katalog perangkat lab (semua role login). Mahasiswa: tombol Ajukan Pinjam → form peminjaman.
+// Katalog perangkat lab (semua role login). Mahasiswa: "Ajukan Pinjam" membuka form inline & mengirim langsung.
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { perangkatService } from '@/services/perangkat'
+import { peminjamanPerangkatService } from '@/services/peminjaman-perangkat'
 import { useAuthStore } from '@/stores/auth'
 import { usePagination } from '@/composables/use-pagination'
 import { statusPerangkatLabel } from '@/utils/format'
@@ -87,15 +116,29 @@ import FooterComponent from '@/components/footer-component.vue'
 import PaginationBar from '@/components/pagination-bar.vue'
 
 const auth = useAuthStore()
-const router = useRouter()
+const today = new Date().toISOString().slice(0, 10)
 const items = ref([])
 const loading = ref(false)
 const listError = ref('')
 const filter = ref('semua')
 
-const filtered = computed(() =>
-  filter.value === 'tersedia' ? items.value.filter((p) => p.status === 'tersedia') : items.value,
-)
+// Pengajuan inline per perangkat
+const ajukanFor = ref(null)
+const ajukanForm = ref({ tanggal_pinjam: today, tanggal_kembali_rencana: '' })
+const savingAjukan = ref(false)
+const ajukanError = ref('')
+
+// Filter pencarian per kolom (nama, nomor seri, kategori) di atas filter status (tab).
+const filters = ref({ nama: '', nomor: '', kategori: '' })
+const cocok = (val, q) => !q || String(val ?? '').toLowerCase().includes(q.toLowerCase())
+
+const filtered = computed(() => {
+  const byStatus = filter.value === 'tersedia' ? items.value.filter((p) => p.status === 'tersedia') : items.value
+  const f = filters.value
+  return byStatus.filter(
+    (p) => cocok(p.nama_perangkat, f.nama) && cocok(p.nomor_seri, f.nomor) && cocok(p.kategori, f.kategori),
+  )
+})
 const { page, totalPages, pagedItems } = usePagination(filtered, 10)
 const countTersedia = computed(() => items.value.filter((p) => p.status === 'tersedia').length)
 
@@ -112,9 +155,40 @@ async function load() {
   }
 }
 
-// Arahkan ke "Peminjaman Saya" tab Perangkat dengan perangkat terpilih (pre-fill via query).
-function ajukan(p) {
-  router.push({ path: '/peminjaman-saya', query: { tab: 'perangkat', perangkat: p.id } })
+// Buka form pengajuan inline untuk perangkat terpilih.
+function bukaAjukan(p) {
+  ajukanFor.value = p.id
+  ajukanForm.value = { tanggal_pinjam: today, tanggal_kembali_rencana: '' }
+  ajukanError.value = ''
+}
+
+// Kirim pengajuan peminjaman langsung dari katalog.
+async function submitAjukan(p) {
+  savingAjukan.value = true
+  ajukanError.value = ''
+  try {
+    await peminjamanPerangkatService.create({
+      perangkat_id: p.id,
+      tanggal_pinjam: ajukanForm.value.tanggal_pinjam,
+      tanggal_kembali_rencana: ajukanForm.value.tanggal_kembali_rencana,
+    })
+    ajukanFor.value = null
+    alert('Pengajuan peminjaman terkirim, menunggu persetujuan. Pantau di "Peminjaman Saya".')
+    await load()
+  } catch (err) {
+    ajukanError.value = extractError(err)
+  } finally {
+    savingAjukan.value = false
+  }
+}
+
+function extractError(err) {
+  const res = err.response?.data
+  if (res?.errors) {
+    const first = Object.values(res.errors)[0]
+    if (Array.isArray(first) && first.length) return first[0]
+  }
+  return res?.message || 'Terjadi kesalahan. Silakan coba lagi.'
 }
 
 onMounted(load)
@@ -152,6 +226,19 @@ onMounted(load)
 }
 .data-table th {
   border-bottom: 3px solid var(--bs-grey2);
+}
+.filter-row th {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--bs-grey2);
+  font-weight: normal;
+}
+.filter-input {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--bs-grey2);
+  border-radius: 6px;
+  font-size: 0.85em;
+  font-family: inherit;
 }
 .status-badge {
   display: inline-block;

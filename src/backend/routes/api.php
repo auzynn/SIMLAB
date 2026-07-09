@@ -3,16 +3,23 @@
 use App\Http\Controllers\AslabController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BidangMinatController;
+use App\Http\Controllers\DeadlinePertemuanController;
 use App\Http\Controllers\DosenController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\InfoLabController;
 use App\Http\Controllers\KelasLabController;
 use App\Http\Controllers\MataKuliahController;
+use App\Http\Controllers\NotifikasiController;
 use App\Http\Controllers\PeminjamanPerangkatController;
 use App\Http\Controllers\PeminjamanRuanganController;
 use App\Http\Controllers\PerangkatController;
 use App\Http\Controllers\PerpanjanganController;
+use App\Http\Controllers\PortofolioController;
+use App\Http\Controllers\RekapTugasController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RuanganController;
+use App\Http\Controllers\SertifikasiController;
+use App\Http\Controllers\TugasController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -105,9 +112,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/perpanjangan/{perpanjanganPeminjaman}/approve', [PerpanjanganController::class, 'approve']);
     Route::patch('/perpanjangan/{perpanjanganPeminjaman}/reject', [PerpanjanganController::class, 'reject']);
 
+    // Pengumpulan Tugas (menggantikan Presensi). Kirim: Mahasiswa (kelas yang diikuti);
+    // rekap sesuai role (Mahasiswa → miliknya; Dosen → kelasnya; Admin/Supervisor → semua).
+    Route::get('/tugas', [TugasController::class, 'index']);
+    Route::post('/tugas', [TugasController::class, 'store']);
+    Route::delete('/tugas/{tugas}', [TugasController::class, 'destroy']);
+
     // Kelas Lab/Praktikum (3_SDD.md 5.7, SRS UC-02a). Aksi peserta & pendaftaran
     // didefinisikan sebelum apiResource agar tidak terbaca sebagai {kelasLab}.
     // Persetujuan pendaftaran — Dosen (kelas miliknya) / Supervisor.
+    // Rekap kepatuhan pengumpulan tugas per kelas (Dosen/Supervisor/Admin) — sebelum {kelasLab}.
+    Route::get('/kelas-lab/rekap-tugas', [KelasLabController::class, 'rekapTugas']);
     Route::get('/kelas-lab/pendaftaran', [KelasLabController::class, 'pendaftaran']);
     Route::patch('/kelas-lab/pendaftaran/{kelasLabPeserta}/approve', [KelasLabController::class, 'approvePendaftaran']);
     Route::patch('/kelas-lab/pendaftaran/{kelasLabPeserta}/reject', [KelasLabController::class, 'rejectPendaftaran']);
@@ -115,9 +130,44 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/kelas-lab/{kelasLab}/peserta', [KelasLabController::class, 'peserta']);
     Route::post('/kelas-lab/{kelasLab}/daftar', [KelasLabController::class, 'daftar']);
     Route::delete('/kelas-lab/{kelasLab}/daftar', [KelasLabController::class, 'batalDaftar']);
+
+    // Deadline pengumpulan tugas per pertemuan (Dosen pengampu/Supervisor/Admin atur; semua role lihat).
+    Route::get('/kelas-lab/{kelasLab}/deadline', [DeadlinePertemuanController::class, 'index']);
+    Route::put('/kelas-lab/{kelasLab}/deadline/{pertemuan}', [DeadlinePertemuanController::class, 'upsert']);
+    Route::delete('/kelas-lab/{kelasLab}/deadline/{pertemuan}', [DeadlinePertemuanController::class, 'destroy']);
     Route::apiResource('kelas-lab', KelasLabController::class)
         ->only(['index', 'show', 'store', 'update', 'destroy'])
         ->parameters(['kelas-lab' => 'kelasLab']);
+
+    // Katalog Sertifikasi (3_SDD.md 5.13, SRS UC-05). Read terbuka untuk semua role login;
+    // CUD via Gate manage-master-data (Admin/Supervisor) di controller. Modul informasional.
+    Route::apiResource('sertifikasi', SertifikasiController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->parameters(['sertifikasi' => 'sertifikasi']);
+
+    // Portofolio Mahasiswa (3_SDD.md 5.14, PRD 3.7). Read terbuka untuk semua role login;
+    // CUD hanya pemilik (Mahasiswa) — divalidasi di Store/UpdatePortofolioRequest & destroy.
+    Route::apiResource('portofolio', PortofolioController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
+        ->parameters(['portofolio' => 'portofolio']);
+
+    // Notifikasi In-App (3_SDD.md 5.14, SRS UC-07). Semua role hanya notifikasi miliknya;
+    // pembuatan dilakukan internal (NotifikasiService), bukan endpoint publik.
+    // read-all didefinisikan sebelum aksi ber-{notifikasi} agar tidak terbaca sebagai id.
+    Route::get('/notifikasi', [NotifikasiController::class, 'index']);
+    Route::patch('/notifikasi/read-all', [NotifikasiController::class, 'readAll']);
+    Route::patch('/notifikasi/{notifikasi}/read', [NotifikasiController::class, 'read']);
+    Route::delete('/notifikasi/{notifikasi}', [NotifikasiController::class, 'destroy']);
+
+    // Laporan/Report (3_SDD.md 5.13, SRS UC-06). Rekap + unduh PDF — Admin/Supervisor.
+    Route::get('/report', [ReportController::class, 'index']);
+    Route::get('/report/pdf', [ReportController::class, 'pdf']);
+
+    // Rekap Tugas Kelas Lab (3_SDD.md 5.15, SRS UC-06). Ringkasan + matriks per pertemuan,
+    // unduh PDF & Excel — Admin/Supervisor/Dosen (Dosen di-scope ke kelas sendiri).
+    Route::get('/rekap-tugas', [RekapTugasController::class, 'index']);
+    Route::get('/rekap-tugas/pdf', [RekapTugasController::class, 'pdf']);
+    Route::get('/rekap-tugas/excel', [RekapTugasController::class, 'excel']);
 
     // Update konten info lab — khusus Admin (3_SDD.md 5.12, otorisasi via Gate manage-info-lab)
     Route::patch('/info-lab/{tipe}', [InfoLabController::class, 'update'])

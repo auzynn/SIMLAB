@@ -157,7 +157,7 @@
         <!-- ============ TAB PERANGKAT ============ -->
         <section v-show="tab === 'perangkat'">
           <div class="flex-h between mt-30">
-            <h3>Daftar Perangkat</h3>
+            <h3>Daftar Perangkat ({{ perangkatItems.length }})</h3>
             <button class="btn btn-navy-solid" style="width: auto; padding: 8px 20px" @click="openCreatePerangkat">
               + Tambah Perangkat
             </button>
@@ -166,6 +166,12 @@
             Inventaris perangkat lab. Status "dipinjam" diatur otomatis oleh alur peminjaman;
             ubah manual hanya untuk perbaikan/pemeliharaan.
           </p>
+          <div class="perangkat-stats mt-20">
+            <span class="stat-chip">Total <strong>{{ perangkatItems.length }}</strong></span>
+            <span class="stat-chip stat-tersedia">Tersedia <strong>{{ countPerangkat.tersedia }}</strong></span>
+            <span class="stat-chip stat-dipinjam">Dipinjam <strong>{{ countPerangkat.dipinjam }}</strong></span>
+            <span class="stat-chip stat-perbaikan">Perbaikan <strong>{{ countPerangkat.perbaikan }}</strong></span>
+          </div>
 
           <form v-if="showPerangkatForm" class="master-form mt-20" @submit.prevent="submitPerangkat">
             <h3 class="mb-20">{{ perangkatForm.id ? 'Edit Perangkat' : 'Tambah Perangkat' }}</h3>
@@ -293,7 +299,7 @@
 
 <script setup>
 // Panel Admin/Supervisor — kelola Data Master (Ruangan & Mata Kuliah), Gate manage-master-data.
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { ruanganService } from '@/services/ruangan'
 import { mataKuliahService } from '@/services/mata-kuliah'
 import { perangkatService } from '@/services/perangkat'
@@ -449,6 +455,12 @@ async function removeMk(m) {
 
 // ---------- Perangkat ----------
 const perangkatItems = ref([])
+// Rincian jumlah perangkat per status (memudahkan rekap inventaris).
+const countPerangkat = computed(() => ({
+  tersedia: perangkatItems.value.filter((p) => p.status === 'tersedia').length,
+  dipinjam: perangkatItems.value.filter((p) => p.status === 'dipinjam').length,
+  perbaikan: perangkatItems.value.filter((p) => p.status === 'perbaikan').length,
+}))
 const { page: perangkatPage, totalPages: perangkatTotalPages, pagedItems: pagedPerangkat } = usePagination(perangkatItems, 10)
 const loadingPerangkat = ref(false)
 const perangkatListError = ref('')
@@ -693,6 +705,44 @@ onMounted(() => {
 }
 
 .btn-link-danger {
+  color: #c0392b;
+}
+
+/* Rincian jumlah perangkat per status */
+.perangkat-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.stat-chip {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  color: #5f6368;
+  background-color: var(--bs-grey2, #e3e6ea);
+}
+.stat-chip strong {
+  color: var(--bs-navy);
+}
+.stat-tersedia {
+  color: #1e7e34;
+  background-color: #d4edda;
+}
+.stat-tersedia strong {
+  color: #1e7e34;
+}
+.stat-dipinjam {
+  color: #856404;
+  background-color: #fff3cd;
+}
+.stat-dipinjam strong {
+  color: #856404;
+}
+.stat-perbaikan {
+  color: #c0392b;
+  background-color: #f8d7da;
+}
+.stat-perbaikan strong {
   color: #c0392b;
 }
 </style>

@@ -176,7 +176,7 @@
             <p v-if="formError" style="color: #c0392b">{{ formError }}</p>
             <p v-if="formSukses" style="color: #1e7e34">{{ formSukses }}</p>
 
-            <button type="submit" class="btn btn-navy-solid mt-20" style="width: 100%; padding: 11px" :disabled="saving">
+            <button type="submit" class="btn btn-navy-solid mt-20" style="width: 100%; padding: 10px" :disabled="saving">
               {{ saving ? 'Mengirim...' : 'Kirim Pengajuan' }}
             </button>
           </form>
@@ -197,7 +197,7 @@
             Ruangan: <strong>{{ menungguCount }}</strong> · Perangkat: <strong>{{ menungguPerangkatCount }}</strong>
           </p>
 
-          <router-link to="/persetujuan-peminjaman" class="btn btn-navy-solid" style="width: 100%; padding: 10px; text-align: center; margin-top: 20px">
+          <router-link to="/persetujuan-peminjaman" class="btn btn-navy-solid" style="width: 100%; padding: 9px; text-align: center; margin-top: 14px">
             Tinjau Pengajuan
           </router-link>
         </div>
@@ -208,7 +208,7 @@
           <p class="mt-10" style="color: #5f6368">
             Inventaris perangkat lab (PC, Router, Switch, IoT Kit, dll). Lihat ketersediaan & ajukan peminjaman.
           </p>
-          <router-link to="/perangkat" class="btn btn-navy-solid" style="width: 100%; padding: 10px; text-align: center; margin-top: 20px">
+          <router-link to="/perangkat" class="btn btn-navy-solid" style="width: 100%; padding: 9px; text-align: center; margin-top: 14px">
             Lihat &amp; Pinjam Perangkat
           </router-link>
         </div>
@@ -450,7 +450,33 @@ onMounted(() => {
 .approval-col {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
+}
+
+/* Kartu kolom aksi dibuat lebih ringkas (maintenance Fase 6–7):
+   padding, tipografi, dan jarak internal dikecilkan agar tidak memakan ruang. */
+.action-col > .card {
+  padding: 16px 18px;
+}
+.action-col > .card h3 {
+  font-size: 1.05em;
+}
+.action-col > .card > p {
+  margin-top: 6px;
+  font-size: 0.85em;
+  line-height: 1.45;
+}
+/* Kartu Persetujuan: ringkasan lebih padat */
+.approval-card .approval-count {
+  margin-top: 16px;
+  padding: 11px 14px;
+}
+.approval-card .approval-num {
+  font-size: 1.35em;
+}
+.approval-card .approval-breakdown {
+  margin-top: 8px;
+  font-size: 0.82em;
 }
 
 .approval-count {

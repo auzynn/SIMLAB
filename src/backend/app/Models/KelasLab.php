@@ -24,6 +24,7 @@ class KelasLab extends Model
         'tanggal_mulai_semester',
         'tanggal_selesai_semester',
         'kuota',
+        'tautan_pengumpulan',
     ];
 
     protected function casts(): array
@@ -70,5 +71,11 @@ class KelasLab extends Model
     public function peserta(): HasMany
     {
         return $this->hasMany(KelasLabPeserta::class);
+    }
+
+    // Deadline/tugas yang ditetapkan per pertemuan untuk kelas ini.
+    public function deadlinePertemuan(): HasMany
+    {
+        return $this->hasMany(DeadlinePertemuan::class);
     }
 }

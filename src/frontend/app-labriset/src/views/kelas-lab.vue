@@ -9,8 +9,17 @@
           <div class="profil-title"></div>
         </div>
         <div class="flex-h" style="gap: 12px; flex-wrap: wrap">
+          <router-link v-if="isMahasiswa" to="/tugas" class="btn btn-navy-border" style="width: auto; padding: 8px 20px">
+            Kirim Tugas
+          </router-link>
           <router-link v-if="isMahasiswa" to="/kelaslab/katalog" class="btn btn-navy-solid" style="width: auto; padding: 8px 20px">
             + Daftar Kelas Lab
+          </router-link>
+          <router-link v-if="bisaKelola" to="/tugas" class="btn btn-navy-border" style="width: auto; padding: 8px 20px">
+            Tugas Masuk
+          </router-link>
+          <router-link v-if="bisaKelola" to="/rekap-tugas" class="btn btn-navy-border" style="width: auto; padding: 8px 20px">
+            Rekap Tugas
           </router-link>
           <router-link v-if="bisaKelola" to="/kelaslab/persetujuan" class="btn btn-navy-border" style="width: auto; padding: 8px 20px">
             Persetujuan Pendaftaran
@@ -42,7 +51,8 @@
                 <span>{{ k.ruangan?.nama_ruangan }}</span>
               </div>
             </div>
-            <div class="sesi-action">
+            <!-- Kolom tengah: aksi/keterangan pembatalan -->
+            <div class="sesi-mid">
               <button
                 v-if="k.status_pendaftaran === 'menunggu'"
                 class="btn btn-navy-border sesi-btn-sm"
@@ -54,6 +64,12 @@
               <span v-else-if="k.status_pendaftaran === 'disetujui'" class="sesi-note-sm">
                 Pembatalan hanya lewat dosen / asisten lab.
               </span>
+            </div>
+            <!-- Kolom kanan: tautan ke halaman Detail Kelas Lab (berisi list tugas) -->
+            <div class="sesi-action">
+              <router-link :to="`/kelaslab/${k.id}/detail`" class="sesi-detail-link">
+                Lihat Detail Kelas Lab &rarr;
+              </router-link>
             </div>
           </div>
         </div>
@@ -81,8 +97,23 @@
                   <span>{{ k.dosen?.user?.name ?? '-' }}</span>
                 </div>
               </div>
-              <div class="sesi-action">
+              <div class="sesi-mid">
                 <span :class="['kuota-badge', { penuh: k.sisa_kuota <= 0 }]">Sisa {{ k.sisa_kuota }}/{{ k.kuota }}</span>
+                <span :class="['tugas-badge', { kosong: !k.tugas_count }]">
+                  {{ k.tugas_count ? `${k.tugas_count} pertemuan bertugas` : 'Belum ada tugas' }}
+                </span>
+                <template v-if="k.tugas_count">
+                  <span v-if="rekap(k.id)?.status === 'perhatian'" class="pantau-badge perhatian">
+                    ● Perlu perhatian · {{ rekap(k.id).tunggakan }} belum
+                  </span>
+                  <span v-else-if="rekap(k.id)?.status === 'berjalan'" class="pantau-badge berjalan">● Berjalan</span>
+                  <span v-else class="pantau-badge beres">● Beres</span>
+                </template>
+              </div>
+              <div class="sesi-action">
+                <router-link :to="`/kelaslab/${k.id}/detail`" class="sesi-detail-link">
+                  Lihat Detail Kelas Lab &rarr;
+                </router-link>
               </div>
             </div>
           </div>
@@ -114,6 +145,12 @@ const loading = ref(false)
 const listError = ref('')
 const busyId = ref(null)
 
+// Rekap kepatuhan tugas per kelas (Opsi B) — dipetakan per kelas_lab_id untuk badge.
+const rekapMap = ref({})
+function rekap(id) {
+  return rekapMap.value[id] || null
+}
+
 // Pendaftaran milik mahasiswa ini (status menunggu/disetujui/ditolak).
 const kelasSaya = computed(() => items.value.filter((k) => k.status_pendaftaran))
 
@@ -133,6 +170,17 @@ async function load() {
   try {
     const res = await kelasLabService.list()
     items.value = res.data.data
+    // Muat rekap kepatuhan tugas untuk badge "Perlu perhatian / Beres".
+    // Admin juga melihat katalog ini (bukan mahasiswa) & backend mengizinkannya —
+    // sebelumnya hanya bisaKelola (dosen/supervisor) sehingga badge Admin selalu "Beres".
+    if (!isMahasiswa.value) {
+      try {
+        const rk = await kelasLabService.rekapTugas()
+        rekapMap.value = Object.fromEntries(rk.data.data.map((r) => [r.kelas_lab_id, r]))
+      } catch {
+        rekapMap.value = {}
+      }
+    }
   } catch (err) {
     listError.value = err.response?.data?.message || 'Gagal memuat data.'
   } finally {
@@ -206,6 +254,50 @@ onMounted(load)
 .meta-sep {
   color: #cbd0d6;
 }
+/* Kolom tengah: tombol batal / keterangan pembatalan / badge kuota+tugas */
+.sesi-mid {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 200px;
+  text-align: center;
+}
+.tugas-badge {
+  font-size: 0.78em;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 20px;
+  color: var(--bs-navy);
+  background-color: #eef1f7;
+  white-space: nowrap;
+}
+.tugas-badge.kosong {
+  color: #9aa0a6;
+  background-color: #f0f2f4;
+  font-weight: 500;
+}
+.pantau-badge {
+  font-size: 0.76em;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.pantau-badge.perhatian {
+  color: #c0392b;
+  background-color: #fdecec;
+}
+.pantau-badge.berjalan {
+  color: #3a5a8c;
+  background-color: #e8eef7;
+}
+.pantau-badge.beres {
+  color: #1e7e34;
+  background-color: #e6f4ea;
+}
 .sesi-action {
   flex-shrink: 0;
   display: flex;
@@ -222,6 +314,15 @@ onMounted(load)
 .sesi-note-sm {
   font-size: 0.78em;
   color: #5f6368;
+}
+.sesi-detail-link {
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--bs-navy);
+  white-space: nowrap;
+}
+.sesi-detail-link:hover {
+  text-decoration: underline;
 }
 .kuota-badge {
   font-size: 0.8em;
@@ -262,6 +363,7 @@ onMounted(load)
     flex-direction: column;
     align-items: stretch;
   }
+  .sesi-mid,
   .sesi-action {
     justify-content: flex-start;
     min-width: 0;

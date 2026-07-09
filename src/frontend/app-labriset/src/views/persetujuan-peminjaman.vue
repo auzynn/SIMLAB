@@ -111,6 +111,22 @@
               <th>Status</th>
               <th style="text-align: right">Aksi</th>
             </tr>
+            <tr class="filter-row">
+              <th>
+                <div class="filter-pengaju">
+                  <select v-model="devSearch.pengajuField" class="filter-select">
+                    <option value="nama">Nama</option>
+                    <option value="npm">NPM</option>
+                  </select>
+                  <input v-model="devSearch.pengaju" class="filter-input" :placeholder="devSearch.pengajuField === 'npm' ? 'Cari NPM' : 'Cari nama'" />
+                </div>
+              </th>
+              <th><input v-model="devSearch.perangkat" class="filter-input" placeholder="Cari perangkat" /></th>
+              <th><input v-model="devSearch.tglPinjam" class="filter-input" placeholder="Cari tanggal" /></th>
+              <th><input v-model="devSearch.tglKembali" class="filter-input" placeholder="Cari tanggal" /></th>
+              <th></th>
+              <th></th>
+            </tr>
           </thead>
           <tbody>
             <tr v-for="p in pagedDev" :key="p.id">
@@ -134,6 +150,14 @@
                   @click="kembalikanDev(p)"
                 >
                   Konfirmasi Kembali
+                </button>
+                <button
+                  v-else-if="p.status === 'dikembalikan' || p.status === 'ditolak'"
+                  class="btn-link btn-link-danger"
+                  :disabled="devBusy === p.id"
+                  @click="hapusDev(p)"
+                >
+                  Hapus
                 </button>
                 <span v-else style="color: #9aa0a6">—</span>
               </td>
@@ -159,9 +183,24 @@
               <th>Usulan Tanggal Baru</th>
               <th style="text-align: right">Aksi</th>
             </tr>
+            <tr class="filter-row">
+              <th>
+                <div class="filter-pengaju">
+                  <select v-model="perpSearch.pengajuField" class="filter-select">
+                    <option value="nama">Nama</option>
+                    <option value="npm">NPM</option>
+                  </select>
+                  <input v-model="perpSearch.pengaju" class="filter-input" :placeholder="perpSearch.pengajuField === 'npm' ? 'Cari NPM' : 'Cari nama'" />
+                </div>
+              </th>
+              <th><input v-model="perpSearch.perangkat" class="filter-input" placeholder="Cari perangkat" /></th>
+              <th></th>
+              <th></th>
+              <th></th>
+            </tr>
           </thead>
           <tbody>
-            <tr v-for="x in perpMenunggu" :key="x.id">
+            <tr v-for="x in perpFiltered" :key="x.id">
               <td>
                 <div>{{ x.peminjaman?.user?.name }}</div>
                 <div v-if="x.peminjaman?.user?.mahasiswa?.npm" class="pengaju-npm">{{ x.peminjaman.user.mahasiswa.npm }}</div>
@@ -174,7 +213,7 @@
                 <button class="btn-link btn-link-danger" :disabled="devBusy === 'pp-' + x.id" @click="rejectPerp(x)">Tolak</button>
               </td>
             </tr>
-            <tr v-if="!perpMenunggu.length">
+            <tr v-if="!perpFiltered.length">
               <td colspan="5" style="text-align: center; color: #9aa0a6">Tidak ada pengajuan perpanjangan.</td>
             </tr>
           </tbody>
@@ -269,10 +308,23 @@ const loadingDev = ref(false)
 const errorDev = ref('')
 const devBusy = ref(null)
 
-// Menunggu di atas, lalu sisanya.
-const devFiltered = computed(() =>
-  [...devItems.value].sort((a, b) => (a.status === 'menunggu' ? -1 : 0) - (b.status === 'menunggu' ? -1 : 0)),
-)
+const devSearch = ref({ pengajuField: 'nama', pengaju: '', perangkat: '', tglPinjam: '', tglKembali: '' })
+
+// Cocok filter dulu, lalu menunggu di atas.
+const devFiltered = computed(() => {
+  const f = devSearch.value
+  return [...devItems.value]
+    .filter((p) => {
+      const pengajuVal = f.pengajuField === 'npm' ? p.user?.mahasiswa?.npm : p.user?.name
+      return (
+        cocok(pengajuVal, f.pengaju) &&
+        cocok(p.perangkat?.nama_perangkat, f.perangkat) &&
+        cocok(formatTanggalId(p.tanggal_pinjam), f.tglPinjam) &&
+        cocok(formatTanggalId(p.tanggal_kembali_rencana), f.tglKembali)
+      )
+    })
+    .sort((a, b) => (a.status === 'menunggu' ? -1 : 0) - (b.status === 'menunggu' ? -1 : 0))
+})
 const { page: pageP, totalPages: totalPagesP, pagedItems: pagedDev } = usePagination(devFiltered, 10)
 const devMenunggu = computed(() => devItems.value.filter((p) => p.status === 'menunggu').length)
 
@@ -281,6 +333,14 @@ const perpMenunggu = computed(() =>
     (p.perpanjangan ?? []).filter((x) => x.status === 'menunggu').map((x) => ({ ...x, peminjaman: p })),
   ),
 )
+const perpSearch = ref({ pengajuField: 'nama', pengaju: '', perangkat: '' })
+const perpFiltered = computed(() => {
+  const f = perpSearch.value
+  return perpMenunggu.value.filter((x) => {
+    const pengajuVal = f.pengajuField === 'npm' ? x.peminjaman?.user?.mahasiswa?.npm : x.peminjaman?.user?.name
+    return cocok(pengajuVal, f.pengaju) && cocok(x.peminjaman?.perangkat?.nama_perangkat, f.perangkat)
+  })
+})
 
 async function loadDev() {
   loadingDev.value = true
@@ -314,6 +374,11 @@ const rejectDev = (p) => {
 const kembalikanDev = (p) => {
   if (!confirm('Konfirmasi bahwa perangkat sudah dikembalikan?')) return
   return devAksi(p.id, () => peminjamanPerangkatService.kembalikan(p.id))
+}
+// Hapus riwayat — hanya untuk peminjaman yang sudah dikembalikan (bukan yang sedang berjalan).
+const hapusDev = (p) => {
+  if (!confirm('Hapus riwayat peminjaman ini dari daftar? Tindakan ini permanen.')) return
+  return devAksi(p.id, () => peminjamanPerangkatService.remove(p.id))
 }
 const approvePerp = (x) => devAksi('pp-' + x.id, () => peminjamanPerangkatService.approvePerpanjangan(x.id))
 const rejectPerp = (x) => {

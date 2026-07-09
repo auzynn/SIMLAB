@@ -12,9 +12,9 @@
             <h1>{{ kelas?.mata_kuliah?.nama_mk }}</h1>
             <div class="profil-title"></div>
           </div>
-          <router-link to="/kelaslab/kelola" class="btn btn-navy-border" style="display: inline-block; width: auto; padding: 8px 20px; flex-shrink: 0">
-            &larr; Kembali ke Kelola Kelas Lab
-          </router-link>
+          <button type="button" class="btn btn-navy-border" style="display: inline-block; width: auto; padding: 8px 20px; flex-shrink: 0" @click="kembali">
+            &larr; Kembali
+          </button>
         </div>
 
         <div class="kelas-meta mt-30">
@@ -64,14 +64,23 @@
 // Halaman daftar peserta satu sesi Kelas Lab (terpisah dari halaman Kelola Kelas Lab).
 // Akses: pemilik kelas (Dosen) atau Supervisor — divalidasi backend (KelasLabPolicy::viewPeserta).
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { kelasLabService } from '@/services/kelas-lab'
 import { formatJam, hariLabel, statusLabel } from '@/utils/format'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 
 const route = useRoute()
+const router = useRouter()
 const kelasId = route.params.id
+
+// Halaman ini dijangkau dari >1 halaman (Kelola Kelas Lab & Detail Kelas Lab),
+// jadi kembali ke halaman sebelumnya. Fallback ke Kelola bila tak ada history
+// (mis. dibuka langsung via URL / tab baru).
+function kembali() {
+  if (window.history.length > 1) router.back()
+  else router.push('/kelaslab/kelola')
+}
 
 const kelas = ref(null)
 const peserta = ref([])

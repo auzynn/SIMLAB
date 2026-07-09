@@ -29,6 +29,10 @@ export const kelasLabService = {
   peserta(id) {
     return api.get(`/api/kelas-lab/${id}/peserta`)
   },
+  // Rekap kepatuhan pengumpulan tugas per kelas (Dosen/Supervisor/Admin) — Opsi B.
+  rekapTugas() {
+    return api.get('/api/kelas-lab/rekap-tugas')
+  },
   // Persetujuan pendaftaran (Dosen/Supervisor): list + approve/reject.
   pendaftaran(params = {}) {
     return api.get('/api/kelas-lab/pendaftaran', { params })
@@ -42,5 +46,16 @@ export const kelasLabService = {
   // Keluarkan peserta dari kelas (Dosen pemilik / Supervisor) — mis. salah daftar.
   hapusPeserta(pesertaId) {
     return api.delete(`/api/kelas-lab/pendaftaran/${pesertaId}`)
+  },
+  // Deadline pengumpulan tugas per pertemuan: lihat (semua role), atur/hapus (Dosen/Supervisor/Admin).
+  deadlineList(id) {
+    return api.get(`/api/kelas-lab/${id}/deadline`)
+  },
+  // payload: { materi?, deadline? } — minimal salah satu; keduanya kosong = record dihapus.
+  setDeadline(id, pertemuan, payload) {
+    return api.put(`/api/kelas-lab/${id}/deadline/${pertemuan}`, payload)
+  },
+  removeDeadline(id, pertemuan) {
+    return api.delete(`/api/kelas-lab/${id}/deadline/${pertemuan}`)
   },
 }

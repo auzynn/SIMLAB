@@ -77,6 +77,19 @@
           </div>
         </div>
 
+        <div class="form-row mt-20">
+          <label>Tautan Pengumpulan Dokumen</label>
+          <input
+            v-model="form.tautan_pengumpulan"
+            type="url"
+            class="form-ctrl input-border"
+            style="width: 100%"
+            placeholder="https://forms.gle/... atau folder Google Drive"
+            required
+          />
+          <p class="field-hint">Tautan tempat mahasiswa mengunggah dokumen laporan (PDF/DOCX). Wajib diisi.</p>
+        </div>
+
         <p class="jam-note">Jam operasional lab: 07.00–17.00 WIB.</p>
         <p v-if="formError" style="color: #c0392b">{{ formError }}</p>
 
@@ -92,8 +105,7 @@
       <table v-else class="data-table mt-30">
         <thead>
           <tr>
-            <th>Mata Kuliah</th>
-            <th>Sesi</th>
+            <th>Mata Kuliah / Kelas</th>
             <th>Jadwal</th>
             <th>Ruangan</th>
             <th>Peserta</th>
@@ -101,7 +113,6 @@
           </tr>
           <tr class="filter-row">
             <th><input v-model="filters.mk" class="filter-input" placeholder="Cari mata kuliah" /></th>
-            <th><input v-model="filters.sesi" class="filter-input" placeholder="Cari sesi" /></th>
             <th><input v-model="filters.jadwal" class="filter-input" placeholder="Cari jadwal" /></th>
             <th><input v-model="filters.ruangan" class="filter-input" placeholder="Cari ruangan" /></th>
             <th></th>
@@ -109,20 +120,25 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="k in kelasTampil" :key="k.id">
-            <td>{{ k.mata_kuliah?.nama_mk }}</td>
-            <td>{{ k.nama_sesi }}</td>
-            <td>{{ hariLabel(k.hari) }} {{ formatJam(k.jam_mulai) }}–{{ formatJam(k.jam_selesai) }}</td>
-            <td>{{ k.ruangan?.nama_ruangan }}</td>
-            <td>{{ k.peserta_count ?? (k.kuota - k.sisa_kuota) }}/{{ k.kuota }}</td>
-            <td style="text-align: right">
-              <router-link class="btn-link" :to="`/kelaslab/${k.id}/peserta`">Peserta</router-link>
-              <button class="btn-link" @click="openEdit(k)">Edit</button>
-              <button class="btn-link btn-link-danger" @click="hapus(k)">Hapus</button>
-            </td>
-          </tr>
-          <tr v-if="!kelasTampil.length">
-            <td colspan="6" style="text-align: center; color: #9aa0a6">Belum ada kelas.</td>
+          <!-- Dikelompokkan per mata kuliah (baris judul abu), diurut Nama MK A→Z lalu Hari/Jam. -->
+          <template v-for="g in grupTampil" :key="g.namaMk">
+            <tr class="grup-head">
+              <td colspan="5">{{ g.namaMk }} <span class="grup-count">· {{ g.items.length }} kelas</span></td>
+            </tr>
+            <tr v-for="k in g.items" :key="k.id">
+              <td class="sesi-cell">{{ k.nama_sesi }}</td>
+              <td>{{ hariLabel(k.hari) }} {{ formatJam(k.jam_mulai) }}–{{ formatJam(k.jam_selesai) }}</td>
+              <td>{{ k.ruangan?.nama_ruangan }}</td>
+              <td>{{ k.peserta_count ?? (k.kuota - k.sisa_kuota) }}/{{ k.kuota }}</td>
+              <td style="text-align: right">
+                <router-link class="btn-link" :to="`/kelaslab/${k.id}/peserta`">Peserta</router-link>
+                <button class="btn-link" @click="openEdit(k)">Edit</button>
+                <button class="btn-link btn-link-danger" @click="hapus(k)">Hapus</button>
+              </td>
+            </tr>
+          </template>
+          <tr v-if="!grupTampil.length">
+            <td colspan="5" style="text-align: center; color: #9aa0a6">Belum ada kelas.</td>
           </tr>
         </tbody>
       </table>
@@ -171,6 +187,7 @@ const blankForm = () => ({
   tanggal_mulai_semester: '',
   tanggal_selesai_semester: '',
   kuota: 30,
+  tautan_pengumpulan: '',
 })
 const form = ref(blankForm())
 
@@ -182,17 +199,39 @@ const milikSaya = computed(() => {
 })
 
 // Filter kolom tabel kelola.
-const filters = ref({ mk: '', sesi: '', jadwal: '', ruangan: '' })
+const filters = ref({ mk: '', jadwal: '', ruangan: '' })
 const cocok = (val, q) => !q || String(val ?? '').toLowerCase().includes(q.toLowerCase())
 const kelasTampil = computed(() => {
   const f = filters.value
   return milikSaya.value.filter(
     (k) =>
       cocok(k.mata_kuliah?.nama_mk, f.mk) &&
-      cocok(k.nama_sesi, f.sesi) &&
       cocok(`${hariLabel(k.hari)} ${formatJam(k.jam_mulai)} ${formatJam(k.jam_selesai)}`, f.jadwal) &&
       cocok(k.ruangan?.nama_ruangan, f.ruangan),
   )
+})
+
+// Urutan hari untuk pengurutan dalam grup (Senin → Sabtu).
+const URUT_HARI = { senin: 1, selasa: 2, rabu: 3, kamis: 4, jumat: 5, sabtu: 6, minggu: 7 }
+
+// Kelompokkan per mata kuliah, urut Nama MK A→Z, di dalamnya urut Hari lalu Jam mulai.
+const grupTampil = computed(() => {
+  const peta = new Map()
+  for (const k of kelasTampil.value) {
+    const nama = k.mata_kuliah?.nama_mk ?? '(Tanpa mata kuliah)'
+    if (!peta.has(nama)) peta.set(nama, [])
+    peta.get(nama).push(k)
+  }
+  const grup = [...peta.entries()].map(([namaMk, items]) => {
+    items.sort((a, b) => {
+      const h = (URUT_HARI[a.hari] ?? 99) - (URUT_HARI[b.hari] ?? 99)
+      if (h !== 0) return h
+      return String(a.jam_mulai ?? '').localeCompare(String(b.jam_mulai ?? ''))
+    })
+    return { namaMk, items }
+  })
+  grup.sort((a, b) => a.namaMk.localeCompare(b.namaMk, 'id'))
+  return grup
 })
 
 async function load() {
@@ -234,6 +273,7 @@ function openEdit(k) {
     tanggal_mulai_semester: k.tanggal_mulai_semester,
     tanggal_selesai_semester: k.tanggal_selesai_semester,
     kuota: k.kuota,
+    tautan_pengumpulan: k.tautan_pengumpulan ?? '',
   }
   formError.value = ''
   showForm.value = true
@@ -310,6 +350,11 @@ onMounted(() => {
   font-size: 0.85em;
   color: #5f6368;
 }
+.field-hint {
+  margin-top: 6px;
+  font-size: 0.82em;
+  color: #9aa0a6;
+}
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -327,6 +372,26 @@ onMounted(() => {
   padding: 6px 10px;
   border-bottom: 1px solid var(--bs-grey2);
   font-weight: normal;
+}
+/* Baris judul kelompok mata kuliah (Bentuk B). */
+.grup-head td {
+  background-color: var(--bs-grey1);
+  border-left: 4px solid var(--bs-navy);
+  border-bottom: 2px solid var(--bs-grey2);
+  font-weight: 700;
+  color: var(--bs-navy);
+  padding: 10px 12px;
+}
+.grup-count {
+  font-weight: 500;
+  color: #5f6368;
+  font-size: 0.85em;
+}
+/* Sel sesi menjorok agar terlihat "anak" dari judul mata kuliah di atasnya. */
+.sesi-cell {
+  padding-left: 24px;
+  font-weight: 600;
+  color: var(--bs-navy);
 }
 .filter-input {
   width: 100%;

@@ -112,6 +112,13 @@ const routes = [
     meta: { requiresAuth: true, roles: ['admin'] }
   },
   {
+    path: '/admin/sertifikasi',
+    name: 'admin-sertifikasi',
+    // Kelola Katalog Sertifikasi — Admin & Supervisor (Gate manage-master-data)
+    component: () => import('../views/admin-sertifikasi.vue'),
+    meta: { requiresAuth: true, roles: ['admin', 'supervisor'] }
+  },
+  {
     path: '/admin/data-master',
     name: 'admin-data-master',
     // Kelola Data Master (Ruangan & Mata Kuliah) — Admin & Supervisor (Gate manage-master-data)
@@ -124,6 +131,21 @@ const routes = [
     // Status pengajuan peminjaman ruangan milik sendiri — Mahasiswa (Dosen tidak meminjam ruangan)
     component: () => import('../views/peminjaman-saya.vue'),
     meta: { requiresAuth: true, roles: ['mahasiswa'] }
+  },
+  {
+    path: '/report',
+    name: 'report',
+    // Laporan/Report (rekap + unduh PDF) — Admin & Supervisor (Gate view-report, SRS UC-06)
+    component: () => import('../views/report.vue'),
+    meta: { requiresAuth: true, roles: ['admin', 'supervisor'] }
+  },
+  {
+    path: '/rekap-tugas',
+    name: 'rekap-tugas',
+    // Rekap Tugas Kelas Lab (ringkasan + matriks per pertemuan, unduh PDF/Excel) —
+    // Admin, Supervisor & Dosen (Gate view-rekap-tugas, SRS UC-06). Dosen di-scope ke kelasnya.
+    component: () => import('../views/rekap-tugas.vue'),
+    meta: { requiresAuth: true, roles: ['admin', 'supervisor', 'dosen'] }
   },
   {
     path: '/persetujuan-peminjaman',
@@ -149,6 +171,27 @@ const routes = [
     // Persetujuan perangkat kini menyatu ke halaman Persetujuan Peminjaman (tab Perangkat).
     path: '/persetujuan-perangkat',
     redirect: '/persetujuan-peminjaman?tab=perangkat'
+  },
+  {
+    path: '/tugas',
+    name: 'tugas',
+    // Pengumpulan Tugas — Mahasiswa kirim tautan tugas; Dosen/Supervisor/Admin melihat (per-role)
+    component: () => import('../views/tugas.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/sertifikasi',
+    name: 'sertifikasi',
+    // Katalog sertifikasi eksternal (informasional) — semua role yang login
+    component: () => import('../views/sertifikasi.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/portofolio',
+    name: 'portofolio',
+    // Portofolio riset mahasiswa — semua role login (Mahasiswa kelola milik sendiri)
+    component: () => import('../views/portofolio.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/kelaslab',
@@ -181,9 +224,23 @@ const routes = [
   {
     path: '/kelaslab/:id/peserta',
     name: 'peserta-kelas-lab',
-    // Daftar peserta satu sesi Kelas Lab — pemilik (Dosen) atau Supervisor
+    // Daftar peserta satu sesi Kelas Lab — pemilik (Dosen) / Supervisor / Admin
     component: () => import('../views/peserta-kelas-lab.vue'),
-    meta: { requiresAuth: true, roles: ['dosen', 'supervisor'] }
+    meta: { requiresAuth: true, roles: ['dosen', 'supervisor', 'admin'] }
+  },
+  {
+    path: '/kelaslab/:id/detail',
+    name: 'detail-kelas-lab',
+    // Detail satu sesi Kelas Lab + daftar tugas mahasiswa — semua role yang login
+    component: () => import('../views/detail-kelas-lab.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/kelaslab/:id/pertemuan/:pertemuan',
+    name: 'detail-pertemuan',
+    // Detail satu pertemuan: status pengumpulan mahasiswa — Dosen pengampu/Supervisor/Admin
+    component: () => import('../views/detail-pertemuan.vue'),
+    meta: { requiresAuth: true, roles: ['dosen', 'supervisor', 'admin'] }
   }
 ]
 

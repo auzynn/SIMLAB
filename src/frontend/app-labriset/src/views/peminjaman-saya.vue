@@ -24,8 +24,16 @@
 
       <!-- ============ TAB RUANGAN ============ -->
       <template v-if="tab === 'ruangan'">
-        <p v-if="loadingRuangan" class="mt-30">Memuat data...</p>
-        <p v-else-if="errorRuangan" class="mt-30" style="color: #c0392b">{{ errorRuangan }}</p>
+        <!-- Pengajuan ruangan dilakukan dari halaman Jadwal Lab (Informasi Jadwal + formulir) -->
+        <div class="flex-h between mt-20" style="align-items: center; gap: 12px; flex-wrap: wrap">
+          <h3>Riwayat Pengajuan Ruangan</h3>
+          <router-link to="/jadwallab" class="btn btn-navy-solid" style="width: auto; padding: 8px 20px">
+            + Ajukan Peminjaman Ruangan
+          </router-link>
+        </div>
+
+        <p v-if="loadingRuangan" class="mt-20">Memuat data...</p>
+        <p v-else-if="errorRuangan" class="mt-20" style="color: #c0392b">{{ errorRuangan }}</p>
         <table v-else class="data-table mt-20">
           <thead>
             <tr>
@@ -66,39 +74,13 @@
 
       <!-- ============ TAB PERANGKAT ============ -->
       <template v-else>
-        <!-- Form pengajuan perangkat -->
-        <form class="master-form mt-20" @submit.prevent="submitPerangkat">
-          <h3 class="mb-20">Ajukan Peminjaman Perangkat</h3>
-          <div class="form-row">
-            <label>Perangkat</label>
-            <select class="form-ctrl input-border" v-model="form.perangkat_id" required>
-              <option value="" disabled>Pilih perangkat tersedia</option>
-              <option v-for="p in perangkatTersedia" :key="p.id" :value="p.id">
-                {{ p.nama_perangkat }} ({{ p.nomor_seri }})
-              </option>
-            </select>
-            <p v-if="!perangkatTersedia.length && !loadingPerangkatList" style="color: #9aa0a6; margin-top: 6px">
-              Tidak ada perangkat tersedia saat ini.
-            </p>
-          </div>
-          <div class="form-row">
-            <label>Tanggal Pinjam</label>
-            <input type="date" class="form-ctrl input-border" v-model="form.tanggal_pinjam" :min="today" required />
-          </div>
-          <div class="form-row">
-            <label>Rencana Tanggal Kembali</label>
-            <input type="date" class="form-ctrl input-border" v-model="form.tanggal_kembali_rencana" :min="form.tanggal_pinjam || today" required />
-          </div>
-
-          <p v-if="formError" style="color: #c0392b">{{ formError }}</p>
-
-          <button type="submit" class="btn btn-navy-solid" style="width: auto; padding: 8px 24px" :disabled="saving">
-            {{ saving ? 'Mengirim...' : 'Ajukan Peminjaman' }}
-          </button>
-        </form>
-
-        <!-- Riwayat pengajuan perangkat -->
-        <h3 class="mt-40">Riwayat Pengajuan Perangkat</h3>
+        <!-- Pengajuan dilakukan dari katalog Perangkat Lab: pilih perangkat → "Ajukan Pinjam" -->
+        <div class="flex-h between mt-20" style="align-items: center; gap: 12px; flex-wrap: wrap">
+          <h3>Riwayat Pengajuan Perangkat</h3>
+          <router-link to="/perangkat" class="btn btn-navy-solid" style="width: auto; padding: 8px 20px">
+            + Ajukan Peminjaman Perangkat
+          </router-link>
+        </div>
         <p v-if="loadingPerangkat" class="mt-20">Memuat data...</p>
         <p v-else-if="errorPerangkat" class="mt-20" style="color: #c0392b">{{ errorPerangkat }}</p>
         <table v-else class="data-table mt-20">
@@ -171,11 +153,10 @@
 <script setup>
 // "Peminjaman Saya" — gabungan pengajuan ruangan (UC-02) & perangkat (UC-03) milik Mahasiswa,
 // dipisah tab. Backend memfilter agar hanya milik sendiri. Pengajuan 'menunggu' bisa dibatalkan.
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { peminjamanRuanganService } from '@/services/peminjaman-ruangan'
 import { peminjamanPerangkatService } from '@/services/peminjaman-perangkat'
-import { perangkatService } from '@/services/perangkat'
 import { usePagination } from '@/composables/use-pagination'
 import { formatTanggalId, formatJam, statusLabel, namaHari } from '@/utils/format'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
@@ -199,14 +180,6 @@ const itemsPerangkat = ref([])
 const { page: pageP, totalPages: totalPagesP, pagedItems: pagedPerangkat } = usePagination(itemsPerangkat, 10)
 const loadingPerangkat = ref(false)
 const errorPerangkat = ref('')
-
-const perangkatList = ref([])
-const loadingPerangkatList = ref(false)
-const perangkatTersedia = computed(() => perangkatList.value.filter((p) => p.status === 'tersedia'))
-
-const form = ref({ perangkat_id: '', tanggal_pinjam: today, tanggal_kembali_rencana: '' })
-const saving = ref(false)
-const formError = ref('')
 
 const perpanjanganFor = ref(null)
 const perpanjanganTanggal = ref('')
@@ -251,34 +224,6 @@ async function loadPerangkatPeminjaman() {
   }
 }
 
-async function loadPerangkatList() {
-  loadingPerangkatList.value = true
-  try {
-    const res = await perangkatService.list()
-    perangkatList.value = res.data.data
-  } finally {
-    loadingPerangkatList.value = false
-  }
-}
-
-async function submitPerangkat() {
-  saving.value = true
-  formError.value = ''
-  try {
-    await peminjamanPerangkatService.create({
-      perangkat_id: Number(form.value.perangkat_id),
-      tanggal_pinjam: form.value.tanggal_pinjam,
-      tanggal_kembali_rencana: form.value.tanggal_kembali_rencana,
-    })
-    form.value = { perangkat_id: '', tanggal_pinjam: today, tanggal_kembali_rencana: '' }
-    await Promise.all([loadPerangkatPeminjaman(), loadPerangkatList()])
-  } catch (err) {
-    formError.value = extractError(err)
-  } finally {
-    saving.value = false
-  }
-}
-
 async function batalkanRuangan(p) {
   if (!confirm('Batalkan pengajuan peminjaman ruangan ini?')) return
   busyId.value = 'r-' + p.id
@@ -297,7 +242,7 @@ async function batalkanPerangkat(p) {
   busyId.value = 'p-' + p.id
   try {
     await peminjamanPerangkatService.remove(p.id)
-    await Promise.all([loadPerangkatPeminjaman(), loadPerangkatList()])
+    await loadPerangkatPeminjaman()
   } catch (err) {
     alert(extractError(err))
   } finally {
@@ -334,17 +279,12 @@ function extractError(err) {
   return res?.message || 'Terjadi kesalahan. Silakan coba lagi.'
 }
 
-onMounted(async () => {
-  // Tab awal & prefill dari query (mis. datang dari katalog perangkat: ?tab=perangkat&perangkat=ID)
+onMounted(() => {
+  // Tab awal dari query (mis. datang dari katalog perangkat: ?tab=perangkat)
   if (route.query.tab === 'perangkat') tab.value = 'perangkat'
 
-  await Promise.all([loadRuangan(), loadPerangkatPeminjaman(), loadPerangkatList()])
-
-  const pre = route.query.perangkat
-  if (pre && perangkatTersedia.value.some((p) => String(p.id) === String(pre))) {
-    form.value.perangkat_id = Number(pre)
-    tab.value = 'perangkat'
-  }
+  loadRuangan()
+  loadPerangkatPeminjaman()
 })
 </script>
 
@@ -353,6 +293,7 @@ onMounted(async () => {
   display: flex;
   gap: 8px;
   border-bottom: 2px solid var(--bs-grey2);
+  margin-bottom: 14px;
 }
 .tab {
   background: none;
@@ -367,22 +308,6 @@ onMounted(async () => {
 .tab.active {
   color: var(--bs-navy);
   border-bottom-color: var(--bs-navy);
-}
-.master-form {
-  max-width: 480px;
-  padding: 24px;
-  background-color: var(--bs-grey1);
-  border-radius: 8px;
-}
-.form-row {
-  margin-bottom: 16px;
-}
-.form-row label {
-  display: block;
-  margin-bottom: 6px;
-}
-.form-row .form-ctrl {
-  width: 100%;
 }
 .data-table {
   width: 100%;
