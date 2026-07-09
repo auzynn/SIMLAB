@@ -55,5 +55,18 @@ class AppServiceProvider extends ServiceProvider
 
         // Mendaftar sebagai peserta Kelas Lab: khusus Mahasiswa (2_SRS.md Bagian 1, UC-02a).
         Gate::define('daftar-kelas-lab', fn (User $user) => $user->role === 'mahasiswa');
+
+        // Akses Laporan/Report (lihat rekap + unduh PDF): Admin & Supervisor (2_SRS.md Bagian 1, UC-06).
+        Gate::define(
+            'view-report',
+            fn (User $user) => in_array($user->role, ['admin', 'supervisor'], true),
+        );
+
+        // Akses Rekap Tugas Kelas Lab (rekap + unduh PDF/Excel): Admin, Supervisor & Dosen.
+        // Dosen di-scope ke kelas miliknya di RekapTugasService (2_SRS.md Bagian 1, UC-06).
+        Gate::define(
+            'view-rekap-tugas',
+            fn (User $user) => in_array($user->role, ['admin', 'supervisor', 'dosen'], true),
+        );
     }
 }
