@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,6 +13,12 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
+    ->withSchedule(function (Schedule $schedule): void {
+        // Pengingat pengembalian perangkat tiap pagi 07.00 (perlu `schedule:run` via cron/Task Scheduler/schedule:work).
+        $schedule->command('pengingat:pengembalian')->dailyAt('07:00');
+        // Pengingat tenggat tugas terlewati — dicek tiap jam agar mendekati waktu deadline.
+        $schedule->command('pengingat:deadline')->hourly();
+    })
     ->withMiddleware(function (Middleware $middleware): void {
         //
     })
