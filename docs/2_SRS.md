@@ -2,8 +2,10 @@
 
 **Nama Produk**: Sistem Informasi Manajemen Laboratorium Riset (SIM Lab. Riset)
 **Unit Terkait**: Laboratorium Riset Kelompok Keahlian (KK) Jaringan, Komputer, dan Forensik (JKF) — Prodi Informatika
-**Versi Dokumen**: 1.0
+**Versi Dokumen**: 1.1
 **Dokumen Acuan**: `1_PRD.md`
+
+> **Perubahan v1.1 (per 2026-07-09)**: modul **Presensi digantikan Pengumpulan Tugas** (UC-04 ditulis ulang). Matriks RBAC baris "Presensi" → "Pengumpulan Tugas"; ditambah baris "Deadline & Materi Pertemuan". UC-06a (Rekap Tugas) & UC-07 (pemicu pengingat) diselaraskan dengan implementasi. Delegasi Aslab didokumentasikan.
 
 > Dokumen ini adalah **sumber kebenaran** untuk aturan validasi bisnis dan hak akses (RBAC). Semua AI Agent membaca dokumen ini untuk memastikan setiap endpoint dan fitur yang diimplementasikan mematuhi aturan otorisasi dan validasi yang didefinisikan di sini — lihat `.clinerules/agent.md`.
 
@@ -16,17 +18,20 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | Modul | Admin | Supervisor | Dosen | Mahasiswa |
 |---|---|---|---|---|
 | Data User & Role | CRUD | – | – | – |
+| Delegasi Asisten Lab (Mahasiswa ↔ Supervisor) | C, R, D | – | – | – |
 | Data Master (ruangan, perangkat, mata kuliah) | CRUD | CRUD | – | – |
 | Jadwal Peminjaman Lab | CRUD | CRUD | R | R |
 | Kelas Lab/Praktikum (jadwal semester) | R saja (tidak bisa membuka kelas) | C (atas permintaan Dosen), R, approve/reject pendaftaran | CRUD (milik sendiri) + approve/reject pendaftaran kelasnya | R, daftar sebagai peserta (butuh persetujuan) |
 | Pengajuan Peminjaman Ruangan | R (approve/reject) | R (approve/reject) | – | C, R (milik sendiri) |
 | Pengajuan Peminjaman Perangkat & Perpanjangan | R (approve/reject) | R (approve/reject) | – | C, R, U (milik sendiri, sebelum disetujui) |
-| Presensi | R (rekap) | R (rekap) | C, R, U, D (milik sendiri & mahasiswa bimbingan) | C, R (milik sendiri) |
+| Pengumpulan Tugas (menggantikan Presensi) | R (semua), D | R (semua), D | R (kelas milik sendiri), D | C, R, D (milik sendiri) |
+| Deadline & Materi Pertemuan Kelas Lab | CRU (semua kelas) | CRU (semua kelas) | CRU (kelas milik sendiri) | R |
 | Sertifikasi (katalog informasi) | CRUD | CRUD | – | R |
 | Portofolio Mahasiswa | R | R | R | CRUD (milik sendiri) |
 | Profil & Roadmap Dosen | R | R | CRUD (milik sendiri) | R |
 | Profil Mahasiswa (data diri, kecuali NPM) | R | R | R (mahasiswa bimbingan) | U (milik sendiri) |
 | Laporan/Report (unduh) | C, R | C, R | – | – |
+| Rekap Tugas Kelas Lab (unduh PDF/Excel) | R (semua kelas) | R (semua kelas) | R (kelas milik sendiri) | – |
 | Halaman Informasi Lab (Beranda, Visi-Misi, Daftar Dosen, Roadmap Lab, Profil Kepala Lab) | CRUD (kelola konten) | R | R | R |
 | Edit Profil Akun Pribadi | U (milik sendiri) | U (milik sendiri) | U (milik sendiri) | U (milik sendiri) |
 | Notifikasi In-App | U (tandai baca), D (milik sendiri) | U (tandai baca), D (milik sendiri) | U (tandai baca), D (milik sendiri) | U (tandai baca), D (milik sendiri) |
@@ -35,7 +40,7 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 - Setiap endpoint API **wajib** diproteksi middleware `auth:sanctum` kecuali endpoint publik yang eksplisit didefinisikan di Bagian 4
 - Pengecekan role **wajib** dilakukan lewat Laravel Policy/Gate, bukan pengecekan manual `if ($user->role === ...)` yang tersebar di Controller
 - "Milik sendiri" berarti sistem **wajib** memvalidasi `user_id`/`dosen_id`/`mahasiswa_id` pemilik data cocok dengan user yang sedang login, sebelum mengizinkan operasi Update/Delete
-- Hubungan "mahasiswa bimbingan" (untuk validasi akses Dosen ke profil/presensi mahasiswa bimbingan) didefinisikan melalui foreign key `dosen_pembimbing_id` pada entri mahasiswa yang merujuk ke id dosen.
+- Hubungan "mahasiswa bimbingan" (untuk validasi akses Dosen ke profil mahasiswa bimbingan) didefinisikan melalui foreign key `dosen_pembimbing_id` pada entri mahasiswa yang merujuk ke id dosen. (Akses Dosen ke tugas kelas mengikuti kepemilikan kelas `dosen_id`, bukan relasi bimbingan.)
 - Pada **Edit Profil Akun Pribadi** (`PATCH /api/auth/profile`), field `email` dan `role` **wajib immutable** (tidak dapat diubah pemilik akun — `role` hanya lewat Kelola User oleh Admin); untuk Mahasiswa, `npm` dan `angkatan` juga immutable. Validasi penolakan field ini dilakukan di backend (Form Request/Controller), bukan hanya disembunyikan di frontend.
 
 ---
@@ -48,6 +53,7 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | F-AD-01 | Login via Google OAuth UNSIL | Jalur utama, sekaligus pembuatan akun pertama kali |
 | F-AD-02 | Login manual (email/password) | Alternatif, hanya aktif setelah password diatur di Profil (lihat UC-01b) |
 | F-AD-03 | Kelola data user | CRUD data user lintas role |
+| F-AD-03a | Delegasi Asisten Lab (Aslab) | Menetapkan Mahasiswa menjadi Supervisor & mengembalikannya (hanya transisi Mahasiswa↔Supervisor) |
 | F-AD-04 | Kelola data dosen | Tambah, ubah, hapus, lihat detail profil dosen |
 | F-AD-05 | Kelola konten informasi lab | Update Beranda, Visi-Misi, Profil Kepala Lab |
 | F-AD-06 | Kelola roadmap lab (tingkat KK) | Tambah/ubah konten roadmap riset KK JKF |
@@ -56,6 +62,7 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | F-AD-09 | Kelola data perangkat & sertifikasi | CRUD penuh |
 | F-AD-10 | Terima & kelola notifikasi in-app | Tandai baca (satu/semua), hapus; notifikasi masuk otomatis saat ada pengajuan baru yang menunggu persetujuan |
 | F-AD-11 | Edit profil akun pribadi | Update nama & no. telepon, unggah foto profil, atur/ubah password (milik sendiri) |
+| F-AD-12 | Unduh laporan & Rekap Tugas | Report (PDF, per rentang tanggal) + Rekap Tugas semua kelas (PDF/Excel) — lihat UC-06, UC-06a |
 
 ### 2.2 Supervisor (Asisten Lab)
 | ID | Fungsi | Keterangan |
@@ -67,7 +74,7 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | F-SV-05 | Approve/reject pengajuan peminjaman & perpanjangan perangkat | — |
 | F-SV-06 | Kelola data perangkat | CRUD nomor seri, status (Tersedia/Dipinjam/Perbaikan) |
 | F-SV-07 | Kelola katalog informasi sertifikasi | Tambah/ubah/hapus info sertifikasi eksternal (penyelenggara, jadwal, syarat, link/kontak pendaftaran) yang ditampilkan ke mahasiswa |
-| F-SV-08 | Unduh laporan (report) | Filter berdasarkan rentang tanggal, ekspor PDF |
+| F-SV-08 | Unduh laporan (report) & Rekap Tugas | Report (filter rentang tanggal, ekspor PDF) + Rekap Tugas semua kelas (PDF/Excel) — lihat UC-06, UC-06a |
 | F-SV-09 | Membuka Kelas Lab/Praktikum atas permintaan Dosen | Supervisor dapat membuat jadwal kelas atas nama Dosen terkait; Admin tidak memiliki kewenangan ini |
 | F-SV-10 | Terima & kelola notifikasi in-app | Tandai baca (satu/semua), hapus; notifikasi masuk otomatis saat ada pengajuan baru yang menunggu persetujuan |
 | F-SV-11 | Edit profil akun pribadi | Update nama & no. telepon, unggah foto profil, atur/ubah password (milik sendiri) |
@@ -78,11 +85,11 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | F-DS-01 | Login via Google OAuth UNSIL + login manual (setelah set password) | Sama seperti Admin |
 | F-DS-02 | Edit profil pribadi | Update data diri (nama, no. telepon, NIDN, jabatan fungsional, tempat & tanggal lahir, Bidang Minat), unggah foto profil; email & peran tidak dapat diubah sendiri |
 | F-DS-03 | Kelola portofolio & roadmap riset pribadi | CRUD konten riset pribadi |
-| F-DS-04 | Kelola presensi mahasiswa bimbingan | CRUD entri presensi terkait |
+| F-DS-04 | Kelola tugas kelas & rekap kepatuhan | Menetapkan materi & deadline per pertemuan (kelas yang diampu), melihat tugas masuk, mengunduh Rekap Tugas (PDF/Excel) kelasnya (lihat UC-04, UC-06a) |
 | F-DS-05 | Lihat jadwal ketersediaan lab | Read-only (kalender ketersediaan). Dosen **tidak** mengajukan peminjaman ruangan — itu hak Mahasiswa (lihat UC-02) |
-| F-DS-06 | Membuka & mengelola Kelas Lab/Praktikum | Tentukan mata kuliah (dari daftar yang sudah ada), ruangan, jadwal berulang (mingguan) selama satu semester, kuota peserta (30-40), bisa multi-sesi paralel (lihat UC-02a) |
+| F-DS-06 | Membuka & mengelola Kelas Lab/Praktikum | Tentukan mata kuliah (dari daftar yang sudah ada), ruangan, jadwal berulang (mingguan) selama satu semester, kuota peserta (30-40), bisa multi-sesi paralel; setujui/tolak pendaftaran peserta (lihat UC-02a) |
 | F-DS-07 | Lihat daftar mata kuliah | Read-only, untuk dipilih saat membuka Kelas Lab |
-| F-DS-08 | Terima & kelola notifikasi in-app | Tandai baca (satu/semua), hapus |
+| F-DS-08 | Terima & kelola notifikasi in-app | Tandai baca (satu/semua), hapus; menerima notifikasi saat ada tugas baru masuk pada kelasnya |
 
 ### 2.4 Mahasiswa
 | ID | Fungsi | Keterangan |
@@ -95,7 +102,7 @@ Tabel berikut adalah rujukan **wajib** sebelum mengimplementasikan middleware/Po
 | F-MH-05a | Mendaftar sesi Kelas Lab/Praktikum | Pilih sesi (mis. Kelas A/B/C) selama kuota belum penuh |
 | F-MH-06 | Ajukan peminjaman perangkat | Pilih dari daftar perangkat status "Tersedia" |
 | F-MH-07 | Ajukan perpanjangan peminjaman perangkat | Sebelum batas waktu pinjam habis |
-| F-MH-08 | Presensi (check-in/check-out) | Pilih keperluan riset saat check-in |
+| F-MH-08 | Kumpulkan tugas Kelas Lab | Kirim tautan hasil tugas per pertemuan (1–16) untuk kelas yang diikuti (status peserta `disetujui`); satu tugas per pertemuan; ditandai "Terlambat" bila lewat deadline (lihat UC-04) |
 | F-MH-09 | Lihat katalog informasi sertifikasi | Melihat daftar sertifikasi eksternal yang tersedia (penyelenggara, jadwal, syarat, cara mendaftar) — SIM Lab. Riset hanya menampilkan info, pendaftaran dilakukan langsung ke pihak penyelenggara |
 | F-MH-10 | Kelola portofolio pribadi | CRUD hasil riset/proyek/publikasi milik sendiri |
 | F-MH-11 | Terima & kelola notifikasi in-app | Tandai baca (satu/semua), hapus; menerima notifikasi status pengajuan dan konfirmasi pendaftaran Kelas Lab |
@@ -195,15 +202,31 @@ Bagian ini merinci skenario normal dan alternatif untuk use case yang punya pote
 
 **Aturan validasi kunci**: Mahasiswa **tidak dapat** mengajukan perpanjangan setelah batas waktu pinjam terlewati (harus mengembalikan dan mengajukan peminjaman baru).
 
-### UC-04: Presensi Laboratorium
-**Aktor**: Mahasiswa
+### UC-04: Pengumpulan Tugas Kelas Lab (menggantikan Presensi)
+**Aktor**: Mahasiswa (pengumpul), Dosen pengampu/Supervisor/Admin (penetap deadline & peninjau)
 
-1. Mahasiswa melakukan *Check-in* saat masuk lab, memilih keperluan riset
-2. Mahasiswa melakukan *Check-out* saat selesai
-3. Sistem mencatat timestamp **sesuai waktu lokal WIB**
-4. Admin/Supervisor/Dosen dapat merekap data kehadiran untuk laporan utilisasi lab
+> **Catatan**: Modul **Presensi** (check-in/check-out) pada v1.0 **dihapus** dan diganti modul **Pengumpulan Tugas**. Fokus lab bergeser dari pencatatan kehadiran fisik ke pemantauan kepatuhan pengumpulan tugas praktikum per pertemuan.
 
-**Aturan validasi kunci**: Mahasiswa tidak dapat melakukan *check-in* kedua sebelum melakukan *check-out* dari sesi sebelumnya.
+**Menetapkan materi/deadline (Dosen pengampu / Supervisor / Admin)**:
+1. Reviewer membuka Detail Kelas Lab → memilih salah satu dari **16 pertemuan**
+2. Reviewer mengisi **Nama Materi** dan/atau **Deadline**. Materi boleh berdiri sendiri (silabus) tanpa deadline; pertemuan tanpa deadline **tidak dihitung sebagai tugas**
+3. Bila materi & deadline dikosongkan keduanya, record pertemuan dihapus (kembali "kosong")
+
+**Mengumpulkan tugas (Mahasiswa)**:
+
+| Skenario Normal | Skenario Alternatif |
+|---|---|
+| 1. Mahasiswa membuka Kelas Lab yang diikutinya → *Kirim Tugas* | 1a. Mahasiswa bukan peserta `disetujui` pada kelas → ditolak |
+| 2. Memilih pertemuan (1–16), mengisi judul + tautan hasil tugas | 2a. Sudah pernah mengirim tugas untuk pertemuan yang sama → ditolak (satu tugas per pertemuan) |
+| 3. Sistem menyimpan tugas; bila melewati deadline, tugas ditandai **"Terlambat"** (tetap diterima) | 3a. Tautan bukan URL valid → ditolak (validasi `url`) |
+| 4. Dosen pengampu & Supervisor menerima notifikasi "tugas baru masuk" | |
+
+**Aturan validasi kunci**:
+- Tugas hanya boleh dikirim untuk Kelas Lab yang diikuti mahasiswa dengan status peserta **`disetujui`**.
+- **Satu tugas per (kelas, pertemuan, mahasiswa)** — pengiriman kedua untuk pertemuan yang sama ditolak (hapus dulu yang lama untuk mengganti).
+- **"Tanpa deadline = tidak ada tugas"**: status tepat/telat/belum hanya dihitung untuk pertemuan yang memiliki `deadline`.
+- Deadline **tidak memblokir** pengiriman terlambat — hanya menandai; timestamp dibandingkan dalam **waktu lokal WIB**.
+- Penetapan materi/deadline hanya oleh Dosen pengampu kelas (`dosen_id` cocok), Supervisor, atau Admin (scoping di backend).
 
 ### UC-05: Melihat Katalog Informasi Sertifikasi
 **Aktor**: Mahasiswa (pengunjung informasi), Admin/Supervisor (pengelola konten)
@@ -227,6 +250,19 @@ Bagian ini merinci skenario normal dan alternatif untuk use case yang punya pote
 5. Supervisor memilih *Download PDF*
 6. Sistem menghasilkan dan mengunduh file laporan
 
+### UC-06a: Rekap Tugas Kelas Lab (per pertemuan)
+**Aktor**: Admin, Supervisor, Dosen (Dosen di-scope ke kelas miliknya)
+
+1. Pengguna membuka menu **Rekap Tugas**
+2. Sistem menampilkan **ringkasan kepatuhan** semua kelas (untuk Dosen: hanya kelasnya) + **matriks detail per kelas** (peserta × pertemuan bertugas: tepat/telat/belum)
+3. Data selalu mencerminkan tugas terbaru yang masuk (dihitung on-request, tanpa snapshot)
+4. Pengguna memilih **Unduh PDF** atau **Unduh Excel (.xlsx)**
+5. Sistem menghasilkan dan mengunduh file rekap terkini
+
+**Aturan validasi kunci**: Otorisasi via Gate `view-rekap-tugas` (Admin/Supervisor/Dosen). Dosen **wajib** hanya dapat merekap kelas yang `dosen_id`-nya miliknya (scoping di backend, bukan hanya UI). Kolom matriks hanya mencakup pertemuan yang memiliki `deadline` (pertemuan tanpa deadline tidak dihitung sebagai tugas).
+
+> **Rencana lanjutan (Tahap 2)**: sinkronisasi otomatis rekap ke Google Sheets (auto-update saat ada tugas masuk), ditunda hingga kredensial Google Cloud tersedia.
+
 ### UC-07: Notifikasi In-App
 **Aktor**: Semua role (penerima); sistem (pembuat — otomatis, bukan aksi pengguna)
 
@@ -242,6 +278,11 @@ Bagian ini merinci skenario normal dan alternatif untuk use case yang punya pote
 | Ada pengajuan peminjaman perangkat baru (status `menunggu`) | Semua Supervisor & Admin |
 | Ada pengajuan perpanjangan baru (status `menunggu`) | Semua Supervisor & Admin |
 | Pendaftaran Kelas Lab berhasil | Mahasiswa yang mendaftar |
+| Tugas baru masuk pada sebuah kelas | Dosen pengampu kelas + semua Supervisor |
+| Tenggat tugas terlewati & belum dikumpulkan (terjadwal) | Mahasiswa peserta `disetujui` yang belum mengumpulkan |
+| Tenggat pengembalian perangkat mendekati/terlewati (terjadwal) | Mahasiswa peminjam perangkat terkait |
+
+> Dua pemicu terakhir bertipe `pengingat` dan dihasilkan oleh **penjadwalan berkala** (Laravel Scheduler: `pengingat:deadline` per jam, `pengingat:pengembalian` harian) — bukan aksi langsung pengguna. Bersifat **idempoten** (tidak menduplikasi pengingat yang sama untuk pasangan pengguna–deadline yang sama).
 
 **Alur pengguna**:
 | Skenario Normal | Skenario Tandai Baca / Hapus |
@@ -269,7 +310,7 @@ Bagian ini merinci skenario normal dan alternatif untuk use case yang punya pote
 
 ### 4.2 Ketersediaan & Performa (Availability & Performance)
 - Aplikasi dikembangkan sebagai **Single Page Application (SPA)** terpisah dari backend, untuk transisi halaman yang cepat dan penghematan bandwidth lewat pemrosesan berbasis API JSON
-- Query yang menampilkan data dalam jumlah besar (daftar perangkat, daftar presensi, laporan) **wajib** menggunakan pagination, tidak mengambil seluruh data sekaligus
+- Query yang menampilkan data dalam jumlah besar (daftar perangkat, daftar tugas, laporan) **wajib** menggunakan pagination, tidak mengambil seluruh data sekaligus
 
 ### 4.3 Pemeliharaan (Maintainability)
 - Pemisahan kode bersih antara logika bisnis backend (Laravel Controllers, Models, Policies, Form Requests) dan presentasi frontend (Vue Components, Composables)
@@ -277,7 +318,7 @@ Bagian ini merinci skenario normal dan alternatif untuk use case yang punya pote
 - Setiap perubahan skema database **wajib** lewat migration, tidak ada perubahan manual ke database produksi
 
 ### 4.4 Kualitas Perangkat Lunak
-- **Ketersediaan**: sistem harus dapat diandalkan untuk menangani presensi dan pengajuan peminjaman setiap hari kerja lab
+- **Ketersediaan**: sistem harus dapat diandalkan untuk menangani pengumpulan tugas dan pengajuan peminjaman setiap hari kerja lab
 - **Ketepatan**: alur sistem sesuai dengan use case yang didefinisikan di Bagian 3, termasuk skenario alternatif/error handling
 - **Pemulihan data**: backup database dilakukan berkala; jika terjadi kerusakan, pemulihan dilakukan dari backup terakhir atau log transaksi
 

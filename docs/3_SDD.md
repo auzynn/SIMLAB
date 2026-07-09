@@ -2,8 +2,10 @@
 
 **Nama Produk**: Sistem Informasi Manajemen Laboratorium Riset (SIM Lab. Riset)
 **Unit Terkait**: Laboratorium Riset Kelompok Keahlian (KK) Jaringan, Komputer, dan Forensik (JKF) — Prodi Informatika
-**Versi Dokumen**: 1.0
+**Versi Dokumen**: 1.1
 **Dokumen Acuan**: `1_PRD.md`, `2_SRS.md`
+
+> **Perubahan v1.1 (per 2026-07-09)**: skema `presensi` (3.12) **dihapus**, digantikan `tugas` (3.12) + `deadline_pertemuan` (3.12a). `kelas_lab` (3.7) mendapat kolom `tautan_pengumpulan`. `notifikasi` (3.16) menambah nilai enum `pengingat`. ERD & daftar endpoint (5.9 Pengumpulan Tugas, 5.13 Laporan) diselaraskan. Ditambah 3.16 `notifikasi`, 3.17 `deadline_pertemuan` catatan penjadwalan, dan endpoint Rekap Tugas (5.15) + Pengingat terjadwal.
 
 > Dokumen ini adalah **sumber kebenaran** untuk skema database, struktur API, dan arsitektur sistem. Semua AI Agent **wajib** merujuk dokumen ini sebelum membuat migration, model, atau route — lihat `.clinerules/agent.md`. AI Agent **dilarang** mengasumsikan struktur data di luar yang didefinisikan di sini.
 
@@ -219,10 +221,12 @@ Jadwal Kelas Lab/Praktikum — satu sesi terjadwal tetap (umumnya mingguan) sela
 | `tanggal_mulai_semester` | date | |
 | `tanggal_selesai_semester` | date | |
 | `kuota` | int | Maksimal 30-40 (divalidasi range di Form Request, bukan hardcode di kolom) |
+| `tautan_pengumpulan` | varchar(2048), nullable | Tautan tempat unggah dokumen laporan (PDF/DOCX) yang diisi Dosen; ditampilkan ke mahasiswa di form Kirim Tugas. Nullable di DB agar baris lama valid, namun **wajib diisi** lewat validasi `Store/UpdateKelasLabRequest` |
 | `created_at`, `updated_at` | timestamp | |
 
 **Catatan implementasi**:
 - Beberapa sesi paralel (Kelas A, B, C) dari mata kuliah yang sama disimpan sebagai **baris terpisah** di tabel ini, semuanya merujuk `mata_kuliah_id` yang sama, masing-masing dengan `kuota` independen — pengelompokan formal kini tersedia lewat relasi ini (mis. untuk menampilkan "semua sesi Praktikum Jaringan Komputer" atau laporan rekap per mata kuliah)
+- Relasi `kelas_lab (1) ──── (M) deadline_pertemuan` (3.12a) & `kelas_lab (1) ──── (M) tugas` (3.12) — dipakai untuk fitur tugas per pertemuan & Rekap Tugas.
 - Backend **wajib** memvalidasi `dosen_id` yang dimasukkan benar merujuk dosen yang sah, terlepas dari apakah yang membuat entri adalah Dosen itu sendiri (`dibuat_oleh = dosen_id`'s `user_id`) atau Supervisor atas permintaannya
 - Constraint bentrok jadwal terhadap `peminjaman_ruangan` dan sesama `kelas_lab` lain divalidasi di Form Request, mengecek ruangan + hari + rentang jam yang overlap, dalam rentang `tanggal_mulai_semester`–`tanggal_selesai_semester`. Pembukaan kelas hanya diizinkan jika `ruangan.status = 'tersedia'`.
 - **Jam wajib dalam rentang operasional lab 07.00–17.00 WIB** (`jam_mulai ≥ 07:00`, `jam_selesai ≤ 17:00`).
@@ -290,20 +294,41 @@ Pengajuan perpanjangan waktu pinjam perangkat (SRS UC-03).
 - Backend menolak insert baru di tabel ini jika `tanggal_kembali_rencana` pada `peminjaman_perangkat` terkait sudah lewat dari tanggal hari ini.
 - Ketika status perpanjangan diperbarui menjadi `disetujui`, backend wajib secara otomatis (lewat DB Transaction) memperbarui kolom `tanggal_kembali_rencana` pada tabel `peminjaman_perangkat` induk menjadi nilai dari `tanggal_kembali_baru`.
 
-### 3.12 `presensi`
-Log kehadiran mahasiswa di lab.
+### 3.12 `tugas` (menggantikan `presensi`)
+Pengumpulan tugas mahasiswa (tautan/URL hasil) untuk sebuah pertemuan pada sesi Kelas Lab yang diikutinya. **Menggantikan modul `presensi` v1.0** (tabel `presensi` di-drop lewat migrasi `..._drop_presensi_table`).
 
 | Kolom | Tipe | Keterangan |
 |---|---|---|
 | `id` | bigint, PK | |
-| `user_id` | bigint, FK → `users.id` | Mahasiswa yang presensi, `on delete cascade` |
-| `keperluan` | varchar | Dipilih saat check-in |
-| `check_in` | datetime | Disimpan dalam waktu lokal WIB |
-| `check_out` | datetime, nullable | Null selama sesi masih berlangsung |
-| `dicatat_oleh` | bigint, FK → `users.id`, nullable | Diisi jika entri dikoreksi Dosen/Admin, `on delete set null` |
+| `kelas_lab_id` | bigint, FK → `kelas_lab.id` | Sesi kelas konteks tugas, `on delete cascade`; ada index |
+| `pertemuan` | tinyint unsigned | Pertemuan 1–16 dalam satu semester (default 1) |
+| `mahasiswa_id` | bigint, FK → `mahasiswa.id` | Pengirim tugas, `on delete cascade` |
+| `judul` | varchar | Judul tugas |
+| `tautan` | varchar(2048) | URL hasil tugas (GDrive/GitHub/dll), divalidasi `url` |
+| `created_at`, `updated_at` | timestamp | `created_at` dipakai membandingkan tepat/telat vs `deadline_pertemuan.deadline` |
+
+**Aturan (SRS UC-04)**:
+- Hanya mahasiswa berstatus peserta **`disetujui`** pada `kelas_lab` tujuan yang boleh mengirim (divalidasi `StoreTugasRequest`).
+- **Satu tugas per (`kelas_lab_id`, `pertemuan`, `mahasiswa_id`)** — pengiriman kedua ditolak.
+- Deadline **tidak memblokir** pengiriman; keterlambatan ditandai dengan membandingkan `tugas.created_at` (WIB) terhadap `deadline_pertemuan.deadline`.
+- Saat tugas dibuat, sistem mengirim notifikasi `pengajuan_masuk` ke **dosen pengampu kelas + semua Supervisor** (transaksi sama, SRS UC-07).
+
+### 3.12a `deadline_pertemuan`
+Materi &/atau deadline pengumpulan tugas untuk satu pertemuan (1–16) sebuah Kelas Lab, ditetapkan Dosen pengampu / Supervisor / Admin.
+
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| `id` | bigint, PK | |
+| `kelas_lab_id` | bigint, FK → `kelas_lab.id` | `on delete cascade` |
+| `pertemuan` | tinyint unsigned | 1–16; unique bersama `kelas_lab_id` |
+| `materi` | varchar, nullable | Nama materi/silabus pertemuan — boleh berdiri sendiri tanpa deadline |
+| `deadline` | datetime, nullable | Tenggat pengumpulan (WIB). **Nullable**: pertemuan tanpa `deadline` **tidak dihitung sebagai tugas** |
 | `created_at`, `updated_at` | timestamp | |
 
-**Aturan (SRS UC-04)**: backend menolak `check_in` baru dari user yang sama jika masih ada entri miliknya dengan `check_out IS NULL`.
+**Aturan**:
+- Unique `(kelas_lab_id, pertemuan)` — satu record per pertemuan per kelas (upsert via `PUT`).
+- Record valid bila **minimal salah satu** dari `materi`/`deadline` terisi; bila keduanya dikosongkan, record dihapus.
+- **"Tanpa deadline = tidak ada tugas"**: kolom matriks Rekap Tugas (5.15) hanya mencakup pertemuan yang punya `deadline`.
 
 ### 3.13 `sertifikasi`
 Katalog informasi sertifikasi eksternal (**bukan** transaksi pendaftaran — lihat SRS Bagian 3, UC-05).
@@ -349,6 +374,33 @@ Konten halaman informasi lab (Beranda, Visi-Misi, Profil Kepala Lab, Roadmap Lab
 
 **Profil Kepala Lab (`kepala_lab`)**: bila baris ini punya `dosen_id`, halaman publik dirender sebagai **kartu identitas terstruktur** dari profil dosen tertaut (nama, jabatan fungsional, NIDN, jenis kelamin, TTL, email, no. telp, Bidang Minat) — `GET /api/info-lab/kepala_lab` meng-eager-load `dosen.user` & `dosen.bidangMinat`. Bila `dosen_id` kosong, halaman jatuh kembali ke konten bebas (`judul`/`gambar`/`konten`). Admin menautkan dosen lewat fitur *Ambil dari Profil Dosen* (men-set `dosen_id` saat disimpan; tidak menambah endpoint baru).
 
+### 3.16 `notifikasi`
+Notifikasi in-app (SRS UC-07). Dibuat **otomatis oleh sistem** sebagai efek samping aksi lain (approve/reject/pengajuan baru/tugas masuk) di dalam transaksi yang sama, atau lewat penjadwalan berkala (pengingat). Tidak ada endpoint pembuatan publik.
+
+| Kolom | Tipe | Keterangan |
+|---|---|---|
+| `id` | bigint, PK | |
+| `user_id` | bigint, FK → `users.id` | Penerima, `on delete cascade` |
+| `judul` | varchar | |
+| `pesan` | text | |
+| `tipe` | enum(`pengajuan_masuk`,`status_pengajuan`,`pendaftaran`,`pengingat`) | Menentukan ikon/warna di frontend. `pengingat` = tenggat tugas / pengembalian perangkat (terjadwal) |
+| `referensi_id` | bigint unsigned, nullable | ID entitas pemicu (peminjaman/perpanjangan/kelas/tugas) untuk navigasi — **tanpa FK** (lintas tabel) |
+| `is_read` | boolean, default false | |
+| `created_at`, `updated_at` | timestamp | Index komposit `(user_id, is_read)` untuk hitung unread & list milik user |
+
+**Aturan (SRS UC-07)**:
+- Insert `notifikasi` dilakukan dalam **DB transaction yang sama** dengan aksi pemicunya (rollback → notifikasi ikut batal).
+- `GET /api/auth/me` menyertakan `unread_notifications_count` (COUNT `is_read=false` milik user) untuk badge navbar tanpa request tambahan.
+- Notifikasi `pengingat` dibuat oleh command terjadwal (lihat 3.17) dan **idempoten** — tidak menduplikasi pengingat yang sama untuk pasangan pengguna–deadline/peminjaman yang sama.
+
+### 3.17 Penjadwalan (Scheduler) & Pengingat
+Dua command terjadwal (didaftarkan di `bootstrap/app.php` via `withSchedule`, dijalankan oleh `schedule:run`/`schedule:work`):
+
+| Command | Jadwal | Fungsi |
+|---|---|---|
+| `pengingat:deadline` | tiap jam (`hourly`) | `PengingatDeadlineService` — kirim notifikasi `pengingat` ke mahasiswa peserta `disetujui` yang belum mengumpulkan untuk `deadline_pertemuan` yang sudah lewat; idempoten per (user, deadline). Hook lazy juga dipanggil di `NotifikasiController@index` |
+| `pengingat:pengembalian` | harian 07.00 (`dailyAt`) | `PengingatPengembalianService` — kirim notifikasi `pengingat` pengembalian perangkat yang jatuh tempo |
+
 ---
 
 ## 4. Diagram Relasi (ERD Ringkas)
@@ -358,8 +410,8 @@ users (1) ──── (1) dosen
 users (1) ──── (1) mahasiswa
 users (1) ──── (M) peminjaman_ruangan
 users (1) ──── (M) peminjaman_perangkat
-users (1) ──── (M) presensi
 users (1) ──── (M) portofolio
+users (1) ──── (M) notifikasi
 
 dosen (1) ──── (M) mahasiswa     → mahasiswa bimbingan (via dosen_pembimbing_id)
 ruangan (1) ──── (M) peminjaman_ruangan
@@ -368,12 +420,16 @@ mata_kuliah (1) ──── (M) kelas_lab
 dosen (1) ──── (M) kelas_lab
 kelas_lab (1) ──── (M) kelas_lab_peserta
 mahasiswa (1) ──── (M) kelas_lab_peserta
+kelas_lab (1) ──── (M) tugas                → pengumpulan tugas per pertemuan
+mahasiswa (1) ──── (M) tugas
+kelas_lab (1) ──── (M) deadline_pertemuan   → materi/deadline per pertemuan (1–16)
 
 perangkat (1) ──── (M) peminjaman_perangkat
 peminjaman_perangkat (1) ──── (M) perpanjangan_peminjaman
 
 sertifikasi   → berdiri sendiri, tidak ada relasi ke users (murni katalog)
-info_lab      → berdiri sendiri, hanya relasi updated_by ke users
+info_lab      → relasi updated_by ke users; opsional dosen_id (tipe kepala_lab)
+notifikasi    → referensi_id lintas tabel (tanpa FK); hanya user_id yang ber-FK
 ```
 
 ---
@@ -425,7 +481,7 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 ### 5.4 Mahasiswa
 | Method | Endpoint | Keterangan |
 |---|---|---|
-| GET | `/api/mahasiswa` | List semua mahasiswa — Admin & Supervisor (operasional penuh); Dosen (read-only, untuk kebutuhan rekap presensi mahasiswa) |
+| GET | `/api/mahasiswa` | List semua mahasiswa — Admin & Supervisor (operasional penuh); Dosen (read-only, untuk kebutuhan rekap tugas mahasiswa) |
 | GET | `/api/mahasiswa/{id}` | Detail profil satu mahasiswa (milik sendiri, atau Admin/Dosen pembimbing) |
 | PATCH | `/api/mahasiswa/{id}` | Update profil milik sendiri — field `npm` diabaikan/ditolak meski dikirim di body (lihat SDD 3.3) |
 
@@ -482,14 +538,17 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | PATCH | `/api/perpanjangan/{id}/approve` | Setujui perpanjangan (Admin/Supervisor) — otomatis memperbarui tanggal_kembali_rencana di peminjaman_perangkat induk |
 | PATCH | `/api/perpanjangan/{id}/reject` | Tolak perpanjangan (Admin/Supervisor) |
 
-### 5.9 Presensi
+### 5.9 Pengumpulan Tugas & Deadline Pertemuan (menggantikan Presensi)
 | Method | Endpoint | Keterangan |
 |---|---|---|
-| POST | `/api/presensi/check-in` | Check-in (Mahasiswa) |
-| PATCH | `/api/presensi/{id}/check-out` | Check-out (Mahasiswa) |
-| GET | `/api/presensi` | List presensi (milik sendiri / mahasiswa bimbingan untuk Dosen / rekap untuk Admin-Supervisor) |
-| PATCH | `/api/presensi/{id}` | Koreksi entri (Dosen, untuk mahasiswa bimbingan) |
-| DELETE | `/api/presensi/{id}` | Hapus entri (Dosen) |
+| GET | `/api/tugas` | List tugas — cakupan per-role: Mahasiswa → miliknya; Dosen → kelas yang diampu; Admin/Supervisor → semua |
+| POST | `/api/tugas` | Kirim tugas (Mahasiswa, peserta `disetujui`) — body `kelas_lab_id`, `pertemuan` (1–16), `judul`, `tautan` (url). Satu tugas per pertemuan |
+| DELETE | `/api/tugas/{tugas}` | Hapus tugas — pemilik (Mahasiswa) atau Admin/Supervisor |
+| GET | `/api/kelas-lab/{kelasLab}/deadline` | List materi/deadline pertemuan sebuah kelas (semua role login) |
+| PUT | `/api/kelas-lab/{kelasLab}/deadline/{pertemuan}` | Upsert materi &/atau deadline pertemuan — Dosen pengampu/Supervisor/Admin. Bila materi & deadline kosong keduanya → record dihapus |
+| DELETE | `/api/kelas-lab/{kelasLab}/deadline/{pertemuan}` | Hapus materi & deadline pertemuan — Dosen pengampu/Supervisor/Admin |
+
+> Endpoint `presensi` v1.0 (`/api/presensi/check-in`, `/check-out`, dst.) **sudah dihapus** seiring penggantian modul.
 
 ### 5.10 Sertifikasi (Katalog)
 | Method | Endpoint | Keterangan |
@@ -523,7 +582,9 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 - `periode` — `{ dari, sampai }` tanggal yang direkap
 - `peminjaman_ruangan` — `{ total_pengajuan, total_disetujui, total_ditolak, total_menunggu }`
 - `peminjaman_perangkat` — `{ total_pengajuan, total_disetujui, total_ditolak, total_dikembalikan }`
-- `presensi` — `{ total_sesi, total_mahasiswa_unik, rata_rata_durasi_menit }`
+- `tugas` — `{ total_terkumpul, total_mahasiswa_unik, total_kelas }` (peminjaman & tugas dihitung berdasarkan `created_at`)
+
+> Rekap presensi v1.0 pada bagian ini telah **digantikan rekap `tugas`** seiring penggantian modul.
 
 ### 5.14 Notifikasi In-App
 | Method | Endpoint | Keterangan |
@@ -534,6 +595,26 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | DELETE | `/api/notifikasi/{id}` | Hapus satu notifikasi milik sendiri |
 
 **Aturan akses**: semua role mengakses notifikasi milik sendiri saja. Pembuatan notifikasi dilakukan internal oleh backend (bukan endpoint publik), dipanggil via Service/Observer dalam transaksi DB yang sama dengan aksi pemicunya.
+
+### 5.15 Rekap Tugas Kelas Lab
+| Method | Endpoint | Keterangan |
+|---|---|---|
+| GET | `/api/rekap-tugas` | Rekap JSON (ringkasan semua kelas + matriks detail per kelas) — Admin/Supervisor/Dosen |
+| GET | `/api/rekap-tugas/pdf` | Unduh PDF rekap (landscape) — Admin/Supervisor/Dosen |
+| GET | `/api/rekap-tugas/excel` | Unduh Excel `.xlsx` berformat (sheet Ringkasan + satu sheet per kelas) — Admin/Supervisor/Dosen |
+
+**Aturan akses**: Gate `view-rekap-tugas` (Admin/Supervisor/Dosen). **Dosen di-scope otomatis** hanya ke kelas yang `dosen_id`-nya miliknya; Admin/Supervisor melihat semua kelas. Data dihitung on-request (selalu mencerminkan tugas terbaru — tanpa snapshot tersimpan).
+
+**Struktur response `GET /api/rekap-tugas`** (field `data`):
+- `generated_at` — waktu rekap dibuat (WIB)
+- `ringkasan[]` — satu baris per kelas: `{ kelas_lab_id, mata_kuliah, nama_sesi, dosen, hari, jam, peserta_disetujui, total_tugas, pertemuan_bertugas, pertemuan_berjalan, tunggakan, perlu_perhatian, status ('perhatian'|'berjalan'|'beres'), deadline_terdekat }`
+- `detail[]` — per kelas: `{ kelas_lab_id, mata_kuliah, nama_sesi, dosen, hari, jam, pertemuan[], peserta[] }`
+  - `pertemuan[]` — kolom matriks (hanya pertemuan yang punya deadline): `{ pertemuan, materi, deadline }`
+  - `peserta[]` — baris matriks (peserta status `disetujui`): `{ npm, nama, prodi, sel{ <pertemuan>: { status ('tepat'|'telat'|'belum'), judul, tautan, dikumpulkan } }, total_kumpul, telat }`
+  - Sel `tepat`/`telat` ditentukan dari `tugas.created_at` vs `deadline_pertemuan.deadline`.
+
+> Implementasi: `RekapTugasService` (agregasi, dipakai bersama endpoint `/kelas-lab/rekap-tugas` untuk badge kepatuhan), `RekapTugasExcelWriter` (phpspreadsheet), Blade `reports/rekap-tugas.blade.php` (dompdf).
+> **Rencana lanjutan (Tahap 2)**: sinkronisasi otomatis ke Google Sheets (service account) — ditunda hingga kredensial GCP tersedia.
 
 ---
 

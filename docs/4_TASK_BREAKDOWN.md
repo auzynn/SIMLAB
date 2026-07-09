@@ -10,6 +10,10 @@
 
 ---
 
+## Catatan Progres (per 2026-07-09)
+
+> **Ringkasan penyelarasan dokumen (2026-07-09)**: Seluruh FASE 0–9 tuntas. **Modul Presensi (Fase 5) telah digantikan modul Pengumpulan Tugas** — lihat Fase 5 di bawah. Modul tambahan di luar backlog awal yang kini aktif & teruji: **Rekap Tugas** (PDF/Excel), **Deadline & Materi per Pertemuan**, **Notifikasi Pengingat terjadwal** (`pengingat:deadline` per jam + `pengingat:pengembalian` harian), **Delegasi Aslab**. Verifikasi terakhir: **backend 185/185 test lulus**, `vite build` hijau (per `docs/STATUS Sesi - Tugas Pertemuan & Deadline.md`). Dokumen `1_PRD.md`, `2_SRS.md`, `3_SDD.md` sudah diselaraskan ke v1.1. **Belum ada commit** (working tree).
+
 ## Catatan Progres (per 2026-07-05)
 
 **Backend (`src/backend`)**:
@@ -33,7 +37,16 @@
   - **Persetujuan pendaftaran Kelas Lab**: migration `add_status_to_kelas_lab_peserta` (`status` enum menunggu/disetujui/ditolak + `disetujui_oleh`). `daftar` membuat status `menunggu`; kuota & aturan menghitung menunggu+disetujui. Endpoint baru `GET /api/kelas-lab/pendaftaran`, `PATCH …/pendaftaran/{peserta}/approve|reject` (Dosen pemilik / Supervisor). Aturan pendaftaran: **1 sesi per mata kuliah** + **tanpa bentrok jadwal** (boleh ambil >1 mata kuliah). Baris `ditolak` boleh diajukan ulang.
   - Suite backend **72 test lulus**.
 - **Inventaris & Peminjaman Perangkat (FASE 4, per 2026-07-05)**: migrasi + model `perangkat` (SDD 3.9), `peminjaman_perangkat` (SDD 3.10), `perpanjangan_peminjaman` (SDD 3.11) dengan relasi lengkap. Gate `approve-peminjaman-perangkat` (Admin/Supervisor); CRUD perangkat via `manage-master-data`. `PerangkatController` (apiResource — read terbuka, CUD via Gate; **destroy** ditolak bila status ≠ `tersedia` atau ada peminjaman aktif). `PeminjamanPerangkatController` (index filter-per-role; store **Mahasiswa saja** via `StorePeminjamanPerangkatRequest`; approve/reject; **kembalikan**; **destroy** = batalkan pengajuan sendiri saat `menunggu` / hapus oleh Admin/Supervisor; ajukanPerpanjangan). `PerpanjanganController` (approve/reject). **Aturan kunci UC-03**: approve peminjaman menandai perangkat `dipinjam` (DB transaction, re-validasi tersedia); kembalikan → `dikembalikan` + `tanggal_kembali_aktual` + perangkat `tersedia`; perpanjangan ditolak bila `tanggal_kembali_rencana` sudah lewat; approve perpanjangan otomatis memperbarui `tanggal_kembali_rencana` induk. Seeder `PerangkatSeeder` (10 perangkat contoh, idempotent) di `DatabaseSeeder`. Diuji `PerangkatTest` (7), `PeminjamanPerangkatTest` (14, termasuk batal/hapus), `PerpanjanganTest` (5). Suite backend **104 test lulus**.
-- **Belum ada**: Gate/Policy modul FASE 5–9, seluruh modul FASE 5–9.
+- **Presensi Laboratorium (FASE 5, per 2026-07-05)**: migrasi + model `presensi` (SDD 3.12) + migrasi `add_konteks_to_presensi_table` (`kelas_lab_id` & `peminjaman_ruangan_id`, FK nullable `nullOnDelete`, saling eksklusif). **Presensi berbasis konteks jadwal** (maintenance Fase 5) — bukan check-in/out teks bebas: sebuah entri terikat **Kelas Lab terjadwal hari ini** (peserta `disetujui`, hari cocok + dalam rentang semester) atau **peminjaman ruangan disetujui hari ini**; `check_in`/`check_out` & `keperluan` diturunkan dari jadwal konteks, bukan waktu tombol ditekan. `PresensiController`: `index` (cakupan per-role — Mahasiswa miliknya / Dosen mahasiswa bimbingan via `dosen.mahasiswaBimbingan` / Admin-Supervisor semua), `konteks` (`GET /api/presensi/konteks` — daftar konteks layak hari ini + tanda `sudah_presensi`), `store` (`POST /api/presensi` — cek presensi; validasi sumber & konteks di `StorePresensiRequest`), `update`/`destroy` (koreksi/hapus: Dosen untuk bimbingannya, Admin/Supervisor untuk entri mana pun; set `dicatat_oleh`). **Aturan kunci UC-04**: presensi ganda untuk konteks yang sama ditolak (422); tanpa konteks jadwal aktif tidak bisa presensi. Timestamp waktu lokal WIB (`Asia/Jakarta`; app tz `UTC`). Tanpa Gate baru — otorisasi via `authorize()` Form Request + helper scoping controller. Diuji `PresensiTest` (15 — cek presensi kelas/peminjaman, tolak bukan-hari-ini/belum-disetujui/duplikat, konteks + `sudah_presensi`, scoping mahasiswa/dosen/supervisor, koreksi dosen+`dicatat_oleh`, hapus). Suite backend **119 test lulus**.
+- **Katalog Sertifikasi (FASE 6, per 2026-07-05)**: migrasi + model `sertifikasi` (SDD 3.13 — katalog berdiri sendiri, tanpa relasi ke `users`). `SertifikasiController` apiResource: `index` terbuka semua role login, `store`/`update`/`destroy` via Gate `manage-master-data` (Admin/Supervisor, dipakai bersama katalog master lain). Modul murni informasional (tidak menangani pendaftaran). Seeder `SertifikasiSeeder` (MTCNA, CCNA, CEH, Oracle SQL, idempotent) di `DatabaseSeeder`. Diuji `SertifikasiTest` (6).
+- **Portofolio Mahasiswa (FASE 7, per 2026-07-05)**: migrasi + model `portofolio` (SDD 3.14, `belongsTo User`, `User::portofolio()` hasMany). `PortofolioController` apiResource: `index` terbuka semua role login (filter `?user_id=`), `store` via `StorePortofolioRequest` (Mahasiswa saja, `user_id` dari user login), `update` via `UpdatePortofolioRequest` (pemilik saja), `destroy` cek kepemilikan (403 bila bukan pemilik). Diuji `PortofolioTest` (7). Suite backend **132 test lulus**.
+- **Enhancement di luar backlog fase (per 2026-07-06)** — fitur nyata yang sudah jalan tetapi tidak berasal dari daftar task FASE 0–9:
+  - **Delegasi Asisten Lab (Aslab)**: `AslabController` — Admin menetapkan/mengembalikan mahasiswa ↔ Supervisor (hanya transisi `mahasiswa↔supervisor`, bukan ubah role bebas), otorisasi Gate `manage-users`. Endpoint `GET /api/aslab`, `POST /api/aslab/{user}` (promote), `DELETE /api/aslab/{user}` (demote); profil `mahasiswa` dipertahankan agar bisa dikembalikan. Frontend `views/admin-aslab.vue`. Diuji `AslabTest`.
+  - **Reset password jalur "lupa password"**: `POST /api/auth/reset-password` (`AuthController::resetPassword`) — atur ulang password **tanpa** password lama, **khusus akun tertaut Google UNSIL** (`google_id` tidak null); akun non-Google ditolak.
+  - **Unggah lampiran konten Info Lab**: `POST /api/info-lab/upload` (`InfoLabController::uploadLampiran`, Gate `manage-info-lab`) — opsi "File" pada editor konten; validasi `mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,jpg,jpeg,png,webp,zip|max:5120`.
+- **Laporan/Report (FASE 8, per 2026-07-06)**: `ReportController` (`index` JSON + `pdf` unduh). Gate baru `view-report` (Admin/Supervisor) di `AppServiceProvider`; `ReportRequest` menggabungkan otorisasi (Gate) + validasi `from`/`to` (`date`, `to after_or_equal:from`). Rekap `periode` + `peminjaman_ruangan` (per status) + `peminjaman_perangkat` (per status) + `presensi` (`total_sesi`, `total_mahasiswa_unik`, `rata_rata_durasi_menit`) sesuai 3_SDD.md 5.13; default 30 hari terakhir. PDF via **`barryvdh/laravel-dompdf ^3.1`** (dependency baru, dikonfirmasi user) render Blade `resources/views/reports/lab.blade.php` (satu-satunya Blade — dokumen PDF, bukan halaman SPA). Route `GET /api/report`, `GET /api/report/pdf`. Diuji `ReportTest` (7 — akses Admin/Supervisor, tolak Dosen/Mahasiswa/guest, agregasi status, unduh PDF `content-type application/pdf`).
+- **Notifikasi In-App (FASE 9, per 2026-07-06)**: migrasi + model `notifikasi` (SDD 3.16 — `user_id`, `judul`, `pesan`, `tipe` enum `pengajuan_masuk`/`status_pengajuan`/`pendaftaran`, `referensi_id` nullable, `is_read`; index `(user_id, is_read)`). `NotifikasiService` (`kirim()` + `kirimKeApprover()`) dipanggil **di dalam transaksi DB aksi pemicu** (rollback → notifikasi ikut batal). Terintegrasi ke: approve/reject & pengajuan baru **peminjaman ruangan** (`PeminjamanRuanganController`), **peminjaman perangkat** & **perpanjangan** (`PeminjamanPerangkatController`, `PerpanjanganController`), dan **pendaftaran Kelas Lab** (`KelasLabController::daftar`). `NotifikasiController` (`index` milik sendiri + `unread_count`, `read`, `readAll`, `destroy`; 403 bila bukan milik). `GET /api/auth/me` kini menyertakan `unread_notifications_count`. `User::notifikasi()` hasMany. Tanpa endpoint pembuatan publik. Diuji `NotifikasiTest` (8 — pengajuan baru→approver bukan pengaju, approve→pengaju saja, `me` unread count, scoping index, read 403 bukan milik, read-all, hapus, rollback atomik). Suite backend **147 test lulus**.
+- **Belum ada**: —. Seluruh FASE 0–9 selesai (kecuali T1.10 Policy RBAC terpusat yang *sebagian* — otorisasi via Gate per-modul).
 
 **Frontend (`src/frontend/app-labriset`)**:
 - Vue 3 + Vite, Vue Router 4, Pinia, Axios — semua terpasang. Struktur folder lengkap (`components/`, `views/`, `stores/`, `services/`, `router/`, `composables/`).
@@ -51,7 +64,12 @@
 - **Peminjaman Ruangan (FASE 3)**: `jadwal-lab.vue` (kartu **Informasi Jadwal Lab** = kelas mingguan + peminjaman disetujui dikelompokkan **Minggu ini / Mendatang** dgn pembatas & catatan auto-refresh mingguan; **form pengajuan Mahasiswa** mode Satu hari / Beberapa hari + jam 07–17; kolom kanan jadi kartu **Persetujuan Peminjaman Ruangan** utk Admin/Supervisor), `peminjaman-saya.vue` (status pengajuan sendiri), `persetujuan-peminjaman.vue` (tabel + **filter per kolom** Pengaju Nama/NPM dll + Approve/Reject/Hapus). Service `peminjaman-ruangan.js`.
 - **Kelas Lab (FASE 3)**: `kelas-lab.vue` (landing — Mahasiswa lihat "Kelas Lab Saya" + status, tombol ke katalog; Dosen/Supervisor lihat katalog + tombol Kelola & Persetujuan), `katalog-kelas-lab.vue` (pilih & daftar sesi), `persetujuan-kelas-lab.vue` (Dosen/Supervisor terima/tolak pendaftaran + filter kolom + tab Menunggu/Semua), `kelola-kelas-lab.vue` (buka/edit/hapus kelas + filter kolom, Nama Sesi dropdown A–F), `peserta-kelas-lab.vue` (halaman peserta terpisah: kolom NPM·Nama·Prodi). Service `kelas-lab.js` (+ pendaftaran/approve/reject). Nav header "Kelas Lab"; aksi dipindah ke tombol dalam halaman (bukan dropdown profil). Util `namaHari()` di `utils/format.js`.
 - **Inventaris & Peminjaman Perangkat (FASE 4)**: `views/perangkat.vue` (katalog perangkat + badge status; Mahasiswa tombol "Ajukan Pinjam"). Peminjaman & persetujuan perangkat **disatukan sebagai tab** ke halaman yang sudah ada agar UX konsisten: `views/peminjaman-saya.vue` (tab **Ruangan/Perangkat** — form pengajuan + riwayat + **Ajukan Perpanjangan** inline + **Batalkan** saat menunggu) dan `views/persetujuan-peminjaman.vue` (tab **Ruangan/Perangkat** — approve/reject + **Konfirmasi Kembali** + approve/reject perpanjangan), dibuka via query `?tab=perangkat`. Path lama `/peminjaman-perangkat` & `/persetujuan-perangkat` di-**redirect** ke tab tersebut. Kelola data perangkat sebagai **tab "Perangkat"** di `admin-data-master.vue`. Service `perangkat.js` & `peminjaman-perangkat.js`. Route `/perangkat` (semua login); nav header menu "Perangkat". Util `statusPerangkatLabel()` + status `dikembalikan` di `utils/format.js`. `vite build` hijau.
-- **Belum ada**: modul admin lain (Katalog Sertifikasi, Rekap Presensi, Laporan), seluruh modul FASE 5–9.
+- **Presensi Laboratorium (FASE 5)**: `views/presensi.vue` (route `/presensi`, semua role login — halaman **adaptif per-role**). Mahasiswa: **Cek Presensi berbasis konteks** — memilih Kelas Lab terjadwal / peminjaman ruangan disetujui hari ini lalu klik **Cek Presensi** (tombol nonaktif bila sudah presensi), plus **Riwayat Presensi Saya** (kolom Kegiatan · Tanggal · Waktu · Ruangan). Dosen/Admin/Supervisor: **Rekap** kehadiran (Dosen → mahasiswa bimbingan; Admin/Supervisor → semua) + statistik (total sesi & mahasiswa unik) + hapus entri. Entri diakses via **kartu "Presensi" di paling atas kolom aksi hub `views/jadwal-lab.vue`** (di atas Formulir Peminjaman Ruangan). Service `presensi.js` (`list`, `konteks`, `cek`, `update`, `remove`). Util `formatWaktu`/`formatRentangWaktu`/`durasiPresensi` di `utils/format.js`. `vite build` hijau.
+- **Katalog Sertifikasi (FASE 6)**: `views/sertifikasi.vue` (route `/sertifikasi`, semua login) — grid kartu (nama, penyelenggara, jadwal, persyaratan) + tombol "Info Pendaftaran ↗" ke tautan eksternal. Panel admin `views/admin-sertifikasi.vue` (route `/admin/sertifikasi`, guard `['admin','supervisor']`) CRUD + paginasi. Service `sertifikasi.js`. Nav header "Sertifikasi"; link aktif di `sidemenu-admin.vue` & kartu hub `admin-page.vue`. `vite build` hijau.
+- **Portofolio Mahasiswa (FASE 7)**: `views/portofolio.vue` (route `/portofolio`, semua login) — tab **Portofolio Saya** (Mahasiswa: form tambah/edit + hapus milik sendiri) & **Jelajah Semua** (grid kartu semua portofolio + nama pemilik; default untuk non-Mahasiswa). Service `portofolio.js`. Nav header "Portofolio". `vite build` hijau.
+- **Laporan/Report (FASE 8)**: `views/report.vue` (route `/report`, guard `['admin','supervisor']`) — filter rentang tanggal (`from`/`to`, default 30 hari), 3 kartu rekap (Peminjaman Ruangan/Perangkat/**Tugas**) + tombol **Unduh PDF** (fetch blob via `reportService.pdf` agar Bearer token terkirim). Service `report.js`. Entri: nav header **"Laporan"** untuk Admin/Supervisor + kartu hub `admin-page.vue` + link `sidemenu-admin.vue`. _Rekap Tugas rinci (PDF/Excel, per pertemuan) tersedia terpisah — lihat Fase 5 T5.8._ `vite build` hijau.
+- **Notifikasi In-App (FASE 9)**: `components/notification-bell.vue` (ikon lonceng + badge merah `unread_count` + panel dropdown: daftar notifikasi, tandai satu/semua dibaca, hapus per item; unread ditandai visual). Store `stores/notifikasi.js` (Pinia — `items`, `unreadCount`, `seed`/`fetch`/`markRead`/`markAllRead`/`remove`/`reset`); badge **diseed dari `unread_notifications_count` pada `me()`** (tanpa request tambahan), daftar dimuat saat panel dibuka. Service `notifikasi.js`. Lonceng dipasang di `header-component.vue` (saat login) + reset saat logout. `vite build` hijau.
+- **Belum ada**: —. Seluruh modul FASE 0–9 selesai.
 
 ---
 
@@ -225,25 +243,37 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.15).
 
 ---
 
-## FASE 5: Presensi Laboratorium
+## FASE 5: Pengumpulan Tugas Kelas Lab (menggantikan Presensi)
 
-(PRD 3.5, SRS UC-04, SDD 3.12)
+(PRD 3.5, SRS UC-04, SDD 3.12, 3.12a)
 
-### Backend
-- [ ] **T5.1** — Migration tabel `presensi` (SDD 3.12)
-- [ ] **T5.2** — Model `Presensi` + relasi
-- [ ] **T5.3** — Endpoint `POST /api/presensi/check-in` — **wajib** validasi tidak ada sesi `check_out IS NULL` aktif milik user yang sama (SRS UC-04 aturan validasi kunci)
-- [ ] **T5.4** — Endpoint `PATCH /api/presensi/{id}/check-out` — set timestamp WIB
-- [ ] **T5.5** — Endpoint `GET /api/presensi` — filter milik sendiri / mahasiswa bimbingan (Dosen) / rekap (Admin-Supervisor)
-- [ ] **T5.6** — Endpoint `PATCH /api/presensi/{id}` & `DELETE /api/presensi/{id}` (Dosen, untuk mahasiswa bimbingan — set `dicatat_oleh`)
+> **⚠️ Perubahan lingkup (per 2026-07-06 s/d 2026-07-08)**: Modul **Presensi** (check-in/check-out) yang semula direncanakan di fase ini **dihapus total** dan digantikan modul **Pengumpulan Tugas** atas permintaan lab. Riwayat evolusi: presensi bebas → presensi berbasis konteks jadwal → **Pengumpulan Tugas** (final). Tabel `presensi` di-drop lewat migrasi `..._drop_presensi_table`. Task T5.1–T5.10 lama (presensi) **tidak lagi berlaku** dan digantikan T5.1–T5.14 di bawah. Detail lihat `docs/STATUS Update Fase 5.md` & `docs/STATUS Sesi - Tugas Pertemuan & Deadline.md`.
+
+### Backend — Pengumpulan Tugas
+- [x] **T5.1** — Migration `drop_presensi_table` + `create_tugas_table` (SDD 3.12): `kelas_lab_id` FK cascade, `mahasiswa_id` FK cascade, `judul`, `tautan` (2048), index `kelas_lab_id`
+- [x] **T5.2** — Migration `add_pertemuan_to_tugas_table` (`pertemuan` tinyint 1–16, default 1) + model `Tugas` (fillable + cast `pertemuan` int; relasi `kelasLab`/`mahasiswa`)
+- [x] **T5.3** — Endpoint `GET /api/tugas` — scoping per-role (Mahasiswa → miliknya; Dosen → kelas yang diampu; Admin/Supervisor → semua)
+- [x] **T5.4** — Endpoint `POST /api/tugas` (`StoreTugasRequest`, Mahasiswa peserta `disetujui`): validasi `pertemuan` 1–16, `tautan` url, **satu tugas per (kelas, pertemuan, mahasiswa)**; kirim notifikasi `pengajuan_masuk` ke dosen pengampu + Supervisor (transaksi sama)
+- [x] **T5.5** — Endpoint `DELETE /api/tugas/{tugas}` — pemilik (Mahasiswa) atau Admin/Supervisor
+
+### Backend — Deadline & Materi per Pertemuan
+- [x] **T5.6** — Migration `create_deadline_pertemuan_table` + `add_materi_...` (SDD 3.12a): unique `(kelas_lab_id, pertemuan)`, `materi` nullable, `deadline` nullable; model `DeadlinePertemuan` + relasi `KelasLab::deadlinePertemuan()`
+- [x] **T5.7** — `DeadlinePertemuanController`: `index` (semua role login), `upsert` (`PUT` — materi &/atau deadline; keduanya kosong → hapus record), `destroy`. Otorisasi Dosen pengampu/Supervisor/Admin. Migration `add_tautan_pengumpulan_to_kelas_lab` + validasi wajib di `Store/UpdateKelasLabRequest`
+
+### Backend — Rekap Tugas & Pengingat
+- [x] **T5.8** — `RekapTugasController` + `RekapTugasService` + `RekapTugasExcelWriter`: `GET /api/rekap-tugas` (JSON), `/pdf` (dompdf landscape), `/excel` (phpspreadsheet). Gate `view-rekap-tugas` (Admin/Supervisor/Dosen); Dosen di-scope ke kelasnya. Endpoint badge `GET /api/kelas-lab/rekap-tugas` (status perhatian/berjalan/beres)
+- [x] **T5.9** — `PengingatDeadlineService` + command `pengingat:deadline` (`hourly`) — notifikasi `pengingat` ke mahasiswa yang belum kumpul untuk deadline lewat; idempoten. Enum `notifikasi.tipe` +`pengingat` (migrasi `add_pengingat_to_notifikasi_tipe`)
+- [x] **T5.10** — `PengingatPengembalianService` + command `pengingat:pengembalian` (`dailyAt 07:00`) — notifikasi pengingat pengembalian perangkat jatuh tempo. Scheduler didaftarkan di `bootstrap/app.php`
 
 ### Frontend
-- [ ] **T5.7** — Tombol/Halaman Check-in (pilih keperluan riset) & Check-out
-- [ ] **T5.8** — Halaman Riwayat Presensi (Mahasiswa: milik sendiri; Dosen: mahasiswa bimbingan; Admin/Supervisor: rekap)
+- [x] **T5.11** — `views/tugas.vue` (Kirim Tugas: dropdown Pertemuan 1–16, hint deadline merah bila lewat, materi pertemuan terpilih, format nama file `NamaTugas_NPM_Nama`; reviewer: Tugas Masuk). Tombol Kirim/Tugas Masuk di `kelas-lab.vue`
+- [x] **T5.12** — `views/detail-kelas-lab.vue` (accordion 16 pertemuan: mhs status kirim + materi + deadline; reviewer form Materi+Deadline) & `views/detail-pertemuan.vue` (reviewer: tabel Sudah/Belum + badge terlambat)
+- [x] **T5.13** — `views/report.vue` rekap **Tugas** (menggantikan rekap Presensi) + halaman Rekap Tugas (unduh PDF/Excel). Kartu Beranda adaptif (mhs: Informasi Tugas; reviewer: Informasi Pemberian Tugas + progres A/B + badge kepatuhan)
+- [x] **T5.14** — Util `formatDeadline`/`toDatetimeLocal`/`sudahLewatDeadline`/`dikirimTerlambat` di `utils/format.js`; service `tugas.js` + `kelas-lab.js` (`deadlineList`/`setDeadline`/`removeDeadline`/`rekapTugas`)
 
 ### Testing
-- [ ] **T5.9** — Test: check-in kedua ditolak selama sesi sebelumnya belum check-out
-- [ ] **T5.10** — Test: timestamp presensi tersimpan sesuai waktu lokal WIB
+- [x] **T5.15** — `TugasTest` (kirim oleh peserta disetujui; tolak non-peserta/menunggu/URL invalid/non-mahasiswa; duplikat pertemuan; scoping; hapus pemilik/supervisor; notifikasi ke dosen & supervisor)
+- [x] **T5.16** — `DeadlinePertemuanTest` (materi tanpa deadline / bersamaan / kosong→hapus), `RekapTugasTest` (status perhatian/berjalan/beres, progres A-B, materi tak terhitung, scope Dosen), `PengingatDeadlineTest`, `PengingatPengembalianTest`
 
 ---
 
@@ -252,16 +282,16 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.15).
 (PRD 3.6, SRS UC-05, SDD 3.13)
 
 ### Backend
-- [ ] **T6.1** — Migration tabel `sertifikasi` (SDD 3.13 — murni katalog, tanpa relasi ke `users`)
-- [ ] **T6.2** — Model `Sertifikasi`
-- [ ] **T6.3** — Endpoint CRUD `/api/sertifikasi` (Create/Update/Delete: Admin/Supervisor; Read: semua role)
+- [x] **T6.1** — Migration tabel `sertifikasi` (SDD 3.13 — murni katalog, tanpa relasi ke `users`)
+- [x] **T6.2** — Model `Sertifikasi`
+- [x] **T6.3** — Endpoint CRUD `/api/sertifikasi` (Create/Update/Delete: Admin/Supervisor; Read: semua role). _`SertifikasiController` apiResource (index/store/update/destroy); CUD via Gate `manage-master-data` (dipakai bersama katalog master lain), read terbuka semua role login. Route `apiResource('sertifikasi')`. Seeder `SertifikasiSeeder` (4 sertifikasi: MTCNA, CCNA, CEH, Oracle SQL) di `DatabaseSeeder`._
 
 ### Frontend
-- [ ] **T6.4** — Halaman Katalog Sertifikasi (list + detail, dengan tautan eksternal ke penyelenggara)
-- [ ] **T6.5** — Panel kelola katalog sertifikasi (Admin/Supervisor)
+- [x] **T6.4** — Halaman Katalog Sertifikasi (list + detail, dengan tautan eksternal ke penyelenggara). _`views/sertifikasi.vue` (route `/sertifikasi`, semua login): grid kartu (nama, penyelenggara, jadwal, persyaratan) + tombol "Info Pendaftaran ↗" ke tautan eksternal. Service `sertifikasi.js`. Nav header "Sertifikasi"._
+- [x] **T6.5** — Panel kelola katalog sertifikasi (Admin/Supervisor). _`views/admin-sertifikasi.vue` (route `/admin/sertifikasi`, guard `['admin','supervisor']`): CRUD penuh + paginasi lokal. Link "Katalog Sertifikasi" aktif di `sidemenu-admin.vue` & kartu hub `admin-page.vue`._
 
 ### Testing
-- [ ] **T6.6** — Test: Mahasiswa hanya bisa Read, tidak bisa Create/Update/Delete katalog sertifikasi
+- [x] **T6.6** — Test: Mahasiswa hanya bisa Read, tidak bisa Create/Update/Delete katalog sertifikasi. _Diuji `SertifikasiTest` (6 test): read mahasiswa/guest, CUD admin & supervisor, mahasiswa CUD → 403, validasi field wajib._
 
 ---
 
@@ -270,16 +300,16 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.15).
 (PRD 3.7, SDD 3.14)
 
 ### Backend
-- [ ] **T7.1** — Migration tabel `portofolio` (SDD 3.14)
-- [ ] **T7.2** — Model `Portofolio` + relasi ke `User`
-- [ ] **T7.3** — Endpoint CRUD `/api/portofolio` — Create/Update/Delete hanya pemilik (Mahasiswa); Read semua role
+- [x] **T7.1** — Migration tabel `portofolio` (SDD 3.14). _`user_id` FK `cascadeOnDelete`, `judul`, `deskripsi` text nullable, `tautan` nullable, `tanggal` date nullable._
+- [x] **T7.2** — Model `Portofolio` + relasi ke `User`. _`belongsTo User`, cast `tanggal` date; `User::portofolio()` hasMany._
+- [x] **T7.3** — Endpoint CRUD `/api/portofolio` — Create/Update/Delete hanya pemilik (Mahasiswa); Read semua role. _`PortofolioController` apiResource; index eager-load `user:id,name,role` + filter `?user_id=`; store via `StorePortofolioRequest` (authorize Mahasiswa, `user_id` di-set dari user login); update via `UpdatePortofolioRequest` (authorize pemilik); destroy cek kepemilikan (403 bila bukan pemilik)._
 
 ### Frontend
-- [ ] **T7.4** — Halaman Portofolio Pribadi (Mahasiswa — kelola milik sendiri)
-- [ ] **T7.5** — Halaman Lihat Portofolio (publik untuk semua role yang login)
+- [x] **T7.4** — Halaman Portofolio Pribadi (Mahasiswa — kelola milik sendiri). _`views/portofolio.vue` (route `/portofolio`) tab **Portofolio Saya** (Mahasiswa): form tambah/edit (judul, deskripsi, tautan, tanggal) + hapus, grid kartu. Service `portofolio.js`._
+- [x] **T7.5** — Halaman Lihat Portofolio (publik untuk semua role yang login). _Tab **Jelajah Semua** di `portofolio.vue`: grid kartu semua portofolio + nama pemilik; default tab untuk non-Mahasiswa. Nav header "Portofolio"._
 
 ### Testing
-- [ ] **T7.6** — Test: Mahasiswa tidak bisa edit/hapus portofolio milik mahasiswa lain
+- [x] **T7.6** — Test: Mahasiswa tidak bisa edit/hapus portofolio milik mahasiswa lain. _Diuji `PortofolioTest` (7 test): read semua role/guest, mahasiswa tambah miliknya (`user_id` dari login), dosen tambah → 403, validasi judul, pemilik ubah/hapus, mahasiswa lain ubah/hapus → 403._
 
 ---
 
@@ -288,14 +318,22 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.15).
 (PRD 3.9, SRS UC-06)
 
 ### Backend
-- [ ] **T8.1** — Endpoint `GET /api/report?from=&to=` — agregasi data peminjaman, presensi, aktivitas lab
-- [ ] **T8.2** — Endpoint `GET /api/report/pdf?from=&to=` — generate PDF (gunakan package PDF generator Laravel, mis. `barryvdh/laravel-dompdf` — **konfirmasi ke user sebelum install dependency baru**, sesuai `agent.md` Bagian 3)
+- [x] **T8.1** — Endpoint `GET /api/report?from=&to=` — agregasi data peminjaman & pengumpulan tugas. _`ReportController::index`; `ReportRequest` (Gate `view-report` + validasi `from`/`to`); rekap periode + peminjaman ruangan/perangkat per status + **tugas** (`total_terkumpul`, `total_mahasiswa_unik`, `total_kelas`) sesuai 3_SDD.md 5.13; default 30 hari terakhir. **Catatan**: rekap presensi awal telah diganti rekap tugas seiring penggantian modul Fase 5._
+- [x] **T8.2** — Endpoint `GET /api/report/pdf?from=&to=` — generate PDF. _Dependency **`barryvdh/laravel-dompdf ^3.1`** dikonfirmasi user. `ReportController::pdf` render Blade `resources/views/reports/lab.blade.php` → unduh PDF._
 
 ### Frontend
-- [ ] **T8.3** — Halaman Report — filter rentang tanggal, tampilan rekap, tombol Download PDF
+- [x] **T8.3** — Halaman Report — filter rentang tanggal, tampilan rekap, tombol Download PDF. _`views/report.vue` (route `/report`, guard `['admin','supervisor']`) via `services/report.js`; PDF diunduh sebagai blob (Bearer token). Nav header "Laporan" + kartu hub + link sidemenu admin._
 
 ### Testing
-- [ ] **T8.4** — Test: hanya Admin/Supervisor yang bisa mengakses endpoint report
+- [x] **T8.4** — Test: hanya Admin/Supervisor yang bisa mengakses endpoint report. _Diuji `ReportTest` (7): Admin/Supervisor 200; Dosen/Mahasiswa 403; guest 401; agregasi status peminjaman; unduh PDF `content-type application/pdf`._
+
+### Rekap Tugas Kelas Lab (maintenance Fase 8, per 2026-07-09) — SRS UC-06a, 3_SDD.md 5.15
+- [x] **T8.5** — `RekapTugasService::build()` — ringkasan kepatuhan per kelas + matriks detail per kelas (peserta × pertemuan bertugas: `tepat`/`telat`/`belum`, dari `tugas.created_at` vs `deadline`). Logika kepatuhan `KelasLabController::rekapTugas` **dipindah ke service** (endpoint lama delegasi, bentuk JSON dijaga → badge Kelas Lab/home tetap jalan). Dosen di-scope ke kelas sendiri.
+- [x] **T8.6** — Gate `view-rekap-tugas` (Admin/Supervisor/Dosen) + `RekapTugasRequest`. Endpoint `GET /api/rekap-tugas` (JSON), `/api/rekap-tugas/pdf` (dompdf, Blade `reports/rekap-tugas.blade.php`, landscape), `/api/rekap-tugas/excel`.
+- [x] **T8.7** — Export Excel `.xlsx` berformat via **`phpoffice/phpspreadsheet ^5.8`** (dependency baru; prasyarat `ext-zip` diaktifkan di php.ini). `RekapTugasExcelWriter`: sheet **Ringkasan** (warna status, freeze header) + **satu sheet per kelas** (matriks P-n, freeze kolom kiri).
+- [x] **T8.8** — Frontend `views/rekap-tugas.vue` (route `/rekap-tugas`, guard `['admin','supervisor','dosen']`) — tabel ringkasan (badge status) + matriks per kelas (accordion) + tombol **Unduh PDF/Excel** (blob). Service `services/rekap-tugas.js`. Entri: nav header **"Rekap Tugas"** + link `sidemenu-admin.vue` + tombol di `kelas-lab.vue`.
+- [x] **T8.9** — Test `RekapTugasTest` (+7 = 15 total): struktur JSON ringkasan+detail; matriks `tepat`/`telat`/`belum`; scoping Dosen; Mahasiswa 403; guest 401; unduh PDF & Excel.
+- [ ] **T8.10 (Tahap 2, ditunda)** — Sinkronisasi otomatis ke Google Sheets (service account, auto-update saat tugas masuk). Menunggu kredensial Google Cloud.
 
 ---
 
@@ -306,31 +344,31 @@ Modul tampilan informasi publik (PRD 2.5, SDD 3.15).
 > Fase ini **tidak berdiri sendiri** — notifikasi adalah efek samping dari aksi di Fase 3, 4, dan 5. Migration dan Model dikerjakan di sini, tapi integrasi insert notifikasi ke transaksi masing-masing modul dikerjakan bersamaan saat fase tersebut dieksekusi (atau sebagai pass kedua setelah fase terkait selesai).
 
 ### Backend
-- [ ] **T9.1** — Migration tabel `notifikasi` (SDD 3.16): kolom `user_id`, `judul`, `pesan`, `tipe` (enum), `referensi_id`, `is_read`; composite index `(user_id, is_read)`
-- [ ] **T9.2** — Model `Notifikasi` + relasi `belongsTo User`
-- [ ] **T9.3** — `NotifikasiService` — class reusable dengan method `kirim(userId, judul, pesan, tipe, referensiId)` yang melakukan insert dalam transaksi yang sudah berjalan; dipanggil dari dalam transaksi modul lain
-- [ ] **T9.4** — Integrasi di modul Peminjaman Ruangan: panggil `NotifikasiService::kirim()` di dalam transaksi approve/reject `peminjaman_ruangan` — kirim ke pengaju; dan di dalam transaksi `POST /api/peminjaman-ruangan` — kirim ke semua Supervisor & Admin (tipe: `pengajuan_masuk`)
-- [ ] **T9.5** — Integrasi di modul Peminjaman Perangkat: panggil `NotifikasiService::kirim()` di dalam transaksi approve/reject `peminjaman_perangkat` — kirim ke pengaju; dan saat pengajuan baru masuk — kirim ke semua Supervisor & Admin
-- [ ] **T9.6** — Integrasi di modul Perpanjangan: panggil `NotifikasiService::kirim()` di dalam transaksi approve/reject `perpanjangan_peminjaman` — kirim ke pengaju; dan saat pengajuan baru masuk — kirim ke semua Supervisor & Admin
-- [ ] **T9.7** — Integrasi di modul Kelas Lab: panggil `NotifikasiService::kirim()` di dalam transaksi `POST /api/kelas-lab/{id}/daftar` (konfirmasi pendaftaran berhasil — kirim ke Mahasiswa yang mendaftar)
-- [ ] **T9.8** — Endpoint `GET /api/notifikasi` — list notifikasi milik sendiri, urut terbaru, response sertakan `unread_count` (SDD 5.14)
-- [ ] **T9.9** — Endpoint `PATCH /api/notifikasi/{id}/read` — tandai satu notifikasi sebagai sudah dibaca (validasi: hanya milik sendiri)
-- [ ] **T9.10** — Endpoint `PATCH /api/notifikasi/read-all` — tandai semua notifikasi milik sendiri sebagai sudah dibaca
-- [ ] **T9.11** — Endpoint `DELETE /api/notifikasi/{id}` — hapus satu notifikasi milik sendiri
-- [ ] **T9.12** — Update `GET /api/auth/me`: tambahkan field `unread_notifications_count` (COUNT `notifikasi` milik user dengan `is_read = 0`) ke response — dipakai badge navbar tanpa request tambahan (SRS UC-07 aturan validasi kunci, SDD 5.1)
+- [x] **T9.1** — Migration tabel `notifikasi` (SDD 3.16): kolom `user_id`, `judul`, `pesan`, `tipe` (enum `pengajuan_masuk`/`status_pengajuan`/`pendaftaran`), `referensi_id`, `is_read`; composite index `(user_id, is_read)`
+- [x] **T9.2** — Model `Notifikasi` + relasi `belongsTo User`. _`$table='notifikasi'`, cast `is_read` boolean; `User::notifikasi()` hasMany._
+- [x] **T9.3** — `NotifikasiService` — `kirim(userId, judul, pesan, tipe, referensiId)` + helper `kirimKeApprover()` (semua Admin/Supervisor); insert Eloquent ikut transaksi yang sedang berjalan (rollback → batal).
+- [x] **T9.4** — Integrasi Peminjaman Ruangan: `store` (transaksi baru) → `kirimKeApprover` tipe `pengajuan_masuk`; `approve`/`reject` (dalam transaksi) → `kirim` ke pengaju tipe `status_pengajuan`.
+- [x] **T9.5** — Integrasi Peminjaman Perangkat: `store` → approver; `approve`/`reject` → pengaju (dalam transaksi masing-masing).
+- [x] **T9.6** — Integrasi Perpanjangan: `ajukanPerpanjangan` → approver; `PerpanjanganController::approve`/`reject` → pengaju (pemilik peminjaman induk), dalam transaksi.
+- [x] **T9.7** — Integrasi Kelas Lab: `KelasLabController::daftar` (dalam transaksi kuota) → `kirim` ke mahasiswa pendaftar tipe `pendaftaran`.
+- [x] **T9.8** — Endpoint `GET /api/notifikasi` — list milik sendiri, terbaru dulu, + `unread_count`. _`NotifikasiController::index`._
+- [x] **T9.9** — Endpoint `PATCH /api/notifikasi/{id}/read` — tandai dibaca; 403 bila bukan milik sendiri.
+- [x] **T9.10** — Endpoint `PATCH /api/notifikasi/read-all` — tandai semua milik sendiri dibaca (didefinisikan sebelum route ber-{id}).
+- [x] **T9.11** — Endpoint `DELETE /api/notifikasi/{id}` — hapus milik sendiri; 403 bila bukan milik.
+- [x] **T9.12** — Update `GET /api/auth/me`: field `unread_notifications_count` (COUNT `is_read=0` milik user) untuk badge navbar tanpa request tambahan.
 
 ### Frontend
-- [ ] **T9.13** — Komponen `NotificationBell` di navbar: ikon lonceng + badge angka merah jika `unread_notifications_count > 0`; nilai badge diambil dari response `GET /api/auth/me` saat pertama load
-- [ ] **T9.14** — Dropdown/panel notifikasi: muncul saat lonceng diklik, list notifikasi dari `GET /api/notifikasi`; notifikasi belum dibaca ditandai secara visual (mis. background berbeda)
-- [ ] **T9.15** — Tombol "Tandai Sudah Dibaca" per item + "Tandai Semua" + tombol hapus per item
-- [ ] **T9.16** — Pinia store `notifikasi` — menyimpan list & `unread_count`; diupdate setelah aksi tandai baca/hapus
+- [x] **T9.13** — Komponen `NotificationBell` di navbar: ikon lonceng + badge merah bila `unreadCount > 0`; badge diseed dari `unread_notifications_count` pada `me()`. _`components/notification-bell.vue`, dipasang di `header-component.vue` saat login._
+- [x] **T9.14** — Dropdown/panel notifikasi: muncul saat lonceng diklik (memuat `GET /api/notifikasi`); notifikasi belum dibaca ditandai visual (background biru). Klik-di-luar menutup panel (overlay).
+- [x] **T9.15** — Tombol "Tandai semua dibaca" + klik item (tandai satu dibaca) + tombol hapus per item.
+- [x] **T9.16** — Pinia store `notifikasi` — `items` & `unreadCount`; diperbarui setelah tandai baca/hapus; `reset()` saat logout. _`stores/notifikasi.js`._
 
 ### Testing
-- [ ] **T9.17** — Test: approve `peminjaman_ruangan` membuat entri `notifikasi` untuk pengaju dan tidak untuk user lain
-- [ ] **T9.18** — Test: pengajuan baru `peminjaman_ruangan` membuat notifikasi untuk semua Supervisor & Admin (bukan untuk pengaju itu sendiri)
-- [ ] **T9.19** — Test: `GET /api/auth/me` mengembalikan `unread_notifications_count` yang akurat
-- [ ] **T9.20** — Test: `PATCH /api/notifikasi/{id}/read` ditolak (403) jika notifikasi bukan milik sendiri
-- [ ] **T9.21** — Test: jika transaksi approve rollback, insert notifikasi ikut rollback (tidak ada notifikasi orphan)
+- [x] **T9.17** — Test: approve `peminjaman_ruangan` membuat `notifikasi` untuk pengaju saja. _`NotifikasiTest`._
+- [x] **T9.18** — Test: pengajuan baru `peminjaman_ruangan` membuat notifikasi untuk semua Supervisor & Admin (bukan pengaju). _`NotifikasiTest`._
+- [x] **T9.19** — Test: `GET /api/auth/me` mengembalikan `unread_notifications_count` akurat. _`NotifikasiTest`._
+- [x] **T9.20** — Test: `PATCH /api/notifikasi/{id}/read` ditolak (403) bila bukan milik sendiri. _`NotifikasiTest`._
+- [x] **T9.21** — Test: transaksi pemicu rollback → insert notifikasi ikut rollback (tanpa orphan). _`NotifikasiTest` (DB::transaction + throw → `assertDatabaseCount('notifikasi', 0)`)._
 
 ---
 
