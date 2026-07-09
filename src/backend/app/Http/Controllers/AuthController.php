@@ -61,9 +61,12 @@ class AuthController extends Controller
     {
         // Muat profil sesuai role agar halaman Profil bisa menampilkan data diri.
         // Dosen: ikut sertakan relasi bidangMinat agar Edit Profil bisa pre-fill pilihan.
-        return response()->json(
-            $request->user()->load(['dosen.bidangMinat', 'mahasiswa']),
-        );
+        $user = $request->user()->load(['dosen.bidangMinat', 'mahasiswa']);
+
+        // Badge lonceng navbar tanpa request terpisah (SRS UC-07, 3_SDD.md 5.1).
+        $user->unread_notifications_count = $user->notifikasi()->where('is_read', false)->count();
+
+        return response()->json($user);
     }
 
     /**

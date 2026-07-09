@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StorePeminjamanPerangkatRequest;
 use App\Models\PeminjamanPerangkat;
+use App\Services\NotifikasiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -18,6 +19,8 @@ use Illuminate\Support\Facades\Gate;
  */
 class PeminjamanPerangkatController extends Controller
 {
+    public function __construct(private NotifikasiService $notifikasi) {}
+
     /**
      * List pengajuan: Admin/Supervisor lihat semua, role lain hanya miliknya (3_SDD.md 5.9).
      */
@@ -49,7 +52,19 @@ class PeminjamanPerangkatController extends Controller
         $data['user_id'] = $request->user()->id;
         $data['status'] = 'menunggu';
 
-        $peminjaman = PeminjamanPerangkat::create($data);
+        // Notifikasi ke approver dalam transaksi yang sama (SRS UC-07).
+        $peminjaman = DB::transaction(function () use ($data, $request) {
+            $peminjaman = PeminjamanPerangkat::create($data);
+
+            $this->notifikasi->kirimKeApprover(
+                'Pengajuan peminjaman perangkat baru',
+                $request->user()->name.' mengajukan peminjaman perangkat.',
+                'pengajuan_masuk',
+                $peminjaman->id,
+            );
+
+            return $peminjaman;
+        });
 
         return response()->json([
             'data' => $peminjaman->load(['perangkat', 'user']),
@@ -82,6 +97,14 @@ class PeminjamanPerangkatController extends Controller
                 'disetujui_oleh' => request()->user()->id,
             ]);
             $perangkat->update(['status' => 'dipinjam']);
+
+            $this->notifikasi->kirim(
+                $peminjamanPerangkat->user_id,
+                'Peminjaman perangkat disetujui',
+                'Pengajuan peminjaman perangkat "'.$perangkat->nama_perangkat.'" telah disetujui.',
+                'status_pengajuan',
+                $peminjamanPerangkat->id,
+            );
         });
 
         return response()->json([
@@ -101,10 +124,20 @@ class PeminjamanPerangkatController extends Controller
             return response()->json(['message' => 'Pengajuan sudah diproses sebelumnya.'], 422);
         }
 
-        $peminjamanPerangkat->update([
-            'status' => 'ditolak',
-            'disetujui_oleh' => request()->user()->id,
-        ]);
+        DB::transaction(function () use ($peminjamanPerangkat) {
+            $peminjamanPerangkat->update([
+                'status' => 'ditolak',
+                'disetujui_oleh' => request()->user()->id,
+            ]);
+
+            $this->notifikasi->kirim(
+                $peminjamanPerangkat->user_id,
+                'Peminjaman perangkat ditolak',
+                'Pengajuan peminjaman perangkat "'.$peminjamanPerangkat->perangkat?->nama_perangkat.'" ditolak.',
+                'status_pengajuan',
+                $peminjamanPerangkat->id,
+            );
+        });
 
         return response()->json([
             'data' => $peminjamanPerangkat->load(['perangkat', 'user', 'penyetuju']),
@@ -157,9 +190,17 @@ class PeminjamanPerangkatController extends Controller
             ], 403);
         }
 
+        // Peminjaman yang sedang berjalan (disetujui) tak boleh dihapus — perangkat masih dipinjam.
+        // Konfirmasi pengembalian dulu; hapus hanya untuk riwayat yang sudah selesai.
+        if ($peminjamanPerangkat->status === 'disetujui') {
+            return response()->json([
+                'message' => 'Peminjaman yang sedang berjalan tidak dapat dihapus. Konfirmasi pengembalian terlebih dahulu.',
+            ], 422);
+        }
+
         $peminjamanPerangkat->delete();
 
-        return response()->json(['message' => 'Pengajuan peminjaman perangkat dibatalkan.']);
+        return response()->json(['message' => 'Pengajuan peminjaman perangkat dihapus.']);
     }
 
     /**
@@ -196,10 +237,22 @@ class PeminjamanPerangkatController extends Controller
             ],
         ]);
 
-        $perpanjangan = $peminjamanPerangkat->perpanjangan()->create([
-            'tanggal_kembali_baru' => $data['tanggal_kembali_baru'],
-            'status' => 'menunggu',
-        ]);
+        // Notifikasi ke approver dalam transaksi yang sama (SRS UC-07).
+        $perpanjangan = DB::transaction(function () use ($peminjamanPerangkat, $data, $user) {
+            $perpanjangan = $peminjamanPerangkat->perpanjangan()->create([
+                'tanggal_kembali_baru' => $data['tanggal_kembali_baru'],
+                'status' => 'menunggu',
+            ]);
+
+            $this->notifikasi->kirimKeApprover(
+                'Pengajuan perpanjangan baru',
+                $user->name.' mengajukan perpanjangan peminjaman perangkat.',
+                'pengajuan_masuk',
+                $perpanjangan->id,
+            );
+
+            return $perpanjangan;
+        });
 
         return response()->json([
             'data' => $perpanjangan,

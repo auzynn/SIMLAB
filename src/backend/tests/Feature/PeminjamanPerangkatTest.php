@@ -185,4 +185,34 @@ class PeminjamanPerangkatTest extends TestCase
 
         $this->assertDatabaseMissing('peminjaman_perangkat', ['id' => $peminjaman->id]);
     }
+
+    public function test_supervisor_dapat_menghapus_riwayat_yang_sudah_dikembalikan(): void
+    {
+        $peminjaman = $this->peminjaman($this->perangkat('tersedia'), User::factory()->create(['role' => 'mahasiswa']), 'dikembalikan');
+
+        Sanctum::actingAs(User::factory()->create(['role' => 'supervisor']));
+        $this->deleteJson("/api/peminjaman-perangkat/{$peminjaman->id}")->assertOk();
+
+        $this->assertDatabaseMissing('peminjaman_perangkat', ['id' => $peminjaman->id]);
+    }
+
+    public function test_supervisor_dapat_menghapus_riwayat_yang_ditolak(): void
+    {
+        $peminjaman = $this->peminjaman($this->perangkat(), User::factory()->create(['role' => 'mahasiswa']), 'ditolak');
+
+        Sanctum::actingAs(User::factory()->create(['role' => 'supervisor']));
+        $this->deleteJson("/api/peminjaman-perangkat/{$peminjaman->id}")->assertOk();
+
+        $this->assertDatabaseMissing('peminjaman_perangkat', ['id' => $peminjaman->id]);
+    }
+
+    public function test_peminjaman_berjalan_disetujui_tidak_dapat_dihapus(): void
+    {
+        $peminjaman = $this->peminjaman($this->perangkat('dipinjam'), User::factory()->create(['role' => 'mahasiswa']), 'disetujui');
+
+        Sanctum::actingAs(User::factory()->create(['role' => 'supervisor']));
+        $this->deleteJson("/api/peminjaman-perangkat/{$peminjaman->id}")->assertStatus(422);
+
+        $this->assertDatabaseHas('peminjaman_perangkat', ['id' => $peminjaman->id]);
+    }
 }

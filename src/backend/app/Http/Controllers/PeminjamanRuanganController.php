@@ -6,6 +6,7 @@ use App\Http\Requests\StorePeminjamanRuanganRequest;
 use App\Models\KelasLab;
 use App\Models\PeminjamanRuangan;
 use App\Services\JadwalRuanganService;
+use App\Services\NotifikasiService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -19,7 +20,10 @@ use Illuminate\Support\Facades\Gate;
  */
 class PeminjamanRuanganController extends Controller
 {
-    public function __construct(private JadwalRuanganService $jadwal) {}
+    public function __construct(
+        private JadwalRuanganService $jadwal,
+        private NotifikasiService $notifikasi,
+    ) {}
 
     /**
      * List pengajuan: Admin/Supervisor lihat semua, role lain hanya miliknya (3_SDD.md 5.5).
@@ -87,7 +91,19 @@ class PeminjamanRuanganController extends Controller
         $data['jam_mulai'] = $this->jadwal->jam($data['jam_mulai']);
         $data['jam_selesai'] = $this->jadwal->jam($data['jam_selesai']);
 
-        $peminjaman = PeminjamanRuangan::create($data);
+        // Notifikasi ke approver dilakukan dalam transaksi yang sama (SRS UC-07).
+        $peminjaman = DB::transaction(function () use ($data, $request) {
+            $peminjaman = PeminjamanRuangan::create($data);
+
+            $this->notifikasi->kirimKeApprover(
+                'Pengajuan peminjaman ruangan baru',
+                $request->user()->name.' mengajukan peminjaman ruangan pada '.$peminjaman->tanggal->format('d-m-Y').'.',
+                'pengajuan_masuk',
+                $peminjaman->id,
+            );
+
+            return $peminjaman;
+        });
 
         return response()->json([
             'data' => $peminjaman->load(['ruangan', 'user']),
@@ -133,6 +149,15 @@ class PeminjamanRuanganController extends Controller
                 'status' => 'disetujui',
                 'disetujui_oleh' => request()->user()->id,
             ]);
+
+            // Notifikasi ke pengaju dalam transaksi yang sama (SRS UC-07).
+            $this->notifikasi->kirim(
+                $peminjamanRuangan->user_id,
+                'Peminjaman ruangan disetujui',
+                'Pengajuan peminjaman ruangan Anda pada '.$peminjamanRuangan->tanggal->format('d-m-Y').' telah disetujui.',
+                'status_pengajuan',
+                $peminjamanRuangan->id,
+            );
         });
 
         return response()->json([
@@ -148,10 +173,20 @@ class PeminjamanRuanganController extends Controller
     {
         Gate::authorize('approve-peminjaman-ruangan');
 
-        $peminjamanRuangan->update([
-            'status' => 'ditolak',
-            'disetujui_oleh' => request()->user()->id,
-        ]);
+        DB::transaction(function () use ($peminjamanRuangan) {
+            $peminjamanRuangan->update([
+                'status' => 'ditolak',
+                'disetujui_oleh' => request()->user()->id,
+            ]);
+
+            $this->notifikasi->kirim(
+                $peminjamanRuangan->user_id,
+                'Peminjaman ruangan ditolak',
+                'Pengajuan peminjaman ruangan Anda pada '.$peminjamanRuangan->tanggal->format('d-m-Y').' ditolak.',
+                'status_pengajuan',
+                $peminjamanRuangan->id,
+            );
+        });
 
         return response()->json([
             'data' => $peminjamanRuangan->load(['ruangan', 'user', 'penyetuju']),
