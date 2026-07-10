@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\KelasLab;
 use App\Models\PeminjamanRuangan;
+use App\Models\Ruangan;
 use Illuminate\Support\Carbon;
 
 /**
@@ -46,7 +47,18 @@ class JadwalRuanganService
     }
 
     /**
-     * Apakah peminjaman pada (ruangan, tanggal, rentang jam) bentrok dengan jadwal lain?
+     * Apakah peminjaman pada (ruangan, tanggal, rentang jam) bentrok / tidak muat?
+     *
+     * Ruangan boleh dibagi beberapa peminjaman selama kapasitas (jumlah komputer)
+     * belum habis: 1 peminjaman disetujui = 1 kursi. Slot dianggap bentrok bila
+     * jumlah peminjaman disetujui yang tumpang tindih sudah mencapai kapasitas,
+     * ATAU ada Kelas Lab overlap (praktikum memblok ruangan penuh — tidak dibagi).
+     *
+     * Kapasitas `null`/`0` diperlakukan sebagai 1 (eksklusif) — aman untuk data lama.
+     *
+     * Catatan: hitungan memakai jumlah peminjaman yang overlap dengan slot baru, bukan
+     * konkurensi maksimum sesungguhnya. Ini konservatif (bisa sedikit lebih ketat bila
+     * ada banyak sub-interval), memadai & aman untuk skala aplikasi ini.
      *
      * @param  int|null  $abaikanPeminjamanId  peminjaman yang dikecualikan (mis. saat approve ulang dirinya)
      */
@@ -61,24 +73,11 @@ class JadwalRuanganService
         $jamMulai = $this->jam($jamMulai);
         $jamSelesai = $this->jam($jamSelesai);
 
-        // (1) Peminjaman lain berstatus disetujui pada tanggal & jam yang tumpang tindih
-        $bentrokPeminjaman = PeminjamanRuangan::query()
-            ->where('ruangan_id', $ruanganId)
-            ->where('status', 'disetujui')
-            ->whereDate('tanggal', $tanggal)
-            ->when($abaikanPeminjamanId, fn ($q) => $q->where('id', '!=', $abaikanPeminjamanId))
-            ->where('jam_mulai', '<', $jamSelesai)
-            ->where('jam_selesai', '>', $jamMulai)
-            ->exists();
-
-        if ($bentrokPeminjaman) {
-            return true;
-        }
-
-        // (2) Kelas Lab aktif pada hari yang sama, jam overlap, tanggal dalam rentang semester
+        // (1) Kelas Lab aktif pada hari yang sama, jam overlap, tanggal dalam rentang semester.
+        //     Praktikum memblok ruangan secara penuh — tidak boleh dibagi peminjaman lain.
         $hari = $this->hariDari($tanggal);
 
-        return KelasLab::query()
+        $bentrokKelas = KelasLab::query()
             ->where('ruangan_id', $ruanganId)
             ->where('hari', $hari)
             ->whereDate('tanggal_mulai_semester', '<=', $tanggal)
@@ -86,6 +85,25 @@ class JadwalRuanganService
             ->where('jam_mulai', '<', $jamSelesai)
             ->where('jam_selesai', '>', $jamMulai)
             ->exists();
+
+        if ($bentrokKelas) {
+            return true;
+        }
+
+        // (2) Kapasitas: hitung peminjaman disetujui lain yang tumpang tindih pada slot ini.
+        //     Penuh bila jumlah tsb sudah >= kapasitas ruangan.
+        $kapasitas = max(1, (int) (Ruangan::whereKey($ruanganId)->value('kapasitas') ?? 1));
+
+        $terpakai = PeminjamanRuangan::query()
+            ->where('ruangan_id', $ruanganId)
+            ->where('status', 'disetujui')
+            ->whereDate('tanggal', $tanggal)
+            ->when($abaikanPeminjamanId, fn ($q) => $q->where('id', '!=', $abaikanPeminjamanId))
+            ->where('jam_mulai', '<', $jamSelesai)
+            ->where('jam_selesai', '>', $jamMulai)
+            ->count();
+
+        return $terpakai >= $kapasitas;
     }
 
     /**

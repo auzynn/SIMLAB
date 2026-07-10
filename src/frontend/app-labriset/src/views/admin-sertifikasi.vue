@@ -91,16 +91,19 @@
 </template>
 
 <script setup>
-// Panel Admin/Supervisor — kelola Katalog Sertifikasi (Gate manage-master-data; SRS UC-05).
+// Panel Admin/Supervisor — kelola Katalog Sertifikasi (SertifikasiPolicy; SRS UC-05).
+// Dosen mengelola referensi miliknya dari halaman publik Sertifikasi (/sertifikasi).
 import { ref, onMounted } from 'vue'
 import { sertifikasiService } from '@/services/sertifikasi'
 import { usePagination } from '@/composables/use-pagination'
+import { useFeedback } from '@/composables/use-feedback'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import SidemenuAdmin from '@/components/sidemenu-admin.vue'
 import FooterComponent from '@/components/footer-component.vue'
 import PaginationBar from '@/components/pagination-bar.vue'
 
 const items = ref([])
+const { notify, confirmDialog } = useFeedback()
 const { page, totalPages, pagedItems } = usePagination(items, 10)
 const loading = ref(false)
 const listError = ref('')
@@ -167,12 +170,13 @@ async function submit() {
 }
 
 async function remove(s) {
-  if (!confirm(`Hapus sertifikasi "${s.nama_sertifikasi}"?`)) return
+  if (!(await confirmDialog(`Hapus sertifikasi "${s.nama_sertifikasi}"?`))) return
   try {
     await sertifikasiService.remove(s.id)
     await load()
+    notify.success(`Sertifikasi "${s.nama_sertifikasi}" dihapus`)
   } catch (err) {
-    alert(extractError(err))
+    notify.error(extractError(err))
   }
 }
 

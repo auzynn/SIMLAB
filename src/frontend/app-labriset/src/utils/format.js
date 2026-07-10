@@ -88,6 +88,7 @@ export function statusLabel(status) {
     menunggu: 'Menunggu',
     disetujui: 'Disetujui',
     ditolak: 'Ditolak',
+    kadaluarsa: 'Kadaluarsa',
     dikembalikan: 'Dikembalikan',
   }[status] ?? status
 }

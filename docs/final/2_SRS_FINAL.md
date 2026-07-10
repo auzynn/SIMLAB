@@ -18,25 +18,25 @@
 | Delegasi Asisten Lab (Mahasiswa ↔ Supervisor) | C, R, D | – | – | – |
 | Data Master (ruangan, perangkat, mata kuliah) | CRUD | CRUD | – | – |
 | Jadwal Peminjaman Lab | CRUD | CRUD | R | R |
-| Kelas Lab/Praktikum (jadwal semester) | R saja (tidak bisa membuka kelas) | C (atas permintaan Dosen), R, approve/reject pendaftaran | CRUD (milik sendiri) + approve/reject pendaftaran kelasnya | R, daftar sebagai peserta (butuh persetujuan) |
+| Kelas Lab/Praktikum (jadwal semester) | CRUD (semua kelas) + approve/reject pendaftaran (menunjuk dosen pengampu saat membuka) | C (atas permintaan Dosen), R, U, D + approve/reject pendaftaran | CRUD (milik sendiri) + approve/reject pendaftaran kelasnya | R, daftar sebagai peserta (butuh persetujuan) |
 | Pengajuan Peminjaman Ruangan | R (approve/reject) | R (approve/reject) | – | C, R (milik sendiri) |
 | Pengajuan Peminjaman Perangkat & Perpanjangan | R (approve/reject) | R (approve/reject) | – | C, R, U (milik sendiri, sebelum disetujui) |
 | Pengumpulan Tugas | R (semua), D | R (semua), D | R (kelas milik sendiri), D | C, R, D (milik sendiri) |
 | Deadline & Materi Pertemuan Kelas Lab | CRU (semua kelas) | CRU (semua kelas) | CRU (kelas milik sendiri) | R |
-| Sertifikasi (katalog informasi) | CRUD | CRUD | – | R |
+| Sertifikasi (katalog informasi) | CRUD | CRUD | C, R + U, D (milik sendiri) | R |
 | Portofolio Mahasiswa | R | R | R | CRUD (milik sendiri) |
 | Profil & Roadmap Dosen | R | R | CRUD (milik sendiri) | R |
 | Profil Mahasiswa (data diri, kecuali NPM) | R | R | R (mahasiswa bimbingan) | U (milik sendiri) |
 | Laporan/Report (unduh) | C, R | C, R | – | – |
 | Rekap Tugas Kelas Lab (unduh PDF/Excel) | R (semua kelas) | R (semua kelas) | R (kelas milik sendiri) | – |
-| Halaman Informasi Lab (Beranda, Visi-Misi, Daftar Dosen, Roadmap Lab, Profil Kepala Lab) | CRUD (kelola konten) | R | R | R |
+| Halaman Informasi Lab (Beranda, Visi-Misi, Daftar Dosen, Roadmap Lab, Profil Kepala Lab) | CRUD (kelola konten) | CRUD (kelola konten) | R | R |
 | Edit Profil Akun Pribadi | U (milik sendiri) | U (milik sendiri) | U (milik sendiri) | U (milik sendiri) |
 | Notifikasi In-App | U (tandai baca), D (milik sendiri) | U (tandai baca), D (milik sendiri) | U (tandai baca), D (milik sendiri) | U (tandai baca), D (milik sendiri) |
 
 **Aturan implementasi**:
 - Setiap endpoint API diproteksi middleware `auth:sanctum` kecuali endpoint publik yang eksplisit didefinisikan di `3_SDD_FINAL.md`
 - Pengecekan role dilakukan lewat Laravel Policy/Gate, bukan pengecekan manual yang tersebar di Controller
-- "Milik sendiri" berarti sistem memvalidasi `user_id`/`dosen_id`/`mahasiswa_id` pemilik data cocok dengan user yang sedang login sebelum mengizinkan Update/Delete
+- "Milik sendiri" berarti sistem memvalidasi kolom pemilik data (`user_id`/`dosen_id`/`mahasiswa_id`, atau `created_by` pada Sertifikasi) cocok dengan user yang sedang login sebelum mengizinkan Update/Delete. Untuk Kelas Lab, Admin & Supervisor mengelola semua kelas (menunjuk `dosen_id` pengampu saat membuka); Dosen dibatasi kelas miliknya.
 - Hubungan "mahasiswa bimbingan" didefinisikan lewat foreign key `dosen_pembimbing_id` pada entri mahasiswa. (Akses Dosen ke tugas kelas mengikuti kepemilikan kelas `dosen_id`, bukan relasi bimbingan.)
 - Pada **Edit Profil Akun Pribadi**, field `email` dan `role` immutable (role hanya diubah Admin lewat Kelola User); untuk Mahasiswa, `npm` dan `angkatan` juga immutable. Validasi penolakan dilakukan di backend, bukan hanya disembunyikan di frontend.
 
@@ -60,6 +60,7 @@
 | F-AD-10 | Terima & kelola notifikasi in-app | Tandai baca (satu/semua), hapus; notifikasi masuk otomatis saat ada pengajuan baru menunggu persetujuan |
 | F-AD-11 | Edit profil akun pribadi | Update nama & no. telepon, unggah foto profil, atur/ubah password |
 | F-AD-12 | Unduh laporan & Rekap Tugas | Report (PDF, per rentang tanggal) + Rekap Tugas semua kelas (PDF/Excel) — lihat UC-06, UC-06a |
+| F-AD-13 | Kelola Kelas Lab/Praktikum (semua kelas) | Hak akses penuh: buka/ubah/hapus kelas (menunjuk dosen pengampu) + approve/reject pendaftaran semua kelas — lihat UC-02a |
 
 ### 2.2 Supervisor (Asisten Lab)
 | ID | Fungsi | Keterangan |
@@ -72,9 +73,10 @@
 | F-SV-06 | Kelola data perangkat | CRUD nomor seri, status (Tersedia/Dipinjam/Perbaikan) |
 | F-SV-07 | Kelola katalog informasi sertifikasi | Tambah/ubah/hapus info sertifikasi eksternal |
 | F-SV-08 | Unduh laporan & Rekap Tugas | Report (rentang tanggal, PDF) + Rekap Tugas semua kelas (PDF/Excel) — lihat UC-06, UC-06a |
-| F-SV-09 | Membuka Kelas Lab/Praktikum atas permintaan Dosen | Membuat jadwal kelas atas nama Dosen terkait; Admin tidak memiliki kewenangan ini |
+| F-SV-09 | Membuka & mengelola Kelas Lab/Praktikum (semua kelas) | Membuat/ubah/hapus jadwal kelas atas nama Dosen terkait + approve/reject pendaftaran; Admin kini juga berwenang penuh (lihat F-AD-13) |
 | F-SV-10 | Terima & kelola notifikasi in-app | Tandai baca (satu/semua), hapus; notifikasi masuk otomatis saat ada pengajuan baru menunggu persetujuan |
 | F-SV-11 | Edit profil akun pribadi | Update nama & no. telepon, unggah foto profil, atur/ubah password |
+| F-SV-12 | Kelola konten Halaman Informasi Lab | Update Beranda, Visi-Misi, Profil Kepala Lab, Roadmap KK (didelegasikan; setara Admin — Gate `manage-info-lab`) |
 
 ### 2.3 Dosen
 | ID | Fungsi | Keterangan |
@@ -87,6 +89,7 @@
 | F-DS-06 | Membuka & mengelola Kelas Lab/Praktikum | Tentukan mata kuliah, ruangan, jadwal berulang mingguan selama satu semester, kuota peserta (30-40), multi-sesi paralel; setujui/tolak pendaftaran peserta — lihat UC-02a |
 | F-DS-07 | Lihat daftar mata kuliah | Read-only, untuk dipilih saat membuka Kelas Lab |
 | F-DS-08 | Terima & kelola notifikasi in-app | Tandai baca (satu/semua), hapus; menerima notifikasi saat ada tugas baru masuk pada kelasnya |
+| F-DS-09 | Tambah referensi katalog Sertifikasi | Menambah entri sertifikasi eksternal; hanya dapat mengubah/menghapus entri miliknya sendiri (`created_by`) |
 
 ### 2.4 Mahasiswa
 | ID | Fungsi | Keterangan |
@@ -164,9 +167,9 @@
 > **Pengajuan satu/beberapa hari**: form mendukung mode **Satu hari** atau **Beberapa hari** (pilih ≥2 hari + tanggal per hari, jam sama). Tiap tanggal menghasilkan satu pengajuan terpisah; backend memvalidasi bentrok per tanggal.
 
 ### UC-02a: Membuka & Mendaftar Kelas Lab/Praktikum
-**Aktor**: Dosen/Supervisor (pembuka kelas), Mahasiswa (pendaftar)
+**Aktor**: Admin/Supervisor/Dosen (pembuka kelas), Mahasiswa (pendaftar)
 
-> Mekanisme **terpisah** dari UC-02. Dibuka di awal semester untuk sesi terjadwal tetap (mingguan) hingga akhir semester. **Admin tidak memiliki kewenangan membuka Kelas Lab.**
+> Mekanisme **terpisah** dari UC-02. Dibuka di awal semester untuk sesi terjadwal tetap (mingguan) hingga akhir semester. **Admin & Supervisor** dapat membuka/mengelola **semua kelas** (menunjuk `dosen_id` pengampu); **Dosen** hanya kelas miliknya.
 
 | Skenario Normal (Pembukaan Kelas) | Skenario Pendaftaran Peserta |
 |---|---|

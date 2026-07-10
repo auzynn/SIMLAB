@@ -185,12 +185,14 @@ import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { kelasLabService } from '@/services/kelas-lab'
 import { tugasService } from '@/services/tugas'
+import { useFeedback } from '@/composables/use-feedback'
 import { formatJam, hariLabel, statusLabel, formatTanggalId, formatDeadline, toDatetimeLocal, sudahLewatDeadline, dikirimTerlambat } from '@/utils/format'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 
 const route = useRoute()
 const kelasId = Number(route.params.id)
+const { notify, confirmDialog } = useFeedback()
 const auth = useAuthStore()
 const isMahasiswa = computed(() => auth.user?.role === 'mahasiswa')
 // Dosen pengampu / Supervisor / Admin melihat tugas masuk kelas ini (list backend sudah tersaring per-role).
@@ -329,7 +331,7 @@ async function simpanDeadline(n) {
   const nilai = deadlineInput.value[n]
   const materi = (materiInput.value[n] || '').trim()
   if (!nilai && !materi) {
-    alert('Isi nama materi dan/atau tanggal & jam deadline terlebih dahulu.')
+    notify.warning('Isi nama materi dan/atau tanggal & jam deadline terlebih dahulu.')
     return
   }
   savingDeadline.value = n
@@ -340,23 +342,25 @@ async function simpanDeadline(n) {
       deadline: nilai ? nilai.replace('T', ' ') + ':00' : null,
     })
     await loadDeadline()
+    notify.success(`Materi/deadline Pertemuan ${n} disimpan`)
   } catch (err) {
-    alert(err.response?.data?.message || 'Gagal menyimpan materi/deadline.')
+    notify.error(err.response?.data?.message || 'Gagal menyimpan materi/deadline.')
   } finally {
     savingDeadline.value = null
   }
 }
 
 async function hapusDeadline(n) {
-  if (!confirm(`Hapus materi & deadline Pertemuan ${n}?`)) return
+  if (!(await confirmDialog(`Hapus materi & deadline Pertemuan ${n}?`))) return
   savingDeadline.value = n
   try {
     await kelasLabService.removeDeadline(kelasId, n)
     deadlineInput.value[n] = ''
     materiInput.value[n] = ''
     await loadDeadline()
+    notify.success(`Materi/deadline Pertemuan ${n} dihapus`)
   } catch (err) {
-    alert(err.response?.data?.message || 'Gagal menghapus materi/deadline.')
+    notify.error(err.response?.data?.message || 'Gagal menghapus materi/deadline.')
   } finally {
     savingDeadline.value = null
   }

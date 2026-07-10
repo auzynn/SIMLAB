@@ -159,10 +159,12 @@ import { peminjamanRuanganService } from '@/services/peminjaman-ruangan'
 import { peminjamanPerangkatService } from '@/services/peminjaman-perangkat'
 import { usePagination } from '@/composables/use-pagination'
 import { formatTanggalId, formatJam, statusLabel, namaHari } from '@/utils/format'
+import { useFeedback } from '@/composables/use-feedback'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 import PaginationBar from '@/components/pagination-bar.vue'
 
+const { notify, confirmDialog } = useFeedback()
 const route = useRoute()
 const today = new Date().toISOString().slice(0, 10)
 
@@ -225,26 +227,28 @@ async function loadPerangkatPeminjaman() {
 }
 
 async function batalkanRuangan(p) {
-  if (!confirm('Batalkan pengajuan peminjaman ruangan ini?')) return
+  if (!(await confirmDialog('Batalkan pengajuan peminjaman ruangan ini?'))) return
   busyId.value = 'r-' + p.id
   try {
     await peminjamanRuanganService.remove(p.id)
     await loadRuangan()
+    notify.success('Pengajuan ruangan dibatalkan.')
   } catch (err) {
-    alert(extractError(err))
+    notify.error(extractError(err))
   } finally {
     busyId.value = null
   }
 }
 
 async function batalkanPerangkat(p) {
-  if (!confirm('Batalkan pengajuan peminjaman perangkat ini?')) return
+  if (!(await confirmDialog('Batalkan pengajuan peminjaman perangkat ini?'))) return
   busyId.value = 'p-' + p.id
   try {
     await peminjamanPerangkatService.remove(p.id)
     await loadPerangkatPeminjaman()
+    notify.success('Pengajuan perangkat dibatalkan.')
   } catch (err) {
-    alert(extractError(err))
+    notify.error(extractError(err))
   } finally {
     busyId.value = null
   }
@@ -340,6 +344,10 @@ onMounted(() => {
 .status-ditolak {
   color: #c0392b;
   background-color: #f8d7da;
+}
+.status-kadaluarsa {
+  color: #6c5400;
+  background-color: #fdecc8;
 }
 .status-dikembalikan {
   color: #383d41;

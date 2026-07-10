@@ -48,8 +48,8 @@ Sistem memiliki 4 peran pengguna dengan hak akses berbeda:
 ### 2.4 Admin (Kepala Lab)
 - **Siapa**: Pemegang kendali penuh atas sistem
 - **Bisa melakukan**: semua yang bisa dilakukan Supervisor, ditambah kelola data user (semua role), **delegasi Asisten Lab** (menetapkan/mengembalikan Mahasiswa ↔ Supervisor), kelola data master sistem secara keseluruhan, kelola konten informasi/profil publik lab (lihat 2.5)
-- **Pengecualian**: Admin **tidak dapat** membuka atau mengelola Kelas Lab/Praktikum. Kewenangan ini hanya dimiliki Dosen (untuk kelasnya sendiri) dan Supervisor (atas permintaan Dosen) — agar setiap sesi kelas selalu terhubung ke Dosen pengampu yang bertanggung jawab.
-- **Hak akses data**: CRUD penuh ke seluruh modul termasuk manajemen user dan role, kecuali Kelas Lab/Praktikum (lihat pengecualian di atas)
+- **Kelas Lab/Praktikum**: Admin memiliki **hak akses penuh** (buka/ubah/hapus semua kelas + approve/reject pendaftaran). Karena Admin bukan Dosen, saat membuka kelas ia **wajib menunjuk Dosen pengampu** agar setiap sesi tetap terhubung ke Dosen yang bertanggung jawab (mekanisme sama seperti Supervisor).
+- **Hak akses data**: CRUD penuh ke seluruh modul termasuk manajemen user dan role
 
 ### 2.5 Halaman Informasi Lab (Dapat Diakses Semua Role)
 Selain modul transaksional (peminjaman, pengumpulan tugas, sertifikasi), sistem juga menyediakan **halaman informasi/profil lab** yang dapat dilihat oleh semua role setelah login:

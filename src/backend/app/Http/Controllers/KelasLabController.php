@@ -16,7 +16,9 @@ use Illuminate\Support\Facades\Gate;
 
 /**
  * Kelas Lab/Praktikum (SRS UC-02a, 3_SDD.md 3.7, 5.7).
- * - Buka/ubah/hapus: Dosen (milik sendiri) atau Supervisor (KelasLabPolicy). Admin tidak boleh buka.
+ * - Buka/ubah/hapus: Admin (semua kelas), Supervisor (semua kelas), atau Dosen (milik sendiri)
+ *   (KelasLabPolicy). Admin/Supervisor menunjuk dosen pengampu saat membuka.
+ * - Kelola pendaftaran (list/approve/reject/hapus): Admin, Supervisor, atau Dosen pemilik.
  * - Daftar/batal peserta: Mahasiswa (Gate daftar-kelas-lab).
  */
 class KelasLabController extends Controller
@@ -83,6 +85,8 @@ class KelasLabController extends Controller
      */
     public function show(KelasLab $kelasLab): JsonResponse
     {
+        Gate::authorize('view', $kelasLab);
+
         $kelasLab->load(['mataKuliah', 'dosen.user', 'ruangan'])
             ->loadCount(['peserta as peserta_count' => fn ($q) => $q->where('status', '!=', 'ditolak')])
             ->append('sisa_kuota');
@@ -291,13 +295,13 @@ class KelasLabController extends Controller
     }
 
     /**
-     * List pendaftaran untuk persetujuan — Dosen (kelas miliknya) atau Supervisor (semua).
+     * List pendaftaran untuk persetujuan — Dosen (kelas miliknya), Supervisor, atau Admin (semua).
      * Filter opsional ?status=menunggu|disetujui|ditolak.
      */
     public function pendaftaran(Request $request): JsonResponse
     {
         $user = $request->user();
-        abort_unless(in_array($user->role, ['dosen', 'supervisor'], true), 403, 'Anda tidak memiliki akses untuk tindakan ini.');
+        abort_unless(in_array($user->role, ['admin', 'dosen', 'supervisor'], true), 403, 'Anda tidak memiliki akses untuk tindakan ini.');
 
         $peserta = KelasLabPeserta::query()
             ->with(['mahasiswa.user', 'kelasLab.mataKuliah', 'kelasLab.dosen.user', 'penyetuju'])
@@ -319,7 +323,11 @@ class KelasLabController extends Controller
     {
         $this->authorizePendaftaran($request, $kelasLabPeserta);
 
-        if ($kelasLabPeserta->status !== 'disetujui') {
+        // Notifikasi hanya dikirim bila status benar-benar berpindah menjadi disetujui,
+        // agar approve berulang pada peserta yang sudah disetujui tidak menghasilkan notifikasi ganda.
+        $perluNotifikasi = $kelasLabPeserta->status !== 'disetujui';
+
+        if ($perluNotifikasi) {
             $disetujui = KelasLabPeserta::where('kelas_lab_id', $kelasLabPeserta->kelas_lab_id)
                 ->where('status', 'disetujui')
                 ->count();
@@ -328,7 +336,23 @@ class KelasLabController extends Controller
             }
         }
 
-        $kelasLabPeserta->update(['status' => 'disetujui', 'disetujui_oleh' => $request->user()->id]);
+        // Data penerima/isi pesan disiapkan sebelum transaksi (pola sama seperti daftar()).
+        $kelasLabPeserta->loadMissing('mahasiswa', 'kelasLab.mataKuliah');
+
+        DB::transaction(function () use ($request, $kelasLabPeserta, $perluNotifikasi) {
+            $kelasLabPeserta->update(['status' => 'disetujui', 'disetujui_oleh' => $request->user()->id]);
+
+            // Beri tahu mahasiswa bahwa pendaftarannya disetujui (null-safe untuk data anomali tanpa mahasiswa).
+            if ($perluNotifikasi && $kelasLabPeserta->mahasiswa?->user_id) {
+                $this->notifikasi->kirim(
+                    $kelasLabPeserta->mahasiswa->user_id,
+                    'Pendaftaran Kelas Lab disetujui',
+                    'Pendaftaran Anda pada sesi "'.$kelasLabPeserta->kelasLab->nama_sesi.'" ('.$kelasLabPeserta->kelasLab->mataKuliah?->nama_mk.') telah disetujui.',
+                    'status_pengajuan',
+                    $kelasLabPeserta->kelas_lab_id,
+                );
+            }
+        });
 
         return response()->json(['data' => $kelasLabPeserta, 'message' => 'Pendaftaran disetujui.']);
     }
@@ -340,7 +364,26 @@ class KelasLabController extends Controller
     {
         $this->authorizePendaftaran($request, $kelasLabPeserta);
 
-        $kelasLabPeserta->update(['status' => 'ditolak', 'disetujui_oleh' => $request->user()->id]);
+        // Notifikasi hanya dikirim bila status benar-benar berpindah menjadi ditolak (hindari ganda).
+        $perluNotifikasi = $kelasLabPeserta->status !== 'ditolak';
+
+        $kelasLabPeserta->loadMissing('mahasiswa', 'kelasLab.mataKuliah');
+
+        DB::transaction(function () use ($request, $kelasLabPeserta, $perluNotifikasi) {
+            $kelasLabPeserta->update(['status' => 'ditolak', 'disetujui_oleh' => $request->user()->id]);
+
+            // Beri tahu mahasiswa bahwa pendaftarannya ditolak. Pesan memuat kata "ditolak"
+            // agar lonceng frontend menampilkan ikon merah (notification-bell iconMeta).
+            if ($perluNotifikasi && $kelasLabPeserta->mahasiswa?->user_id) {
+                $this->notifikasi->kirim(
+                    $kelasLabPeserta->mahasiswa->user_id,
+                    'Pendaftaran Kelas Lab ditolak',
+                    'Pendaftaran Anda pada sesi "'.$kelasLabPeserta->kelasLab->nama_sesi.'" ('.$kelasLabPeserta->kelasLab->mataKuliah?->nama_mk.') ditolak. Anda dapat mendaftar sesi lain.',
+                    'status_pengajuan',
+                    $kelasLabPeserta->kelas_lab_id,
+                );
+            }
+        });
 
         return response()->json(['data' => $kelasLabPeserta, 'message' => 'Pendaftaran ditolak.']);
     }
@@ -359,7 +402,8 @@ class KelasLabController extends Controller
     }
 
     /**
-     * Otorisasi kelola pendaftaran: pemilik kelas (dosen pengampu) atau Supervisor (KelasLabPolicy::update).
+     * Otorisasi kelola pendaftaran: pemilik kelas (dosen pengampu), Supervisor, atau Admin
+     * (KelasLabPolicy::update).
      */
     private function authorizePendaftaran(Request $request, KelasLabPeserta $peserta): void
     {

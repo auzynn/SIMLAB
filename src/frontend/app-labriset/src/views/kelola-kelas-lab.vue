@@ -27,7 +27,7 @@
               <option v-for="m in mataKuliah" :key="m.id" :value="m.id">{{ m.nama_mk }}</option>
             </select>
           </div>
-          <div v-if="isSupervisor" class="form-row">
+          <div v-if="kelolaSemua" class="form-row">
             <label>Dosen Pengampu</label>
             <select v-model="form.dosen_id" class="form-ctrl input-border" required>
               <option value="" disabled>-- Pilih dosen --</option>
@@ -149,7 +149,7 @@
 </template>
 
 <script setup>
-// Buka & kelola Kelas Lab (Dosen: milik sendiri; Supervisor: atas nama dosen).
+// Buka & kelola Kelas Lab (Dosen: milik sendiri; Admin/Supervisor: semua kelas, menunjuk dosen).
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { kelasLabService } from '@/services/kelas-lab'
@@ -157,14 +157,18 @@ import { ruanganService } from '@/services/ruangan'
 import { mataKuliahService } from '@/services/mata-kuliah'
 import { dosenService } from '@/services/dosen'
 import { formatJam, hariLabel } from '@/utils/format'
+import { useFeedback } from '@/composables/use-feedback'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 
+const { notify, confirmDialog } = useFeedback()
 const HARI = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu']
 const SESI = ['Kelas A', 'Kelas B', 'Kelas C', 'Kelas D', 'Kelas E', 'Kelas F']
 
 const auth = useAuthStore()
-const isSupervisor = computed(() => auth.user?.role === 'supervisor')
+// Admin & Supervisor mengelola SEMUA kelas dan menunjuk dosen pengampu;
+// Dosen hanya kelas miliknya (dosen_id dipaksa dirinya di backend).
+const kelolaSemua = computed(() => ['admin', 'supervisor'].includes(auth.user?.role))
 
 const items = ref([])
 const ruangan = ref([])
@@ -191,9 +195,9 @@ const blankForm = () => ({
 })
 const form = ref(blankForm())
 
-// Dosen hanya melihat kelas miliknya; Supervisor melihat semua.
+// Dosen hanya melihat kelas miliknya; Admin/Supervisor melihat semua.
 const milikSaya = computed(() => {
-  if (isSupervisor.value) return items.value
+  if (kelolaSemua.value) return items.value
   const dosenId = auth.user?.dosen?.id
   return items.value.filter((k) => k.dosen_id === dosenId)
 })
@@ -248,7 +252,7 @@ async function loadRefs() {
   const [r, m] = await Promise.all([ruanganService.list(), mataKuliahService.list()])
   ruangan.value = r.data.data
   mataKuliah.value = m.data.data
-  if (isSupervisor.value) {
+  if (kelolaSemua.value) {
     const d = await dosenService.getAll()
     dosenList.value = d.data.data
   }
@@ -283,8 +287,9 @@ async function submit() {
   saving.value = true
   formError.value = ''
   const payload = { ...form.value, kuota: Number(form.value.kuota) }
-  // Dosen tidak mengirim dosen_id (backend memaksa miliknya sendiri)
-  if (!isSupervisor.value) delete payload.dosen_id
+  // Dosen tidak mengirim dosen_id (backend memaksa miliknya sendiri);
+  // Admin/Supervisor wajib mengirim dosen_id pilihan.
+  if (!kelolaSemua.value) delete payload.dosen_id
   delete payload.id
   try {
     if (form.value.id) {
@@ -302,12 +307,13 @@ async function submit() {
 }
 
 async function hapus(k) {
-  if (!confirm(`Hapus kelas "${k.mata_kuliah?.nama_mk} — ${k.nama_sesi}"?`)) return
+  if (!(await confirmDialog(`Hapus kelas "${k.mata_kuliah?.nama_mk} — ${k.nama_sesi}"?`))) return
   try {
     await kelasLabService.remove(k.id)
     await load()
+    notify.success('Kelas lab dihapus.')
   } catch (err) {
-    alert(extractError(err))
+    notify.error(extractError(err))
   }
 }
 

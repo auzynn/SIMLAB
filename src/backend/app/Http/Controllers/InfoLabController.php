@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
- * Konten halaman informasi lab — baca publik, update khusus Admin (3_SDD.md 5.12).
+ * Konten halaman informasi lab — baca publik, kelola konten Admin & Supervisor
+ * (Gate manage-info-lab, 3_SDD.md 5.12, 2_SRS.md Bagian 1 revisi).
  */
 class InfoLabController extends Controller
 {
@@ -35,7 +36,7 @@ class InfoLabController extends Controller
     }
 
     /**
-     * Update konten satu tipe (Admin). Dibuat jika belum ada (upsert by tipe).
+     * Update konten satu tipe (Admin/Supervisor). Dibuat jika belum ada (upsert by tipe).
      */
     public function update(UpdateInfoLabRequest $request, string $tipe): JsonResponse
     {
@@ -51,7 +52,7 @@ class InfoLabController extends Controller
     }
 
     /**
-     * Unggah lampiran pengumuman (Admin) → simpan di disk publik, balas URL + nama asli.
+     * Unggah lampiran pengumuman (Admin/Supervisor) → simpan di disk publik, balas URL + nama asli.
      * Dipakai opsi "File" pada editor Pengumuman; URL yang dikembalikan disimpan di konten JSON.
      */
     public function uploadLampiran(Request $request): JsonResponse

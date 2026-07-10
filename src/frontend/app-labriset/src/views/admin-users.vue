@@ -126,6 +126,7 @@ import { ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { userService } from '@/services/users'
 import { usePagination } from '@/composables/use-pagination'
+import { useFeedback } from '@/composables/use-feedback'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import SidemenuAdmin from '@/components/sidemenu-admin.vue'
 import FooterComponent from '@/components/footer-component.vue'
@@ -145,6 +146,7 @@ const allRoles = ['admin', 'supervisor', 'dosen', 'mahasiswa']
 const createRoles = ['admin', 'supervisor', 'dosen']
 
 const users = ref([])
+const { notify, confirmDialog } = useFeedback()
 const { page, totalPages, pagedItems } = usePagination(users, 10)
 const loading = ref(false)
 const listError = ref('')
@@ -220,12 +222,13 @@ async function submitForm() {
 }
 
 async function removeUser(u) {
-  if (!confirm(`Hapus user "${u.name}"? Tindakan ini tidak bisa dibatalkan.`)) return
+  if (!(await confirmDialog({ message: `Hapus user "${u.name}"? Tindakan ini tidak bisa dibatalkan.`, confirmText: 'Ya, hapus' }))) return
   try {
     await userService.remove(u.id)
     await loadUsers()
+    notify.success(`User "${u.name}" dihapus`)
   } catch (err) {
-    alert(extractError(err))
+    notify.error(extractError(err))
   }
 }
 

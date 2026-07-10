@@ -24,8 +24,12 @@ class AppServiceProvider extends ServiceProvider
         // Hak kelola data user & role: khusus Admin (2_SRS.md Bagian 1 matriks RBAC)
         Gate::define('manage-users', fn (User $user) => $user->role === 'admin');
 
-        // Hak kelola konten halaman informasi lab: khusus Admin (2_SRS.md Bagian 1)
-        Gate::define('manage-info-lab', fn (User $user) => $user->role === 'admin');
+        // Hak kelola konten halaman informasi lab: Admin & Supervisor (2_SRS.md Bagian 1 revisi).
+        // Supervisor (Aslab) didelegasikan memelihara konten publik lab.
+        Gate::define(
+            'manage-info-lab',
+            fn (User $user) => in_array($user->role, ['admin', 'supervisor'], true),
+        );
 
         // Hak kelola master Bidang Minat: Admin & Supervisor (sesuai instruksi pemilik).
         Gate::define(

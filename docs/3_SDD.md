@@ -512,9 +512,9 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 |---|---|---|
 | GET | `/api/kelas-lab` | List Kelas Lab/Praktikum (semua role, untuk melihat & mendaftar); dapat difilter per `mata_kuliah_id` untuk melihat semua sesi paralel suatu mata kuliah |
 | GET | `/api/kelas-lab/{id}` | Detail satu kelas/sesi, termasuk sisa kuota |
-| POST | `/api/kelas-lab` | Buka Kelas Lab/Praktikum baru — **Dosen** (untuk dirinya sendiri) atau **Supervisor** (atas permintaan, wajib isi `dosen_id` terkait). Wajib pilih `mata_kuliah_id` dari data master yang sudah ada. Admin tidak memiliki akses ke endpoint ini |
-| PATCH | `/api/kelas-lab/{id}` | Update jadwal/kuota — pemilik (`dosen_id`) atau Supervisor |
-| DELETE | `/api/kelas-lab/{id}` | Hapus/batalkan kelas — pemilik (`dosen_id`) atau Supervisor |
+| POST | `/api/kelas-lab` | Buka Kelas Lab/Praktikum baru — **Dosen** (untuk dirinya sendiri) atau **Admin/Supervisor** (atas nama Dosen, wajib isi `dosen_id` terkait). Wajib pilih `mata_kuliah_id` dari data master yang sudah ada |
+| PATCH | `/api/kelas-lab/{id}` | Update jadwal/kuota — **Admin/Supervisor** (semua kelas) atau pemilik (`dosen_id`) |
+| DELETE | `/api/kelas-lab/{id}` | Hapus/batalkan kelas — **Admin/Supervisor** (semua kelas) atau pemilik (`dosen_id`) |
 | POST | `/api/kelas-lab/{id}/daftar` | Mahasiswa mendaftar — dibuat status `menunggu`. Ditolak jika kuota penuh, sudah terdaftar di sesi tsb, sudah ambil sesi lain di mata kuliah yang sama, atau bentrok jadwal |
 | DELETE | `/api/kelas-lab/{id}/daftar` | Mahasiswa membatalkan pendaftaran dirinya sendiri — **hanya saat status `menunggu`** (setelah disetujui harus lewat Dosen/Supervisor) |
 | GET | `/api/kelas-lab/{id}/peserta` | List peserta satu sesi + status (pemilik kelas, Supervisor, Admin) |
@@ -553,10 +553,10 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 ### 5.10 Sertifikasi (Katalog)
 | Method | Endpoint | Keterangan |
 |---|---|---|
-| GET | `/api/sertifikasi` | List katalog sertifikasi |
-| POST | `/api/sertifikasi` | Tambah entri (Admin/Supervisor) |
-| PATCH | `/api/sertifikasi/{id}` | Update entri |
-| DELETE | `/api/sertifikasi/{id}` | Hapus entri |
+| GET | `/api/sertifikasi` | List katalog sertifikasi (semua role login) |
+| POST | `/api/sertifikasi` | Tambah entri — Admin/Supervisor/Dosen (`created_by` diisi otomatis) — `SertifikasiPolicy` |
+| PATCH | `/api/sertifikasi/{id}` | Update entri — Admin/Supervisor (semua) atau Dosen pemilik (`created_by`) |
+| DELETE | `/api/sertifikasi/{id}` | Hapus entri — Admin/Supervisor (semua) atau Dosen pemilik (`created_by`) |
 
 ### 5.11 Portofolio
 | Method | Endpoint | Keterangan |
@@ -570,7 +570,7 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | GET | `/api/info-lab/{tipe}` | Ambil konten (beranda/visi_misi/kepala_lab/roadmap_kk) |
-| PATCH | `/api/info-lab/{tipe}` | Update konten (Admin) |
+| PATCH | `/api/info-lab/{tipe}` | Update konten (Admin/Supervisor, Gate `manage-info-lab`) |
 
 ### 5.13 Laporan
 | Method | Endpoint | Keterangan |

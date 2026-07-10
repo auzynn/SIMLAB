@@ -9,7 +9,8 @@ use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 /**
- * Konten info lab: baca publik, update khusus Admin (2_SRS.md Bagian 1, 3_SDD.md 5.12).
+ * Konten info lab: baca publik, kelola konten Admin & Supervisor
+ * (Gate manage-info-lab, 2_SRS.md Bagian 1 revisi, 3_SDD.md 5.12).
  */
 class InfoLabTest extends TestCase
 {
@@ -39,10 +40,27 @@ class InfoLabTest extends TestCase
         ]);
     }
 
-    public function test_non_admin_ditolak_memperbarui_konten(): void
+    public function test_supervisor_dapat_memperbarui_konten(): void
+    {
+        $supervisor = User::factory()->create(['role' => 'supervisor']);
+        Sanctum::actingAs($supervisor);
+
+        $this->patchJson('/api/info-lab/beranda', ['konten' => 'Konten oleh Aslab'])
+            ->assertOk();
+
+        $this->assertDatabaseHas('info_lab', [
+            'tipe' => 'beranda',
+            'konten' => 'Konten oleh Aslab',
+            'updated_by' => $supervisor->id,
+        ]);
+    }
+
+    public function test_dosen_dan_mahasiswa_ditolak_memperbarui_konten(): void
     {
         Sanctum::actingAs(User::factory()->create(['role' => 'dosen']));
+        $this->patchJson('/api/info-lab/beranda', ['konten' => 'x'])->assertForbidden();
 
+        Sanctum::actingAs(User::factory()->create(['role' => 'mahasiswa']));
         $this->patchJson('/api/info-lab/beranda', ['konten' => 'x'])->assertForbidden();
     }
 

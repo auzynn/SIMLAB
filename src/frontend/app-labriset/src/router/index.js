@@ -86,9 +86,10 @@ const routes = [
   {
     path: '/admin',
     name: 'admin',
-    // Panel Admin: menu pusat kelola seluruh modul — khusus role admin (SRS Bagian 1)
+    // Panel kelola: menu pusat modul. Admin (semua) & Supervisor (subset sesuai gate).
+    // Kartu/menu difilter per-role di dalam halaman (SRS Bagian 1 revisi).
     component: () => import('../views/admin-page.vue'),
-    meta: { requiresAuth: true, roles: ['admin'] }
+    meta: { requiresAuth: true, roles: ['admin', 'supervisor'] }
   },
   {
     path: '/admin/users',
@@ -100,9 +101,9 @@ const routes = [
   {
     path: '/admin/info-lab',
     name: 'admin-info-lab',
-    // Kelola konten halaman informasi lab — khusus role admin
+    // Kelola konten halaman informasi lab — Admin & Supervisor (Gate manage-info-lab)
     component: () => import('../views/admin-info-lab.vue'),
-    meta: { requiresAuth: true, roles: ['admin'] }
+    meta: { requiresAuth: true, roles: ['admin', 'supervisor'] }
   },
   {
     path: '/admin/aslab',
@@ -210,16 +211,16 @@ const routes = [
   {
     path: '/kelaslab/persetujuan',
     name: 'persetujuan-kelas-lab',
-    // Persetujuan pendaftaran Kelas Lab — Dosen (kelas miliknya) / Supervisor
+    // Persetujuan pendaftaran Kelas Lab — Dosen (kelas miliknya) / Supervisor / Admin
     component: () => import('../views/persetujuan-kelas-lab.vue'),
-    meta: { requiresAuth: true, roles: ['dosen', 'supervisor'] }
+    meta: { requiresAuth: true, roles: ['admin', 'dosen', 'supervisor'] }
   },
   {
     path: '/kelaslab/kelola',
     name: 'kelola-kelas-lab',
-    // Buka & kelola Kelas Lab — Dosen (milik sendiri) atau Supervisor (atas nama dosen)
+    // Buka & kelola Kelas Lab — Admin/Supervisor (semua kelas, menunjuk dosen) atau Dosen (milik sendiri)
     component: () => import('../views/kelola-kelas-lab.vue'),
-    meta: { requiresAuth: true, roles: ['dosen', 'supervisor'] }
+    meta: { requiresAuth: true, roles: ['admin', 'dosen', 'supervisor'] }
   },
   {
     path: '/kelaslab/:id/peserta',

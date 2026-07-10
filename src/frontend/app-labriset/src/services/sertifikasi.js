@@ -1,5 +1,6 @@
 // Service Katalog Sertifikasi — endpoint /api/sertifikasi (3_SDD.md 5.13, SRS UC-05).
-// Read terbuka untuk semua role login; CUD via Gate manage-master-data (Admin/Supervisor).
+// Read terbuka untuk semua role login. Create: Admin/Supervisor/Dosen; Update/Delete:
+// Admin/Supervisor (semua) atau Dosen pemilik (created_by) — SertifikasiPolicy.
 import api from './api'
 
 export const sertifikasiService = {

@@ -95,9 +95,10 @@
               <select v-model="form.ruangan_id" class="form-ctrl input-border" style="width: 100%" required>
                 <option value="" disabled>-- Pilih ruangan --</option>
                 <option v-for="r in ruanganTersedia" :key="r.id" :value="r.id">
-                  {{ r.nama_ruangan }}<span v-if="r.status !== 'tersedia'"> ({{ r.status }})</span>
+                  {{ r.nama_ruangan }}<span v-if="r.kapasitas"> — {{ r.kapasitas }} komputer</span><span v-if="r.status !== 'tersedia'"> ({{ r.status }})</span>
                 </option>
               </select>
+              <p class="form-hint">Ruangan dapat dipakai beberapa peminjam bersamaan selama komputer masih tersedia.</p>
             </div>
 
             <!-- Durasi: satu hari atau beberapa hari -->

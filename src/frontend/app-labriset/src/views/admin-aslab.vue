@@ -87,6 +87,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { aslabService } from '@/services/aslab'
 import { usePagination } from '@/composables/use-pagination'
+import { useFeedback } from '@/composables/use-feedback'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import SidemenuAdmin from '@/components/sidemenu-admin.vue'
 import FooterComponent from '@/components/footer-component.vue'
@@ -98,6 +99,7 @@ const loading = ref(false)
 const listError = ref('')
 const busyId = ref(null)
 const cari = ref('')
+const { notify, confirmDialog } = useFeedback()
 
 const kandidatFiltered = computed(() => {
   const q = cari.value.trim().toLowerCase()
@@ -123,26 +125,28 @@ async function load() {
 }
 
 async function promote(m) {
-  if (!confirm(`Jadikan ${m.name} sebagai Asisten Lab (Supervisor)?`)) return
+  if (!(await confirmDialog({ message: `Jadikan ${m.name} sebagai Asisten Lab (Supervisor)?`, variant: 'default', confirmText: 'Ya, jadikan Aslab' }))) return
   busyId.value = m.id
   try {
     await aslabService.promote(m.id)
     await load()
+    notify.success(`${m.name} kini menjadi Asisten Lab`)
   } catch (err) {
-    alert(extractError(err))
+    notify.error(extractError(err))
   } finally {
     busyId.value = null
   }
 }
 
 async function demote(a) {
-  if (!confirm(`Kembalikan ${a.name} menjadi Mahasiswa? Akses Supervisor akan dicabut.`)) return
+  if (!(await confirmDialog(`Kembalikan ${a.name} menjadi Mahasiswa? Akses Supervisor akan dicabut.`))) return
   busyId.value = a.id
   try {
     await aslabService.demote(a.id)
     await load()
+    notify.success(`${a.name} dikembalikan menjadi Mahasiswa`)
   } catch (err) {
-    alert(extractError(err))
+    notify.error(extractError(err))
   } finally {
     busyId.value = null
   }

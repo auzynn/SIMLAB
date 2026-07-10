@@ -17,7 +17,9 @@ return new class extends Migration
             $table->time('jam_mulai');
             $table->time('jam_selesai');
             $table->text('keperluan');
-            $table->enum('status', ['menunggu', 'disetujui', 'ditolak'])->default('menunggu');
+            // 'kadaluarsa' = otomatis gugur saat approve karena slot sudah penuh/bentrok
+            // (dibedakan dari 'ditolak' manual oleh approver). Lihat migrasi ALTER untuk MySQL dev.
+            $table->enum('status', ['menunggu', 'disetujui', 'ditolak', 'kadaluarsa'])->default('menunggu');
             $table->foreignId('disetujui_oleh')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 

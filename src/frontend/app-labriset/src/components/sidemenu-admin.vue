@@ -1,44 +1,32 @@
 <template>
   <div class="side-menu-container">
-    <div class="menu-group">
-      <router-link to="/admin" class="menu" style="display: block" active-class="activemenu">Dashboard</router-link>
-    </div>
-    <div class="menu-group">
-      <router-link to="/admin/users" class="menu" style="display: block" active-class="activemenu">Kelola User &amp; Role</router-link>
-    </div>
-    <div class="menu-group">
-      <router-link to="/admin/info-lab" class="menu" style="display: block" active-class="activemenu">Konten Informasi Lab</router-link>
-    </div>
-    <div class="menu-group">
-      <router-link to="/admin/data-master" class="menu" style="display: block" active-class="activemenu">Data Master</router-link>
-    </div>
-    <div class="menu-group">
-      <router-link to="/admin/aslab" class="menu" style="display: block" active-class="activemenu">Delegasi Aslab</router-link>
-    </div>
-    <div class="menu-group">
-      <router-link to="/admin/sertifikasi" class="menu" style="display: block" active-class="activemenu">Katalog Sertifikasi</router-link>
-    </div>
-    <div class="menu-group">
-      <router-link to="/persetujuan-peminjaman" class="menu" style="display: block" active-class="activemenu">Persetujuan Peminjaman</router-link>
-    </div>
-    <div class="menu-group">
-      <router-link to="/report" class="menu" style="display: block" active-class="activemenu">Laporan</router-link>
-    </div>
-    <div class="menu-group">
-      <router-link to="/rekap-tugas" class="menu" style="display: block" active-class="activemenu">Rekap Tugas</router-link>
-    </div>
-
-    <!-- Area kelola lain menyusul per fase — modul backend-nya belum dibuat -->
-    <div v-for="item in segeraHadir" :key="item" class="menu-group">
-      <span class="menu menu-disabled" title="Segera hadir">{{ item }}</span>
+    <div v-for="m in menuTampil" :key="m.to" class="menu-group">
+      <router-link :to="m.to" class="menu" style="display: block" active-class="activemenu">{{ m.label }}</router-link>
     </div>
   </div>
 </template>
 
 <script setup>
-// Menu samping Panel Admin. Area yang modul backend-nya sudah ada ditautkan;
-// sisanya ditandai disabled (segera hadir) sesuai matriks RBAC Admin (2_SRS.md Bagian 1).
-const segeraHadir = []
+// Menu samping Panel kelola. Ditautkan sesuai matriks RBAC (2_SRS.md Bagian 1 revisi):
+// Admin melihat semua; Supervisor hanya area yang diizinkan gate-nya.
+import { computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
+
+const menu = [
+  { to: '/admin', label: 'Dashboard', roles: ['admin', 'supervisor'] },
+  { to: '/admin/users', label: 'Kelola User & Role', roles: ['admin'] },
+  { to: '/admin/info-lab', label: 'Konten Informasi Lab', roles: ['admin', 'supervisor'] },
+  { to: '/admin/data-master', label: 'Data Master', roles: ['admin', 'supervisor'] },
+  { to: '/admin/aslab', label: 'Delegasi Aslab', roles: ['admin'] },
+  { to: '/admin/sertifikasi', label: 'Katalog Sertifikasi', roles: ['admin', 'supervisor'] },
+  { to: '/persetujuan-peminjaman', label: 'Persetujuan Peminjaman', roles: ['admin', 'supervisor'] },
+  { to: '/report', label: 'Laporan', roles: ['admin', 'supervisor'] },
+  { to: '/rekap-tugas', label: 'Rekap Tugas', roles: ['admin', 'supervisor', 'dosen'] },
+]
+
+const menuTampil = computed(() => menu.filter((m) => m.roles.includes(auth.user?.role)))
 </script>
 
 <style scoped>

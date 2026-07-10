@@ -11,7 +11,7 @@ use Illuminate\Validation\Rule;
 
 /**
  * Validasi pembukaan Kelas Lab/Praktikum baru (SRS UC-02a, 3_SDD.md 3.7).
- * Otorisasi via KelasLabPolicy::create (Dosen/Supervisor; Admin & Mahasiswa 403).
+ * Otorisasi via KelasLabPolicy::create (Admin/Dosen/Supervisor; Mahasiswa 403).
  */
 class StoreKelasLabRequest extends FormRequest
 {

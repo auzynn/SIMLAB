@@ -33,6 +33,13 @@
           <span class="pending-cta">Tinjau &rarr;</span>
         </router-link>
 
+        <!-- ===== Strip pendaftaran Kelas Lab menunggu (Dosen pemilik/Supervisor/Admin) ===== -->
+        <router-link v-if="isReviewer && pendingKelasCount > 0" to="/kelaslab/persetujuan" class="pending-strip">
+          <span class="pending-icon">!</span>
+          <span><strong>{{ pendingKelasCount }}</strong> pendaftaran Kelas Lab menunggu persetujuan</span>
+          <span class="pending-cta">Tinjau &rarr;</span>
+        </router-link>
+
         <!-- ===== Baris 1: Jadwal Hari Ini | Kelas Lab | Kepala Lab ===== -->
         <div class="dash-3">
           <section class="card">
@@ -247,6 +254,7 @@ const peminjaman = ref([])
 const kelasLabJadwal = ref([])
 const kelasList = ref([])
 const pendingCount = ref(0)
+const pendingKelasCount = ref(0)
 const kepala = ref(null)
 
 const pinjamItem = (p) => ({
@@ -358,6 +366,11 @@ onMounted(async () => {
     if (bisaApprove.value) {
       const pRes = await safe(peminjamanRuanganService.list())
       if (pRes) pendingCount.value = pRes.data.data.filter((p) => p.status === 'menunggu').length
+    }
+    // Pendaftaran Kelas Lab menunggu — backend sudah men-scope per role (dosen: kelas ampuannya).
+    if (isReviewer.value) {
+      const kpRes = await safe(kelasLabService.pendaftaran({ status: 'menunggu' }))
+      if (kpRes) pendingKelasCount.value = kpRes.data.data.length
     }
     if (auth.user?.role === 'mahasiswa') await muatTugasBelum()
     else if (isReviewer.value) await muatPemberianTugas()

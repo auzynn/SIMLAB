@@ -14,7 +14,7 @@
       </div>
       <p class="mt-30" style="max-width: 680px">
         Terima atau tolak mahasiswa yang mendaftar pada Kelas Lab/Praktikum
-        <span v-if="isSupervisor">(seluruh kelas)</span><span v-else>(kelas yang Anda ampu)</span>.
+        <span v-if="lihatSemua">(seluruh kelas)</span><span v-else>(kelas yang Anda ampu)</span>.
       </p>
 
       <div class="tab-bar mt-30">
@@ -82,18 +82,21 @@
 </template>
 
 <script setup>
-// Persetujuan pendaftaran Kelas Lab — Dosen (kelas miliknya) / Supervisor (semua).
+// Persetujuan pendaftaran Kelas Lab — Dosen (kelas miliknya) / Admin & Supervisor (semua).
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { kelasLabService } from '@/services/kelas-lab'
 import { usePagination } from '@/composables/use-pagination'
 import { formatJam, hariLabel, statusLabel } from '@/utils/format'
+import { useFeedback } from '@/composables/use-feedback'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 import PaginationBar from '@/components/pagination-bar.vue'
 
+const { notify, confirmDialog } = useFeedback()
 const auth = useAuthStore()
-const isSupervisor = computed(() => auth.user?.role === 'supervisor')
+// Admin & Supervisor melihat pendaftaran seluruh kelas; Dosen hanya kelas ampuannya.
+const lihatSemua = computed(() => ['admin', 'supervisor'].includes(auth.user?.role))
 
 const items = ref([])
 const loading = ref(false)
@@ -138,21 +141,23 @@ async function terima(p) {
   try {
     await kelasLabService.approvePendaftaran(p.id)
     await load()
+    notify.success('Pendaftaran disetujui.')
   } catch (err) {
-    alert(err.response?.data?.message || 'Gagal menyetujui.')
+    notify.error(err.response?.data?.message || 'Gagal menyetujui.')
   } finally {
     busyId.value = null
   }
 }
 
 async function tolak(p) {
-  if (!confirm('Tolak pendaftaran mahasiswa ini?')) return
+  if (!(await confirmDialog('Tolak pendaftaran mahasiswa ini?'))) return
   busyId.value = p.id
   try {
     await kelasLabService.rejectPendaftaran(p.id)
     await load()
+    notify.success('Pendaftaran ditolak.')
   } catch (err) {
-    alert(err.response?.data?.message || 'Gagal menolak.')
+    notify.error(err.response?.data?.message || 'Gagal menolak.')
   } finally {
     busyId.value = null
   }

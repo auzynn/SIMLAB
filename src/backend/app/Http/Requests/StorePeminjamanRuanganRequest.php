@@ -58,7 +58,7 @@ class StorePeminjamanRuanganRequest extends FormRequest
             );
 
             if ($bentrok) {
-                $validator->errors()->add('jam_mulai', 'Jadwal bentrok dengan peminjaman lain atau Kelas Lab pada ruangan & waktu tersebut.');
+                $validator->errors()->add('jam_mulai', 'Kuota ruangan pada slot ini sudah penuh atau bentrok dengan Kelas Lab pada waktu tersebut.');
             }
         });
     }

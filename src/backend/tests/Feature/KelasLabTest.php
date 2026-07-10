@@ -74,12 +74,81 @@ class KelasLabTest extends TestCase
         $this->assertDatabaseHas('kelas_lab', ['dosen_id' => $dosen->id, 'dibuat_oleh' => $user->id]);
     }
 
-    public function test_admin_tidak_dapat_membuka_kelas(): void
+    public function test_admin_dapat_membuka_kelas_atas_nama_dosen(): void
     {
+        $dosen = $this->dosen()[1];
         Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
 
-        $this->postJson('/api/kelas-lab', $this->payload(['dosen_id' => $this->dosen()[1]->id]))
-            ->assertForbidden();
+        $this->postJson('/api/kelas-lab', $this->payload(['dosen_id' => $dosen->id]))->assertCreated();
+
+        $this->assertDatabaseHas('kelas_lab', ['dosen_id' => $dosen->id]);
+    }
+
+    public function test_admin_dapat_mengubah_dan_menghapus_kelas_dosen_lain(): void
+    {
+        [$dosenUser, $dosen] = $this->dosen();
+        // Bangun payload sekali (membuat mata kuliah & ruangan) lalu pakai ulang untuk update.
+        $payload = $this->payload(['dosen_id' => $dosen->id]);
+        $kelas = KelasLab::create(array_merge($payload, ['dibuat_oleh' => $dosenUser->id]));
+
+        Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
+
+        $this->patchJson("/api/kelas-lab/{$kelas->id}", array_merge($payload, ['kuota' => 25]))
+            ->assertOk();
+        $this->assertDatabaseHas('kelas_lab', ['id' => $kelas->id, 'kuota' => 25]);
+
+        $this->deleteJson("/api/kelas-lab/{$kelas->id}")->assertOk();
+        $this->assertDatabaseMissing('kelas_lab', ['id' => $kelas->id]);
+    }
+
+    public function test_admin_dapat_menyetujui_pendaftaran_kelas_dosen_lain(): void
+    {
+        [$dosenUser, $dosen] = $this->dosen();
+        $kelas = KelasLab::create(array_merge($this->payload(), ['dosen_id' => $dosen->id, 'dibuat_oleh' => $dosenUser->id]));
+        [, $mhs] = $this->mahasiswa('220040');
+        $peserta = KelasLabPeserta::create(['kelas_lab_id' => $kelas->id, 'mahasiswa_id' => $mhs->id, 'status' => 'menunggu']);
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        Sanctum::actingAs($admin);
+
+        $this->patchJson("/api/kelas-lab/pendaftaran/{$peserta->id}/approve")->assertOk();
+        $this->assertDatabaseHas('kelas_lab_peserta', ['id' => $peserta->id, 'status' => 'disetujui', 'disetujui_oleh' => $admin->id]);
+    }
+
+    public function test_approve_pendaftaran_mengirim_notifikasi_ke_mahasiswa(): void
+    {
+        [$dosenUser, $dosen] = $this->dosen();
+        $kelas = KelasLab::create(array_merge($this->payload(), ['dosen_id' => $dosen->id, 'dibuat_oleh' => $dosenUser->id]));
+        [$mhsUser, $mhs] = $this->mahasiswa('220041');
+        $peserta = KelasLabPeserta::create(['kelas_lab_id' => $kelas->id, 'mahasiswa_id' => $mhs->id, 'status' => 'menunggu']);
+
+        Sanctum::actingAs($dosenUser);
+        $this->patchJson("/api/kelas-lab/pendaftaran/{$peserta->id}/approve")->assertOk();
+
+        $this->assertDatabaseHas('notifikasi', [
+            'user_id' => $mhsUser->id,
+            'tipe' => 'status_pengajuan',
+            'judul' => 'Pendaftaran Kelas Lab disetujui',
+            'referensi_id' => $kelas->id,
+        ]);
+    }
+
+    public function test_reject_pendaftaran_mengirim_notifikasi_ke_mahasiswa(): void
+    {
+        [$dosenUser, $dosen] = $this->dosen();
+        $kelas = KelasLab::create(array_merge($this->payload(), ['dosen_id' => $dosen->id, 'dibuat_oleh' => $dosenUser->id]));
+        [$mhsUser, $mhs] = $this->mahasiswa('220042');
+        $peserta = KelasLabPeserta::create(['kelas_lab_id' => $kelas->id, 'mahasiswa_id' => $mhs->id, 'status' => 'menunggu']);
+
+        Sanctum::actingAs($dosenUser);
+        $this->patchJson("/api/kelas-lab/pendaftaran/{$peserta->id}/reject")->assertOk();
+
+        $this->assertDatabaseHas('notifikasi', [
+            'user_id' => $mhsUser->id,
+            'tipe' => 'status_pengajuan',
+            'judul' => 'Pendaftaran Kelas Lab ditolak',
+            'referensi_id' => $kelas->id,
+        ]);
     }
 
     public function test_mahasiswa_tidak_dapat_membuka_kelas(): void
@@ -422,11 +491,35 @@ class KelasLabTest extends TestCase
         [, $m] = $this->mahasiswa('220004');
         KelasLabPeserta::create(['kelas_lab_id' => $kelas->id, 'mahasiswa_id' => $m->id]);
 
-        Sanctum::actingAs(User::factory()->create(['role' => 'mahasiswa']));
+        // Aktor staf (admin) — detail hanya untuk staf & mahasiswa peserta disetujui; di sini
+        // yang diuji adalah nilai sisa_kuota (1 peserta menunggu → 29 tersisa).
+        Sanctum::actingAs(User::factory()->create(['role' => 'admin']));
 
         $this->getJson("/api/kelas-lab/{$kelas->id}")
             ->assertOk()
             ->assertJsonPath('data.sisa_kuota', 29);
+    }
+
+    public function test_mahasiswa_disetujui_dapat_membuka_detail_kelas(): void
+    {
+        [$dosenUser, $dosen] = $this->dosen();
+        $kelas = KelasLab::create(array_merge($this->payload(), ['dosen_id' => $dosen->id, 'dibuat_oleh' => $dosenUser->id]));
+        [$mhsUser, $mhs] = $this->mahasiswa('220050');
+        KelasLabPeserta::create(['kelas_lab_id' => $kelas->id, 'mahasiswa_id' => $mhs->id, 'status' => 'disetujui']);
+
+        Sanctum::actingAs($mhsUser);
+        $this->getJson("/api/kelas-lab/{$kelas->id}")->assertOk();
+    }
+
+    public function test_mahasiswa_menunggu_tidak_dapat_membuka_detail_kelas(): void
+    {
+        [$dosenUser, $dosen] = $this->dosen();
+        $kelas = KelasLab::create(array_merge($this->payload(), ['dosen_id' => $dosen->id, 'dibuat_oleh' => $dosenUser->id]));
+        [$mhsUser, $mhs] = $this->mahasiswa('220051');
+        KelasLabPeserta::create(['kelas_lab_id' => $kelas->id, 'mahasiswa_id' => $mhs->id, 'status' => 'menunggu']);
+
+        Sanctum::actingAs($mhsUser);
+        $this->getJson("/api/kelas-lab/{$kelas->id}")->assertForbidden();
     }
 
     public function test_pemilik_kelas_dapat_melihat_peserta_dosen_lain_tidak(): void

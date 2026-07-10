@@ -1,7 +1,8 @@
-// Store feedback UI (toast + dialog konfirmasi) — pengganti window.alert()/confirm() bawaan
-// browser yang tampilannya tidak bisa dikustom dan menghentikan thread JS.
-// Dipakai lewat composable useFeedback() (lihat composables/use-feedback.js), bukan store ini
-// secara langsung, supaya API-nya ringkas di komponen (notify.success(...), confirmDialog(...)).
+// Store feedback UI (toast + dialog konfirmasi + dialog input) — pengganti window.alert()/
+// confirm()/prompt() bawaan browser yang tampilannya tidak bisa dikustom dan menghentikan
+// thread JS. Dipakai lewat composable useFeedback() (lihat composables/use-feedback.js),
+// bukan store ini secara langsung, supaya API-nya ringkas di komponen
+// (notify.success(...), confirmDialog(...), promptDialog(...)).
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
@@ -11,13 +12,14 @@ export const useFeedbackStore = defineStore('feedback', () => {
   const toasts = ref([])
   // State dialog konfirmasi tunggal (hanya boleh 1 aktif di satu waktu, seperti confirm() asli).
   const confirmState = ref(null) // { title, message, confirmText, cancelText, variant, resolve }
+  // State dialog input tunggal (pengganti prompt()).
+  const promptState = ref(null) // { title, message, placeholder, defaultValue, confirmText, cancelText, resolve }
 
+  // Auto-dismiss + progress bar + jeda hover diurus oleh toast-item.vue; store hanya menyimpan
+  // datanya (termasuk `timeout` agar durasi progress bar konsisten).
   function pushToast({ type = 'info', message, timeout = 4000 }) {
     const id = ++seqId
-    toasts.value.push({ id, type, message })
-    if (timeout > 0) {
-      setTimeout(() => dismissToast(id), timeout)
-    }
+    toasts.value.push({ id, type, message, timeout })
     return id
   }
 
@@ -38,5 +40,23 @@ export const useFeedbackStore = defineStore('feedback', () => {
     confirmState.value = null
   }
 
-  return { toasts, confirmState, pushToast, dismissToast, askConfirm, resolveConfirm }
+  // Mengembalikan Promise<string|null> — resolve(nilai) jika user klik simpan, null jika batal.
+  function askPrompt({ title = 'Masukkan Data', message = '', placeholder = '', defaultValue = '', confirmText = 'Simpan', cancelText = 'Batal' }) {
+    return new Promise((resolve) => {
+      promptState.value = { title, message, placeholder, defaultValue, confirmText, cancelText, resolve }
+    })
+  }
+
+  function resolvePrompt(result) {
+    if (!promptState.value) return
+    promptState.value.resolve(result)
+    promptState.value = null
+  }
+
+  return {
+    toasts, confirmState, promptState,
+    pushToast, dismissToast,
+    askConfirm, resolveConfirm,
+    askPrompt, resolvePrompt,
+  }
 })

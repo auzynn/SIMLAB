@@ -66,9 +66,11 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { kelasLabService } from '@/services/kelas-lab'
 import { formatJam, hariLabel, statusLabel } from '@/utils/format'
+import { useFeedback } from '@/composables/use-feedback'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 
+const { notify, confirmDialog } = useFeedback()
 const auth = useAuthStore()
 const isMahasiswa = computed(() => auth.user?.role === 'mahasiswa')
 
@@ -126,22 +128,33 @@ async function load() {
 
 async function toggleDaftar(k) {
   const sesi = `${k.mata_kuliah?.nama_mk} — ${k.nama_sesi}`
-  if (terdaftar.value.has(k.id)) {
-    if (!confirm(`Batalkan pendaftaran dari ${sesi}?`)) return
-  } else if (!confirm(`Daftar ke ${sesi}?\nPendaftaran akan menunggu persetujuan dosen/supervisor.`)) {
+  const sudahTerdaftar = terdaftar.value.has(k.id)
+  if (sudahTerdaftar) {
+    if (!(await confirmDialog(`Batalkan pendaftaran dari ${sesi}?`))) return
+  } else if (
+    !(await confirmDialog({
+      title: 'Daftar Kelas Lab',
+      message: `Daftar ke ${sesi}? Pendaftaran akan menunggu persetujuan dosen/supervisor.`,
+      variant: 'info',
+      confirmText: 'Ya, Daftar',
+    }))
+  ) {
     return
   }
 
   busyId.value = k.id
   try {
-    if (terdaftar.value.has(k.id)) {
+    if (sudahTerdaftar) {
       await kelasLabService.batalDaftar(k.id)
+      await load()
+      notify.success('Pendaftaran dibatalkan.')
     } else {
       await kelasLabService.daftar(k.id)
+      await load()
+      notify.success('Pendaftaran terkirim, menunggu persetujuan.')
     }
-    await load()
   } catch (err) {
-    alert(err.response?.data?.message || 'Operasi gagal.')
+    notify.error(err.response?.data?.message || 'Operasi gagal.')
   } finally {
     busyId.value = null
   }

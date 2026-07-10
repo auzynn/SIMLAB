@@ -306,12 +306,14 @@ import { perangkatService } from '@/services/perangkat'
 import { bidangMinatService } from '@/services/bidang-minat'
 import { statusPerangkatLabel } from '@/utils/format'
 import { usePagination } from '@/composables/use-pagination'
+import { useFeedback } from '@/composables/use-feedback'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import SidemenuAdmin from '@/components/sidemenu-admin.vue'
 import FooterComponent from '@/components/footer-component.vue'
 import PaginationBar from '@/components/pagination-bar.vue'
 
 const tab = ref('ruangan')
+const { notify, confirmDialog } = useFeedback()
 
 // ---------- Ruangan ----------
 const ruanganItems = ref([])
@@ -372,12 +374,13 @@ async function submitRuangan() {
 }
 
 async function removeRuangan(r) {
-  if (!confirm(`Hapus ruangan "${r.nama_ruangan}"?`)) return
+  if (!(await confirmDialog(`Hapus ruangan "${r.nama_ruangan}"?`))) return
   try {
     await ruanganService.remove(r.id)
     await loadRuangan()
+    notify.success(`Ruangan "${r.nama_ruangan}" dihapus`)
   } catch (err) {
-    alert(extractError(err))
+    notify.error(extractError(err))
   }
 }
 
@@ -444,12 +447,13 @@ async function submitMk() {
 }
 
 async function removeMk(m) {
-  if (!confirm(`Hapus mata kuliah "${m.nama_mk}"?`)) return
+  if (!(await confirmDialog(`Hapus mata kuliah "${m.nama_mk}"?`))) return
   try {
     await mataKuliahService.remove(m.id)
     await loadMk()
+    notify.success(`Mata kuliah "${m.nama_mk}" dihapus`)
   } catch (err) {
-    alert(extractError(err))
+    notify.error(extractError(err))
   }
 }
 
@@ -519,12 +523,13 @@ async function submitPerangkat() {
 }
 
 async function removePerangkat(p) {
-  if (!confirm(`Hapus perangkat "${p.nama_perangkat}"?`)) return
+  if (!(await confirmDialog(`Hapus perangkat "${p.nama_perangkat}"?`))) return
   try {
     await perangkatService.remove(p.id)
     await loadPerangkat()
+    notify.success(`Perangkat "${p.nama_perangkat}" dihapus`)
   } catch (err) {
-    alert(extractError(err))
+    notify.error(extractError(err))
   }
 }
 
@@ -582,12 +587,13 @@ async function submitBidang() {
 }
 
 async function removeBidang(b) {
-  if (!confirm(`Hapus bidang "${b.nama}"? Pilihan dosen pada bidang ini akan ikut terhapus.`)) return
+  if (!(await confirmDialog(`Hapus bidang "${b.nama}"? Pilihan dosen pada bidang ini akan ikut terhapus.`))) return
   try {
     await bidangMinatService.remove(b.id)
     await loadBidang()
+    notify.success(`Bidang "${b.nama}" dihapus`)
   } catch (err) {
-    alert(extractError(err))
+    notify.error(extractError(err))
   }
 }
 

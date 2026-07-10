@@ -774,3 +774,73 @@ footer {
 }
 /* ---------- FORM PEMINJAMAN END ---------- */
 /* ---------- JADWAL LAB END ---------- */
+
+/* =====================================================================
+   RESPONSIVE GLOBAL (audit UI 2026-07)
+   Breakpoint 980px diselaraskan dengan collapse navbar (header-component.vue):
+   di bawah lebar ini, layout dua-kolom (sidebar + konten) ditumpuk vertikal,
+   kolom lebar-tetap jadi penuh, padding container dirapatkan, dan tabel yang
+   melebihi layar bisa di-scroll horizontal (bukan berdesakan/terpotong).
+   Semua aturan di sini HANYA berlaku di layar sempit — tampilan desktop tak berubah.
+   ===================================================================== */
+@media (max-width: 980px) {
+    .main-container {
+        padding: 30px 24px;
+    }
+
+    /* Layout halaman dua-kolom → tumpuk vertikal */
+    .main-container.flex-h {
+        flex-direction: column;
+    }
+
+    /* Kolom-kolom lebar-tetap → penuh saat ditumpuk */
+    .side-menu-container,
+    .profil-container,
+    .form-container,
+    .schedule-container,
+    .side-table,
+    .lp-roadmap,
+    .login-container {
+        width: 100%;
+    }
+
+    /* Tabel lebar → jadi blok yang bisa di-scroll horizontal (pola GitHub markdown).
+       Hanya menyebabkan scrollbar bila isinya memang melebihi lebar layar. */
+    .main-container table {
+        display: block;
+        width: max-content;
+        max-width: 100%;
+        overflow-x: auto;
+    }
+
+    /* Footer tinggi-tetap → mengikuti isi agar tidak terpotong saat kolomnya menumpuk */
+    footer {
+        height: auto;
+        padding: 30px 24px 12px;
+    }
+
+    /* Kolom footer (Tentang / Kerja Sama / Kontak) → tumpuk vertikal */
+    footer > .flex-h {
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .ft-about,
+    .ft-partner,
+    .ft-socmed {
+        width: 100%;
+    }
+}
+
+@media (max-width: 540px) {
+    .main-container {
+        padding: 24px 16px;
+    }
+}
+
+/* Utilitas opsional untuk membungkus tabel secara eksplisit bila diperlukan di view tertentu:
+   <div class="table-scroll"><table>...</table></div> */
+.table-scroll {
+    width: 100%;
+    overflow-x: auto;
+}

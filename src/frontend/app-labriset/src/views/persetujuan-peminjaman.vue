@@ -234,10 +234,12 @@ import { peminjamanRuanganService } from '@/services/peminjaman-ruangan'
 import { peminjamanPerangkatService } from '@/services/peminjaman-perangkat'
 import { usePagination } from '@/composables/use-pagination'
 import { formatTanggalId, formatJam, statusLabel, namaHari } from '@/utils/format'
+import { useFeedback } from '@/composables/use-feedback'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 import PaginationBar from '@/components/pagination-bar.vue'
 
+const { notify, confirmDialog } = useFeedback()
 const route = useRoute()
 const tab = ref('ruangan')
 
@@ -287,18 +289,21 @@ async function roomAksi(id, fn) {
     await fn()
     await loadRoom()
   } catch (err) {
-    alert(err.response?.data?.message || 'Operasi gagal.')
+    notify.error(err.response?.data?.message || 'Operasi gagal.')
+    // Muat ulang juga saat gagal: mis. approve yang kalah kuota kini otomatis ditandai
+    // 'kadaluarsa' di server, sehingga pengajuan tsb harus hilang dari antrian "menunggu".
+    await loadRoom()
   } finally {
     roomBusy.value = null
   }
 }
 const approveRoom = (p) => roomAksi(p.id, () => peminjamanRuanganService.approve(p.id))
-const rejectRoom = (p) => {
-  if (!confirm('Tolak pengajuan ini?')) return
+const rejectRoom = async (p) => {
+  if (!(await confirmDialog('Tolak pengajuan ini?'))) return
   return roomAksi(p.id, () => peminjamanRuanganService.reject(p.id))
 }
-const deleteRoom = (p) => {
-  if (!confirm('Hapus pengajuan ini dari daftar? Tindakan ini permanen.')) return
+const deleteRoom = async (p) => {
+  if (!(await confirmDialog('Hapus pengajuan ini dari daftar? Tindakan ini permanen.'))) return
   return roomAksi(p.id, () => peminjamanRuanganService.remove(p.id))
 }
 
@@ -361,28 +366,28 @@ async function devAksi(id, fn) {
     await fn()
     await loadDev()
   } catch (err) {
-    alert(err.response?.data?.message || 'Operasi gagal.')
+    notify.error(err.response?.data?.message || 'Operasi gagal.')
   } finally {
     devBusy.value = null
   }
 }
 const approveDev = (p) => devAksi(p.id, () => peminjamanPerangkatService.approve(p.id))
-const rejectDev = (p) => {
-  if (!confirm('Tolak pengajuan ini?')) return
+const rejectDev = async (p) => {
+  if (!(await confirmDialog('Tolak pengajuan ini?'))) return
   return devAksi(p.id, () => peminjamanPerangkatService.reject(p.id))
 }
-const kembalikanDev = (p) => {
-  if (!confirm('Konfirmasi bahwa perangkat sudah dikembalikan?')) return
+const kembalikanDev = async (p) => {
+  if (!(await confirmDialog({ message: 'Konfirmasi bahwa perangkat sudah dikembalikan?', variant: 'info', confirmText: 'Ya, Kembalikan' }))) return
   return devAksi(p.id, () => peminjamanPerangkatService.kembalikan(p.id))
 }
 // Hapus riwayat — hanya untuk peminjaman yang sudah dikembalikan (bukan yang sedang berjalan).
-const hapusDev = (p) => {
-  if (!confirm('Hapus riwayat peminjaman ini dari daftar? Tindakan ini permanen.')) return
+const hapusDev = async (p) => {
+  if (!(await confirmDialog('Hapus riwayat peminjaman ini dari daftar? Tindakan ini permanen.'))) return
   return devAksi(p.id, () => peminjamanPerangkatService.remove(p.id))
 }
 const approvePerp = (x) => devAksi('pp-' + x.id, () => peminjamanPerangkatService.approvePerpanjangan(x.id))
-const rejectPerp = (x) => {
-  if (!confirm('Tolak perpanjangan ini?')) return
+const rejectPerp = async (x) => {
+  if (!(await confirmDialog('Tolak perpanjangan ini?'))) return
   return devAksi('pp-' + x.id, () => peminjamanPerangkatService.rejectPerpanjangan(x.id))
 }
 

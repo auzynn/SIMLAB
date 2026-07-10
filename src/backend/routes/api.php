@@ -120,7 +120,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Kelas Lab/Praktikum (3_SDD.md 5.7, SRS UC-02a). Aksi peserta & pendaftaran
     // didefinisikan sebelum apiResource agar tidak terbaca sebagai {kelasLab}.
-    // Persetujuan pendaftaran — Dosen (kelas miliknya) / Supervisor.
+    // Buka/ubah/hapus & persetujuan pendaftaran — Admin, Supervisor, atau Dosen (kelas miliknya).
     // Rekap kepatuhan pengumpulan tugas per kelas (Dosen/Supervisor/Admin) — sebelum {kelasLab}.
     Route::get('/kelas-lab/rekap-tugas', [KelasLabController::class, 'rekapTugas']);
     Route::get('/kelas-lab/pendaftaran', [KelasLabController::class, 'pendaftaran']);
@@ -139,8 +139,9 @@ Route::middleware('auth:sanctum')->group(function () {
         ->only(['index', 'show', 'store', 'update', 'destroy'])
         ->parameters(['kelas-lab' => 'kelasLab']);
 
-    // Katalog Sertifikasi (3_SDD.md 5.13, SRS UC-05). Read terbuka untuk semua role login;
-    // CUD via Gate manage-master-data (Admin/Supervisor) di controller. Modul informasional.
+    // Katalog Sertifikasi (3_SDD.md 5.13, SRS UC-05). Read terbuka untuk semua role login.
+    // Create: Admin/Supervisor/Dosen; Update/Delete: Admin/Supervisor atau Dosen pemilik
+    // (SertifikasiPolicy). Modul informasional.
     Route::apiResource('sertifikasi', SertifikasiController::class)
         ->only(['index', 'store', 'update', 'destroy'])
         ->parameters(['sertifikasi' => 'sertifikasi']);
@@ -169,10 +170,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/rekap-tugas/pdf', [RekapTugasController::class, 'pdf']);
     Route::get('/rekap-tugas/excel', [RekapTugasController::class, 'excel']);
 
-    // Update konten info lab — khusus Admin (3_SDD.md 5.12, otorisasi via Gate manage-info-lab)
+    // Update konten info lab — Admin & Supervisor (3_SDD.md 5.12, otorisasi via Gate manage-info-lab)
     Route::patch('/info-lab/{tipe}', [InfoLabController::class, 'update'])
         ->whereIn('tipe', ['beranda', 'visi_misi', 'kepala_lab', 'roadmap_kk']);
 
-    // Unggah lampiran pengumuman (Admin) — dipakai opsi "File" pada editor Pengumuman
+    // Unggah lampiran pengumuman (Admin/Supervisor) — dipakai opsi "File" pada editor Pengumuman
     Route::post('/info-lab/upload', [InfoLabController::class, 'uploadLampiran']);
 });

@@ -117,9 +117,11 @@ import { ref, computed, onMounted } from 'vue'
 import { portofolioService } from '@/services/portofolio'
 import { useAuthStore } from '@/stores/auth'
 import { formatTanggalId } from '@/utils/format'
+import { useFeedback } from '@/composables/use-feedback'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 
+const { notify, confirmDialog } = useFeedback()
 const auth = useAuthStore()
 const isMahasiswa = computed(() => auth.user?.role === 'mahasiswa')
 
@@ -191,12 +193,13 @@ async function submit() {
 }
 
 async function remove(p) {
-  if (!confirm(`Hapus portofolio "${p.judul}"?`)) return
+  if (!(await confirmDialog(`Hapus portofolio "${p.judul}"?`))) return
   try {
     await portofolioService.remove(p.id)
     await Promise.all([loadMine(), loadAll()])
+    notify.success('Portofolio dihapus.')
   } catch (err) {
-    alert(extractError(err))
+    notify.error(extractError(err))
   }
 }
 

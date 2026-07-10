@@ -6,10 +6,12 @@ use App\Models\DeadlinePertemuan;
 use App\Models\KelasLab;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 /**
  * Deadline pengumpulan tugas per pertemuan (1–16) sebuah Kelas Lab.
- * - Lihat: semua role login (mahasiswa perlu tahu deadline saat mengumpulkan).
+ * - Lihat: staf kelas + mahasiswa peserta DISETUJUI (KelasLabPolicy::view) — materi/deadline
+ *   tidak boleh bocor ke mahasiswa yang belum disetujui.
  * - Atur/hapus: Dosen pengampu / Supervisor / Admin (KelasLabPolicy::update + Admin).
  */
 class DeadlinePertemuanController extends Controller
@@ -19,6 +21,8 @@ class DeadlinePertemuanController extends Controller
      */
     public function index(KelasLab $kelasLab): JsonResponse
     {
+        Gate::authorize('view', $kelasLab);
+
         $deadline = DeadlinePertemuan::where('kelas_lab_id', $kelasLab->id)
             ->orderBy('pertemuan')
             ->get(['pertemuan', 'materi', 'deadline']);

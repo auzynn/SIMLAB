@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StorePeminjamanRuanganRequest;
 use App\Models\KelasLab;
 use App\Models\PeminjamanRuangan;
+use App\Models\Ruangan;
 use App\Services\JadwalRuanganService;
 use App\Services\NotifikasiService;
 use Illuminate\Http\JsonResponse;
@@ -130,21 +131,42 @@ class PeminjamanRuanganController extends Controller
             ], 422);
         }
 
-        $bentrok = $this->jadwal->peminjamanBentrok(
-            $peminjamanRuangan->ruangan_id,
-            $peminjamanRuangan->tanggal,
-            $peminjamanRuangan->jam_mulai,
-            $peminjamanRuangan->jam_selesai,
-            $peminjamanRuangan->id,
-        );
+        // Kunci baris ruangan lalu cek bentrok + update dalam SATU transaksi. Lock membuat approval
+        // untuk ruangan yang sama berjalan berurutan, sehingga dua approver tidak bisa sama-sama
+        // lolos cek kapasitas lalu melebihi kuota (race TOCTOU). Approver kedua menunggu di lock,
+        // lalu membaca hitungan yang sudah ter-update dan slot dinyatakan penuh (T3.10, UC-02).
+        $kadaluarsa = DB::transaction(function () use ($peminjamanRuangan) {
+            Ruangan::whereKey($peminjamanRuangan->ruangan_id)->lockForUpdate()->first();
 
-        if ($bentrok) {
-            return response()->json([
-                'message' => 'Jadwal kini bentrok dengan peminjaman/Kelas Lab lain, tidak dapat disetujui.',
-            ], 422);
-        }
+            $bentrok = $this->jadwal->peminjamanBentrok(
+                $peminjamanRuangan->ruangan_id,
+                $peminjamanRuangan->tanggal,
+                $peminjamanRuangan->jam_mulai,
+                $peminjamanRuangan->jam_selesai,
+                $peminjamanRuangan->id,
+            );
 
-        DB::transaction(function () use ($peminjamanRuangan) {
+            if ($bentrok) {
+                // Slot sudah penuh/terpakai — pengajuan tidak akan pernah bisa disetujui pada slot ini.
+                // Tandai `kadaluarsa` (dibedakan dari `ditolak` manual, dan bukan dibiarkan `menunggu`)
+                // agar tidak menggantung di antrian approver dan pemohon bebas mengajukan ulang pada
+                // waktu lain (SRS UC-02/UC-07).
+                $peminjamanRuangan->update([
+                    'status' => 'kadaluarsa',
+                    'disetujui_oleh' => request()->user()->id,
+                ]);
+
+                $this->notifikasi->kirim(
+                    $peminjamanRuangan->user_id,
+                    'Peminjaman ruangan kedaluwarsa (kuota penuh)',
+                    'Pengajuan peminjaman ruangan Anda pada '.$peminjamanRuangan->tanggal->format('d-m-Y').' tidak dapat disetujui karena kuota ruangan pada slot tersebut sudah penuh. Silakan ajukan kembali pada waktu lain.',
+                    'status_pengajuan',
+                    $peminjamanRuangan->id,
+                );
+
+                return true;
+            }
+
             $peminjamanRuangan->update([
                 'status' => 'disetujui',
                 'disetujui_oleh' => request()->user()->id,
@@ -158,7 +180,16 @@ class PeminjamanRuanganController extends Controller
                 'status_pengajuan',
                 $peminjamanRuangan->id,
             );
+
+            return false;
         });
+
+        if ($kadaluarsa) {
+            return response()->json([
+                'data' => $peminjamanRuangan->load(['ruangan', 'user', 'penyetuju']),
+                'message' => 'Kuota ruangan pada slot ini sudah penuh. Pengajuan otomatis kedaluwarsa; pemohon dapat mengajukan ulang di waktu lain.',
+            ], 422);
+        }
 
         return response()->json([
             'data' => $peminjamanRuangan->load(['ruangan', 'user', 'penyetuju']),

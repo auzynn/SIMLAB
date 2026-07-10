@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Models\Dosen;
 use App\Models\KelasLab;
+use App\Models\KelasLabPeserta;
+use App\Models\Mahasiswa;
 use App\Models\MataKuliah;
 use App\Models\Ruangan;
 use App\Models\User;
@@ -107,7 +109,7 @@ class DeadlinePertemuanTest extends TestCase
             ->assertStatus(422);
     }
 
-    public function test_semua_role_login_dapat_melihat_deadline(): void
+    public function test_mahasiswa_disetujui_dapat_melihat_deadline(): void
     {
         $dosenUser = User::factory()->create(['role' => 'dosen']);
         $kelas = $this->buatKelas($dosenUser);
@@ -115,11 +117,33 @@ class DeadlinePertemuanTest extends TestCase
         Sanctum::actingAs($dosenUser);
         $this->putJson("/api/kelas-lab/{$kelas->id}/deadline/2", ['deadline' => '2026-09-01 12:00:00'])->assertOk();
 
-        Sanctum::actingAs(User::factory()->create(['role' => 'mahasiswa']));
+        // Mahasiswa peserta yang sudah DISETUJUI berhak melihat materi/deadline.
+        $mhsUser = User::factory()->create(['role' => 'mahasiswa']);
+        $mhs = Mahasiswa::create(['user_id' => $mhsUser->id, 'npm' => '220900', 'angkatan' => '2022']);
+        KelasLabPeserta::create(['kelas_lab_id' => $kelas->id, 'mahasiswa_id' => $mhs->id, 'status' => 'disetujui']);
+
+        Sanctum::actingAs($mhsUser);
         $this->getJson("/api/kelas-lab/{$kelas->id}/deadline")
             ->assertOk()
             ->assertJsonCount(1, 'data')
             ->assertJsonFragment(['pertemuan' => 2]);
+    }
+
+    public function test_mahasiswa_belum_disetujui_tidak_dapat_melihat_deadline(): void
+    {
+        $dosenUser = User::factory()->create(['role' => 'dosen']);
+        $kelas = $this->buatKelas($dosenUser);
+
+        Sanctum::actingAs($dosenUser);
+        $this->putJson("/api/kelas-lab/{$kelas->id}/deadline/2", ['deadline' => '2026-09-01 12:00:00'])->assertOk();
+
+        // Mahasiswa yang masih menunggu persetujuan tidak boleh mengintip materi/deadline.
+        $mhsUser = User::factory()->create(['role' => 'mahasiswa']);
+        $mhs = Mahasiswa::create(['user_id' => $mhsUser->id, 'npm' => '220901', 'angkatan' => '2022']);
+        KelasLabPeserta::create(['kelas_lab_id' => $kelas->id, 'mahasiswa_id' => $mhs->id, 'status' => 'menunggu']);
+
+        Sanctum::actingAs($mhsUser);
+        $this->getJson("/api/kelas-lab/{$kelas->id}/deadline")->assertForbidden();
     }
 
     public function test_materi_dapat_diisi_tanpa_deadline(): void

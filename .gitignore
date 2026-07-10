@@ -30,3 +30,8 @@ Desktop.ini
 storage/framework/cache/*
 storage/framework/sessions/*
 storage/framework/views/*
+
+# Dokumen pribadi & file biner besar (bukan source code)
+*.docx
+*.xlsx
+*.rar

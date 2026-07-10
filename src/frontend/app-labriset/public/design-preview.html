@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Preview Perbandingan Notifikasi Pop-Up — LabRiset</title>
+
+  <!-- Font aplikasi -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;600;700&family=Poppins:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+
+  <!-- SweetAlert2 (library asli, live via CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    /* ============ TOKEN TEMA (identik dengan style.css aplikasi) ============ */
+    :root {
+      --navy: #183861;
+      --yellow: #FFB057;
+      --black: #141E27;
+      --grey1: #FAFAFA;
+      --grey2: #EDEDED;
+
+      --success: #1e7e34;   --success-bg: #e7f4ec;
+      --error:   #c0392b;   --error-bg:   #fdecea;
+      --warning: #c47408;   --warning-bg: #fff6e9;
+      --info:    #183861;   --info-bg:    #eef1f7;
+
+      --shadow-soft: 0 6px 18px rgba(0, 0, 0, 0.18);
+      --shadow-card: 5px 5px 8px 0 rgba(0, 0, 0, 0.1);
+      --shadow-modal: 0 12px 32px rgba(0, 0, 0, 0.25);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Source Sans Pro', sans-serif;
+      color: var(--black);
+      background: var(--grey1);
+      line-height: 1.5;
+    }
+    h1, h2, h3 { font-family: 'Poppins', sans-serif; }
+
+    /* ============ HEADER ============ */
+    .hero {
+      background: var(--navy);
+      color: #fff;
+      padding: 40px 6vw 34px;
+      border-bottom: 6px solid var(--yellow);
+    }
+    .hero h1 { font-size: 1.9em; line-height: 1.15; }
+    .hero p { max-width: 760px; margin-top: 12px; opacity: 0.9; font-size: 1.02em; }
+    .hero .pill {
+      display: inline-block; margin-top: 18px; padding: 6px 14px;
+      background: rgba(255, 176, 87, 0.18); border: 1px solid var(--yellow);
+      color: var(--yellow); border-radius: 999px; font-size: 0.85em; font-weight: 600;
+    }
+
+    .wrap { max-width: 1220px; margin: 0 auto; padding: 34px 5vw 80px; }
+
+    /* Banner penjelasan */
+    .legend {
+      background: #fff; border-left: 5px solid var(--yellow);
+      border-radius: 8px; box-shadow: var(--shadow-card);
+      padding: 18px 22px; margin-bottom: 34px; font-size: 0.96em;
+    }
+    .legend strong { color: var(--navy); }
+    .legend ul { margin: 8px 0 0 18px; }
+    .legend li { margin: 3px 0; }
+
+    .section-title {
+      font-size: 1.35em; color: var(--navy); margin: 10px 0 4px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-title::before {
+      content: ''; width: 8px; height: 26px; background: var(--yellow); border-radius: 3px;
+    }
+    .section-sub { color: #556; margin-bottom: 20px; font-size: 0.96em; }
+
+    /* ============ GRID KARTU ============ */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(330px, 1fr)); gap: 22px; }
+
+    .card {
+      background: #fff; border-radius: 10px; box-shadow: var(--shadow-card);
+      padding: 22px; display: flex; flex-direction: column;
+      border-top: 4px solid var(--navy);
+    }
+    .card.reco { border-top-color: var(--yellow); box-shadow: 0 8px 24px rgba(24, 56, 97, 0.16); }
+    .card h3 { font-size: 1.12em; color: var(--navy); display: flex; align-items: center; gap: 8px; }
+    .card .tag {
+      font-size: 0.68em; font-weight: 700; padding: 3px 8px; border-radius: 999px;
+      background: var(--yellow); color: var(--navy); letter-spacing: 0.3px; text-transform: uppercase;
+    }
+    .card .tag.live { background: var(--success-bg); color: var(--success); }
+    .card .tag.sim  { background: var(--info-bg); color: var(--info); }
+    .card .desc { font-size: 0.9em; color: #556; margin: 8px 0 14px; min-height: 40px; }
+    .card .meta { font-size: 0.8em; color: #778; margin-top: auto; padding-top: 14px; border-top: 1px dashed var(--grey2); }
+    .card .meta b { color: var(--navy); }
+    .card .meta a { color: var(--navy); text-decoration: underline; }
+
+    .btn-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; }
+
+    /* Tombol pemicu — mengikuti .btn aplikasi */
+    .b {
+      font-family: inherit; font-size: 0.86em; cursor: pointer;
+      padding: 7px 14px; border-radius: 5px; border: 2px solid var(--navy);
+      background: var(--navy); color: #fff; transition: 0.18s ease-in; font-weight: 600;
+    }
+    .b:hover { background: transparent; color: var(--navy); }
+    .b.ghost { background: transparent; color: var(--navy); }
+    .b.ghost:hover { background: var(--navy); color: #fff; }
+    .b.s { border-color: var(--success); background: var(--success); }
+    .b.s:hover { background: transparent; color: var(--success); }
+    .b.e { border-color: var(--error); background: var(--error); }
+    .b.e:hover { background: transparent; color: var(--error); }
+    .b.w { border-color: var(--warning); background: var(--warning); }
+    .b.w:hover { background: transparent; color: var(--warning); }
+    .b.y { border-color: var(--yellow); background: var(--yellow); color: #fff; }
+    .b.y:hover { background: transparent; color: var(--warning); }
+
+    .fld { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-size: 0.85em; color: #556; }
+    .fld select {
+      font-family: inherit; padding: 6px 10px; border-radius: 5px;
+      border: 1px solid var(--grey2); background: #fff; color: var(--navy); font-size: 0.95em;
+    }
+
+    /* ============ TABEL PERBANDINGAN ============ */
+    .cmp { width: 100%; border-collapse: collapse; background: #fff; border-radius: 10px; overflow: hidden; box-shadow: var(--shadow-card); font-size: 0.9em; }
+    .cmp th, .cmp td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--grey2); vertical-align: top; }
+    .cmp thead th { background: var(--navy); color: #fff; font-family: 'Poppins', sans-serif; font-weight: 500; }
+    .cmp tbody tr:hover { background: var(--grey1); }
+    .cmp .yes { color: var(--success); font-weight: 700; }
+    .cmp .no  { color: var(--error); font-weight: 700; }
+    .cmp .mid { color: var(--warning); font-weight: 700; }
+    .cmp .name { font-weight: 700; color: var(--navy); }
+    .reco-badge { font-size: 0.72em; background: var(--yellow); color: var(--navy); padding: 1px 7px; border-radius: 999px; font-weight: 700; margin-left: 6px; }
+
+    .note-fw {
+      margin-top: 26px; background: #fff; border-radius: 10px; box-shadow: var(--shadow-card);
+      padding: 20px 24px; border-left: 5px solid var(--navy); font-size: 0.95em;
+    }
+    .note-fw h3 { color: var(--navy); margin-bottom: 8px; }
+
+    footer.pg { text-align: center; color: #889; font-size: 0.85em; padding: 30px; }
+
+    /* =====================================================================
+       KOMPONEN "BUATAN SENDIRI" (yang akan dipakai bila opsi ini dipilih)
+       ===================================================================== */
+
+    /* ---- TOAST (home-grown, refined) ---- */
+    .toast-stack {
+      position: fixed; z-index: 9000; display: flex; flex-direction: column; gap: 10px;
+      max-width: 360px; pointer-events: none;
+    }
+    .toast-stack.tr { top: 20px; right: 20px; }
+    .toast-stack.br { bottom: 20px; right: 20px; }
+    .toast-stack.tc { top: 20px; left: 50%; transform: translateX(-50%); align-items: center; }
+
+    .toast {
+      pointer-events: auto; position: relative; display: flex; align-items: flex-start; gap: 11px;
+      padding: 14px 16px; background: #fff; border-radius: 8px; border-left: 4px solid var(--navy);
+      box-shadow: var(--shadow-soft); overflow: hidden; min-width: 280px;
+      animation: toastIn 0.28s cubic-bezier(0.21, 1.02, 0.73, 1);
+    }
+    .toast.out { animation: toastOut 0.22s ease forwards; }
+    .toast .ic {
+      flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center; margin-top: 1px;
+    }
+    .toast .ic svg { width: 15px; height: 15px; }
+    .toast .msg { flex: 1; font-size: 0.9em; color: var(--black); word-break: break-word; }
+    .toast .msg .t { font-weight: 700; display: block; margin-bottom: 1px; font-family: 'Poppins', sans-serif; font-size: 0.98em; }
+    .toast .x { background: none; border: none; color: #9ca3af; font-size: 1.2em; line-height: 1; cursor: pointer; }
+    .toast .x:hover { color: var(--black); }
+    .toast .bar { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; transform-origin: left; }
+
+    .toast.success { border-left-color: var(--success); } .toast.success .ic { color: var(--success); background: var(--success-bg); } .toast.success .bar { background: var(--success); }
+    .toast.error   { border-left-color: var(--error);   } .toast.error   .ic { color: var(--error);   background: var(--error-bg);   } .toast.error   .bar { background: var(--error); }
+    .toast.warning { border-left-color: var(--warning); } .toast.warning .ic { color: var(--warning); background: var(--warning-bg); } .toast.warning .bar { background: var(--warning); }
+    .toast.info    { border-left-color: var(--navy);    } .toast.info    .ic { color: var(--navy);    background: var(--info-bg);    } .toast.info    .bar { background: var(--navy); }
+
+    @keyframes toastIn  { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes toastOut { to { opacity: 0; transform: translateX(30px); } }
+    @keyframes barShrink { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+    /* ---- OVERLAY & DIALOG (home-grown) ---- */
+    .ov {
+      position: fixed; inset: 0; z-index: 9500; background: rgba(20, 30, 39, 0.45);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+      animation: fade 0.18s ease;
+    }
+    @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes pop  { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+    .dlg { background: #fff; border-radius: 10px; box-shadow: var(--shadow-modal); width: 100%; max-width: 410px; animation: pop 0.2s ease; overflow: hidden; }
+    .dlg .body { padding: 26px 24px 22px; }
+    .dlg .title { font-family: 'Poppins', sans-serif; color: var(--navy); font-size: 1.15em; }
+    .dlg .text { font-size: 0.94em; color: #374151; margin-top: 8px; line-height: 1.55; }
+    .dlg .acts { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+    .dlg .db { font-family: inherit; cursor: pointer; padding: 9px 20px; border-radius: 5px; font-size: 0.9em; font-weight: 600; border: 2px solid var(--navy); background: #fff; color: var(--navy); transition: 0.18s; }
+    .dlg .db:hover { background: var(--navy); color: #fff; }
+    .dlg .db.go { color: #fff; }
+    .dlg .db.go.danger  { background: var(--error);   border-color: var(--error); }
+    .dlg .db.go.danger:hover  { background: #a83224; border-color: #a83224; }
+    .dlg .db.go.warning { background: var(--warning); border-color: var(--warning); }
+    .dlg .db.go.warning:hover { background: #a5620a; border-color: #a5620a; }
+    .dlg .db.go.info    { background: var(--navy);    border-color: var(--navy); }
+    .dlg .db.go.info:hover    { background: transparent; color: var(--navy); }
+    .dlg .db.go.success { background: var(--success); border-color: var(--success); }
+
+    .dlg .din { width: 100%; margin-top: 14px; padding: 11px 12px; border: 1px solid var(--grey2); border-radius: 5px; font-family: inherit; font-size: 0.95em; }
+    .dlg .din:focus { outline: none; border-color: var(--navy); }
+
+    /* variant icon circle */
+    .vic { width: 54px; height: 54px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+    .vic svg { width: 28px; height: 28px; }
+    .vic.danger  { color: var(--error);   background: var(--error-bg); }
+    .vic.warning { color: var(--warning); background: var(--warning-bg); }
+    .vic.info    { color: var(--navy);    background: var(--info-bg); }
+    .vic.success { color: var(--success); background: var(--success-bg); }
+
+    /* Gaya 1: ikon tengah */
+    .dlg.s1 .body { text-align: center; }
+    .dlg.s1 .vic { margin: 0 auto 14px; }
+    .dlg.s1 .acts { justify-content: center; }
+    /* Gaya 2: ikon samping */
+    .dlg.s2 .head { display: flex; align-items: center; gap: 14px; }
+    .dlg.s2 .vic { width: 44px; height: 44px; flex-shrink: 0; }
+    .dlg.s2 .vic svg { width: 22px; height: 22px; }
+    /* Gaya 3: aksen bar */
+    .dlg.s3 .accent { height: 6px; }
+    .dlg.s3 .accent.danger  { background: var(--error); }
+    .dlg.s3 .accent.warning { background: var(--warning); }
+    .dlg.s3 .accent.info    { background: var(--navy); }
+    .dlg.s3 .accent.success { background: var(--success); }
+
+    /* =====================================================================
+       SIMULASI BERTEMA — gaya khas tiap library, palet navy/kuning app
+       ===================================================================== */
+
+    /* vue-sonner: minimalis, kompak, putih, bayangan halus, kanan-bawah */
+    .son { position: fixed; bottom: 20px; right: 20px; z-index: 8800; display: flex; flex-direction: column-reverse; gap: 8px; }
+    .son .t {
+      display: flex; align-items: center; gap: 10px; background: #fff; color: #333;
+      border: 1px solid #ededed; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+      padding: 12px 14px; font-size: 0.86em; min-width: 260px; animation: sonIn 0.3s ease;
+    }
+    .son .t svg { width: 17px; height: 17px; flex-shrink: 0; }
+    .son .t.success svg { color: var(--success); } .son .t.error svg { color: var(--error); }
+    .son .t.warning svg { color: var(--warning); } .son .t.info svg { color: var(--navy); }
+    @keyframes sonIn { from { opacity: 0; transform: translateY(14px) scale(0.96); } to { opacity: 1; transform: none; } }
+
+    /* Notivue (tema Material): ikon lingkaran solid, elevation, kanan-atas */
+    .ntv { position: fixed; top: 20px; right: 20px; z-index: 8810; display: flex; flex-direction: column; gap: 12px; }
+    .ntv .t {
+      display: flex; align-items: center; gap: 12px; background: #fff; border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.08), 0 10px 26px rgba(0,0,0,0.14);
+      padding: 14px 16px; min-width: 300px; animation: ntvIn 0.32s cubic-bezier(.21,1.02,.73,1);
+    }
+    .ntv .r { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; flex-shrink: 0; }
+    .ntv .r svg { width: 19px; height: 19px; }
+    .ntv .t.success .r { background: var(--success); } .ntv .t.error .r { background: var(--error); }
+    .ntv .t.warning .r { background: var(--warning); } .ntv .t.info .r { background: var(--navy); }
+    .ntv .c .tt { font-weight: 700; font-size: 0.9em; color: var(--navy); font-family: 'Poppins', sans-serif; }
+    .ntv .c .mm { font-size: 0.84em; color: #556; }
+    @keyframes ntvIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+
+    /* Vue Toastification: latar SOLID berwarna, teks putih, progress bar */
+    .vtf { position: fixed; top: 20px; right: 20px; z-index: 8820; display: flex; flex-direction: column; gap: 10px; }
+    .vtf .t {
+      position: relative; display: flex; align-items: center; gap: 11px; color: #fff;
+      border-radius: 8px; padding: 15px 16px; min-width: 300px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      overflow: hidden; font-size: 0.9em; animation: vtfIn 0.3s ease;
+    }
+    .vtf .t svg { width: 18px; height: 18px; flex-shrink: 0; }
+    .vtf .t.success { background: var(--success); } .vtf .t.error { background: var(--error); }
+    .vtf .t.warning { background: var(--warning); } .vtf .t.info { background: var(--navy); }
+    .vtf .t .bar { position: absolute; left: 0; bottom: 0; height: 4px; background: rgba(255,255,255,0.7); width: 100%; transform-origin: left; }
+    @keyframes vtfIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+
+    /* vue3-toastify (react-toastify): putih, aksen kiri berwarna, progress bar */
+    .rtf { position: fixed; top: 20px; right: 20px; z-index: 8830; display: flex; flex-direction: column; gap: 10px; }
+    .rtf .t {
+      position: relative; display: flex; align-items: center; gap: 12px; background: #fff; color: #4a4a4a;
+      border-radius: 8px; padding: 15px 16px; min-width: 300px; box-shadow: 0 5px 16px rgba(0,0,0,0.16);
+      overflow: hidden; font-size: 0.9em; animation: rtfIn 0.3s ease;
+    }
+    .rtf .t svg { width: 20px; height: 20px; flex-shrink: 0; }
+    .rtf .t.success { border-left: 6px solid var(--success); } .rtf .t.success svg { color: var(--success); }
+    .rtf .t.error   { border-left: 6px solid var(--error);   } .rtf .t.error svg   { color: var(--error); }
+    .rtf .t.warning { border-left: 6px solid var(--warning); } .rtf .t.warning svg { color: var(--warning); }
+    .rtf .t.info    { border-left: 6px solid var(--navy);    } .rtf .t.info svg    { color: var(--navy); }
+    .rtf .t .bar { position: absolute; left: 0; bottom: 0; height: 4px; width: 100%; transform-origin: left; }
+    .rtf .t.success .bar { background: var(--success); } .rtf .t.error .bar { background: var(--error); }
+    .rtf .t.warning .bar { background: var(--warning); } .rtf .t.info .bar { background: var(--navy); }
+    @keyframes rtfIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: none; } }
+
+    /* SweetAlert2 theming ke palet aplikasi */
+    .swal2-popup { font-family: 'Source Sans Pro', sans-serif !important; border-radius: 12px !important; }
+    .swal2-title { font-family: 'Poppins', sans-serif !important; color: var(--navy) !important; }
+    .swal2-styled.swal2-confirm { background: var(--navy) !important; border-radius: 6px !important; }
+    .swal2-styled.swal2-confirm.danger { background: var(--error) !important; }
+    .swal2-styled.swal2-cancel { background: #fff !important; color: var(--navy) !important; border: 2px solid var(--navy) !important; border-radius: 6px !important; }
+    .swal2-timer-progress-bar { background: var(--yellow) !important; }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <h1>Preview Perbandingan Notifikasi Pop-Up</h1>
+    <p>Bandingkan semua opsi desain pop-up konfirmasi &amp; notifikasi untuk aplikasi <b>LabRiset</b> — semuanya sudah diselaraskan ke tema Anda (navy <code>#183861</code> + kuning <code>#FFB057</code>, font Poppins/Source Sans Pro). Klik tombol di tiap kartu untuk mencobanya langsung.</p>
+    <span class="pill">Klik tombol mana pun untuk melihat animasinya</span>
+  </header>
+
+  <div class="wrap">
+    <div class="legend">
+      <strong>Cara membaca halaman ini</strong>
+      <ul>
+        <li><b>Buatan Sendiri</b> &amp; <b>SweetAlert2</b> = library/komponen <b>asli yang berjalan langsung</b> di halaman ini.</li>
+        <li>Kartu library toast (<b>vue-sonner, Notivue, Vue Toastification, vue3-toastify</b>) = <b>simulasi gaya khas</b> tiap library, sudah di-<i>theme</i> ke warna aplikasi Anda — supaya adil membandingkan "seperti apa jika dipakai di app ini". Perilaku &amp; struktur asli identik; versi asli butuh <code>npm install</code> + build.</li>
+        <li>Lihat <b>tabel perbandingan</b> di bawah untuk ukuran bundle, dukungan dialog konfirmasi, dan rekomendasi.</li>
+      </ul>
+    </div>
+
+    <!-- ============ SECTION 1: BUATAN SENDIRI ============ -->
+    <h2 class="section-title">1. Buatan Sendiri (Rekomendasi)</h2>
+    <p class="section-sub">Memperbaiki sistem <code>toast-container.vue</code> + <code>confirm-dialog.vue</code> yang <b>sudah ada</b> di aplikasi Anda. Tanpa dependency baru, 100% cocok tema, ringan.</p>
+    <div class="grid">
+      <div class="card reco">
+        <h3>Dialog Konfirmasi <span class="tag">3 gaya</span></h3>
+        <p class="desc">Pilih gaya visual yang paling Anda suka. Warna mengikuti jenis aksi (merah=hapus, kuning=peringatan, navy=info).</p>
+        <div class="fld">
+          <label for="variant">Jenis aksi:</label>
+          <select id="variant">
+            <option value="danger">Hapus (merah)</option>
+            <option value="warning">Peringatan (kuning)</option>
+            <option value="info">Konfirmasi (navy)</option>
+            <option value="success">Sukses (hijau)</option>
+          </select>
+        </div>
+        <div class="btn-row">
+          <button class="b" onclick="openDialog(1)">Gaya 1 · Ikon Tengah</button>
+          <button class="b ghost" onclick="openDialog(2)">Gaya 2 · Ikon Samping</button>
+          <button class="b ghost" onclick="openDialog(3)">Gaya 3 · Aksen Bar</button>
+        </div>
+        <div class="meta"><b>Rekomendasi utama.</b> Sudah ada di kode Anda, tinggal dipoles &amp; dipasang di semua modul.</div>
+      </div>
+
+      <div class="card reco">
+        <h3>Toast Notifikasi <span class="tag">refined</span></h3>
+        <p class="desc">Notifikasi non-blocking pojok kanan-atas, dengan progress-bar auto-dismiss &amp; animasi slide.</p>
+        <div class="btn-row">
+          <button class="b s" onclick="hgToast('success')">Sukses</button>
+          <button class="b e" onclick="hgToast('error')">Error</button>
+          <button class="b w" onclick="hgToast('warning')">Peringatan</button>
+          <button class="b ghost" onclick="hgToast('info')">Info</button>
+        </div>
+        <div class="meta">Palet identik dengan lonceng notifikasi navbar → konsisten.</div>
+      </div>
+
+      <div class="card reco">
+        <h3>Input Dialog <span class="tag">baru</span></h3>
+        <p class="desc">Pengganti <code>window.prompt()</code> (mis. "URL tautan" di editor teks) yang selama ini paling jelek.</p>
+        <div class="btn-row">
+          <button class="b" onclick="openInput()">Coba Input Dialog</button>
+        </div>
+        <div class="meta">Komponen baru <code>input-dialog.vue</code>, gaya sama dengan dialog konfirmasi.</div>
+      </div>
+    </div>
+
+    <!-- ============ SECTION 2: LIBRARY ============ -->
+    <h2 class="section-title" style="margin-top: 40px;">2. Opsi Library dari Internet</h2>
+    <p class="section-sub">Hasil pencarian library populer 2026, ditampilkan dengan tema aplikasi Anda.</p>
+    <div class="grid">
+      <!-- SweetAlert2 -->
+      <div class="card">
+        <h3>SweetAlert2 <span class="tag live">asli · live</span></h3>
+        <p class="desc">Modal konfirmasi/alert/input paling populer &amp; cantik. Cocok khusus untuk dialog konfirmasi blocking.</p>
+        <div class="btn-row">
+          <button class="b e" onclick="swalConfirm()">Konfirmasi Hapus</button>
+          <button class="b s" onclick="swalToast()">Toast Sukses</button>
+          <button class="b ghost" onclick="swalInput()">Input</button>
+        </div>
+        <div class="meta"><b>~15 KB gz.</b> Dialog: ✔ · Toast: ✔ · <a href="https://sweetalert2.github.io/" target="_blank" rel="noopener">situs</a>. Untuk Vue 3 panggil lib inti langsung.</div>
+      </div>
+
+      <!-- vue-sonner -->
+      <div class="card">
+        <h3>vue-sonner <span class="tag sim">simulasi bertema</span></h3>
+        <p class="desc">Port dari Sonner (React). Toast minimalis &amp; bersih, muncul dari kanan-bawah, tumpukan halus.</p>
+        <div class="btn-row">
+          <button class="b s" onclick="libToast('son','success')">Sukses</button>
+          <button class="b e" onclick="libToast('son','error')">Error</button>
+          <button class="b w" onclick="libToast('son','warning')">Peringatan</button>
+          <button class="b ghost" onclick="libToast('son','info')">Info</button>
+        </div>
+        <div class="meta"><b>~5 KB gz.</b> Dialog: hanya tombol aksi inline · <a href="https://github.com/xiaoluoboding/vue-sonner" target="_blank" rel="noopener">repo</a>.</div>
+      </div>
+
+      <!-- Notivue -->
+      <div class="card">
+        <h3>Notivue <span class="tag sim">simulasi bertema</span></h3>
+        <p class="desc">Native Vue 3, 5 tema bawaan (di sini gaya "Material"), ikon lingkaran solid, aksesibel + RTL.</p>
+        <div class="btn-row">
+          <button class="b s" onclick="libToast('ntv','success')">Sukses</button>
+          <button class="b e" onclick="libToast('ntv','error')">Error</button>
+          <button class="b w" onclick="libToast('ntv','warning')">Peringatan</button>
+          <button class="b ghost" onclick="libToast('ntv','info')">Info</button>
+        </div>
+        <div class="meta"><b>~7 KB gz.</b> Paling fleksibel (headless) · <a href="https://notivue.smastrom.io/" target="_blank" rel="noopener">situs</a>.</div>
+      </div>
+
+      <!-- Vue Toastification -->
+      <div class="card">
+        <h3>Vue Toastification <span class="tag sim">simulasi bertema</span></h3>
+        <p class="desc">Matang &amp; TypeScript-first. Ciri khas: latar <b>penuh berwarna</b> sesuai tipe, dengan progress bar.</p>
+        <div class="btn-row">
+          <button class="b s" onclick="libToast('vtf','success')">Sukses</button>
+          <button class="b e" onclick="libToast('vtf','error')">Error</button>
+          <button class="b w" onclick="libToast('vtf','warning')">Peringatan</button>
+          <button class="b ghost" onclick="libToast('vtf','info')">Info</button>
+        </div>
+        <div class="meta"><b>~10 KB gz.</b> Bisa komponen kustom sebagai isi · <a href="https://github.com/Maronato/vue-toastification" target="_blank" rel="noopener">repo</a>.</div>
+      </div>
+
+      <!-- vue3-toastify -->
+      <div class="card">
+        <h3>vue3-toastify <span class="tag sim">simulasi bertema</span></h3>
+        <p class="desc">Gaya familiar ala react-toastify: kartu putih, aksen kiri berwarna, progress bar bawah.</p>
+        <div class="btn-row">
+          <button class="b s" onclick="libToast('rtf','success')">Sukses</button>
+          <button class="b e" onclick="libToast('rtf','error')">Error</button>
+          <button class="b w" onclick="libToast('rtf','warning')">Peringatan</button>
+          <button class="b ghost" onclick="libToast('rtf','info')">Info</button>
+        </div>
+        <div class="meta"><b>~12 KB gz.</b> Setup ringkas, auto-container · <a href="https://vue3-toastify.js-bridge.com/" target="_blank" rel="noopener">situs</a>.</div>
+      </div>
+    </div>
+
+    <!-- ============ TABEL PERBANDINGAN ============ -->
+    <h2 class="section-title" style="margin-top: 44px;">3. Tabel Perbandingan</h2>
+    <p class="section-sub">Ringkasan untuk pengambilan keputusan.</p>
+    <table class="cmp">
+      <thead>
+        <tr><th>Opsi</th><th>Tipe</th><th>Bundle (gz)</th><th>Dialog konfirmasi</th><th>Kecocokan tema</th><th>Catatan</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="name">Buatan Sendiri<span class="reco-badge">REKOMENDASI</span></td>
+          <td>Toast + Dialog + Input</td>
+          <td>0 KB (sudah ada)</td>
+          <td class="yes">✔ penuh</td>
+          <td class="yes">✔ 100%</td>
+          <td>Tanpa dependency, konsisten, tinggal dipoles &amp; di-rollout</td>
+        </tr>
+        <tr>
+          <td class="name">SweetAlert2</td>
+          <td>Dialog + Toast</td>
+          <td>~15 KB</td>
+          <td class="yes">✔ terbaik</td>
+          <td class="mid">◐ perlu di-theme</td>
+          <td>Pilihan terkuat bila mau library untuk konfirmasi "wow"</td>
+        </tr>
+        <tr>
+          <td class="name">vue-sonner</td>
+          <td>Toast</td>
+          <td>~5 KB</td>
+          <td class="mid">◐ inline saja</td>
+          <td class="yes">✔ baik</td>
+          <td>Paling ringan &amp; minimalis</td>
+        </tr>
+        <tr>
+          <td class="name">Notivue</td>
+          <td>Toast</td>
+          <td>~7 KB</td>
+          <td class="mid">◐ via headless</td>
+          <td class="yes">✔ terbaik (headless)</td>
+          <td>Modern, aksesibel, 5 tema</td>
+        </tr>
+        <tr>
+          <td class="name">Vue Toastification</td>
+          <td>Toast</td>
+          <td>~10 KB</td>
+          <td class="no">✗</td>
+          <td class="yes">✔ baik</td>
+          <td>Matang, TS-first</td>
+        </tr>
+        <tr>
+          <td class="name">vue3-toastify</td>
+          <td>Toast</td>
+          <td>~12 KB</td>
+          <td class="no">✗</td>
+          <td class="yes">✔ baik</td>
+          <td>Setup paling ringkas</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="note-fw">
+      <h3>Bagaimana dengan framework UI penuh (PrimeVue / Element Plus)?</h3>
+      <p>Keduanya punya komponen Toast + ConfirmDialog sekaligus dan sangat lengkap. <b>Namun tidak disarankan</b> untuk kasus ini: aplikasi Anda memakai CSS tulis tangan tanpa framework, sehingga menambah framework penuh (ratusan KB) hanya untuk pop-up = <i>overkill</i>, memberatkan bundle, dan gaya bawaannya berbeda dari tema Anda (butuh override besar). Cukup dipertimbangkan bila ke depan Anda ingin migrasi seluruh UI ke design-system jadi.</p>
+    </div>
+
+    <div class="note-fw" style="border-left-color: var(--yellow);">
+      <h3>Rekomendasi saya</h3>
+      <p><b>Pertahankan &amp; percantik sistem buatan sendiri</b> (Section 1) lalu pasang di semua ~12 modul yang masih pakai <code>alert()</code>/<code>confirm()</code> bawaan browser. Alasan: sudah ada di kode, 100% cocok tema, tanpa beban bundle. Jika Anda tetap ingin nuansa library: <b>SweetAlert2</b> untuk dialog konfirmasi, atau <b>vue-sonner/Notivue</b> untuk toast — tapi tetap butuh di-theme agar tidak bentrok.</p>
+      <p style="margin-top: 8px;">👉 <b>Silakan coba semua tombol di atas</b>, lalu beri tahu saya: <b>(1)</b> pendekatan yang Anda pilih, dan <b>(2)</b> gaya dialog konfirmasi favorit (Gaya 1/2/3).</p>
+    </div>
+  </div>
+
+  <footer class="pg">Halaman preview sementara — LabRiset · dapat dihapus setelah desain dipilih.</footer>
+
+  <!-- Kontainer runtime -->
+  <div class="toast-stack tr" id="hg-stack"></div>
+  <div class="son" id="son-stack"></div>
+  <div class="ntv" id="ntv-stack"></div>
+  <div class="vtf" id="vtf-stack"></div>
+  <div class="rtf" id="rtf-stack"></div>
+  <div id="modal-root"></div>
+
+  <script>
+    /* ============ IKON SVG ============ */
+    const ICON = {
+      success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
+      error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+      warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+      info:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
+    };
+    // varian dialog -> tipe ikon
+    const VIC = { danger: 'error', warning: 'warning', info: 'info', success: 'success' };
+    const TITLES = {
+      danger:  ['Hapus Data?', 'Data yang dihapus tidak dapat dikembalikan. Lanjutkan menghapus?', 'Ya, Hapus'],
+      warning: ['Perhatian', 'Tindakan ini akan menimpa data yang sudah ada. Yakin lanjut?', 'Ya, Lanjutkan'],
+      info:    ['Konfirmasi', 'Apakah Anda yakin ingin melanjutkan tindakan ini?', 'Ya, Lanjutkan'],
+      success: ['Selesaikan?', 'Tandai item ini sebagai selesai?', 'Ya, Selesaikan'],
+    };
+
+    /* ============ TOAST BUATAN SENDIRI ============ */
+    function hgToast(type) {
+      const stack = document.getElementById('hg-stack');
+      const el = document.createElement('div');
+      el.className = 'toast ' + type;
+      const labels = { success: 'Berhasil', error: 'Gagal', warning: 'Peringatan', info: 'Informasi' };
+      const msgs = {
+        success: 'Data berhasil disimpan.',
+        error: 'Terjadi kesalahan. Silakan coba lagi.',
+        warning: 'Periksa kembali isian Anda.',
+        info: 'Perubahan Anda telah dicatat.',
+      };
+      el.innerHTML = '<span class="ic">' + ICON[type] + '</span>'
+        + '<div class="msg"><span class="t">' + labels[type] + '</span>' + msgs[type] + '</div>'
+        + '<button class="x" aria-label="Tutup">&times;</button>'
+        + '<span class="bar"></span>';
+      stack.appendChild(el);
+      const bar = el.querySelector('.bar');
+      const dur = type === 'error' ? 6000 : 4000;
+      bar.style.animation = 'barShrink ' + dur + 'ms linear forwards';
+      const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 220); };
+      el.querySelector('.x').onclick = close;
+      let timer = setTimeout(close, dur);
+      el.onmouseenter = () => { clearTimeout(timer); bar.style.animationPlayState = 'paused'; };
+      el.onmouseleave = () => { bar.style.animationPlayState = 'running'; timer = setTimeout(close, 1200); };
+    }
+
+    /* ============ DIALOG KONFIRMASI BUATAN SENDIRI (3 gaya) ============ */
+    function currentVariant() { return document.getElementById('variant').value; }
+
+    function openDialog(style) {
+      const v = currentVariant();
+      const [title, text, confirmLabel] = TITLES[v];
+      const icon = '<span class="vic ' + v + '">' + ICON[VIC[v]] + '</span>';
+      let inner;
+      if (style === 1) {
+        inner = '<div class="body">' + icon
+          + '<div class="title">' + title + '</div><div class="text">' + text + '</div>'
+          + acts(v, confirmLabel) + '</div>';
+      } else if (style === 2) {
+        inner = '<div class="body"><div class="head">' + icon + '<div class="title">' + title + '</div></div>'
+          + '<div class="text">' + text + '</div>' + acts(v, confirmLabel) + '</div>';
+      } else {
+        inner = '<div class="accent ' + v + '"></div><div class="body">'
+          + '<div class="title">' + title + '</div><div class="text">' + text + '</div>'
+          + acts(v, confirmLabel) + '</div>';
+      }
+      showModal('<div class="dlg s' + style + '">' + inner + '</div>');
+      wireActs(v);
+    }
+    function acts(v, label) {
+      return '<div class="acts"><button class="db" data-x>Batal</button>'
+        + '<button class="db go ' + v + '" data-ok>' + label + '</button></div>';
+    }
+    function wireActs(v) {
+      const root = document.getElementById('modal-root');
+      root.querySelector('[data-x]').onclick = () => { closeModal(); };
+      root.querySelector('[data-ok]').onclick = () => { closeModal(); hgToast(v === 'danger' ? 'success' : (v === 'info' ? 'info' : v === 'warning' ? 'warning' : 'success')); };
+    }
+
+    /* ============ INPUT DIALOG BUATAN SENDIRI ============ */
+    function openInput() {
+      const inner = '<div class="body"><div class="head">'
+        + '<span class="vic info">' + ICON.info + '</span>'
+        + '<div class="title">Sisipkan Tautan</div></div>'
+        + '<div class="text">Masukkan URL yang ingin ditautkan.</div>'
+        + '<input class="din" id="din" placeholder="https://contoh.com" value="https://" />'
+        + '<div class="acts"><button class="db" data-x>Batal</button>'
+        + '<button class="db go info" data-ok>Simpan</button></div></div>';
+      showModal('<div class="dlg s2">' + inner + '</div>');
+      const root = document.getElementById('modal-root');
+      const input = root.querySelector('#din');
+      setTimeout(() => input.focus(), 30);
+      root.querySelector('[data-x]').onclick = closeModal;
+      root.querySelector('[data-ok]').onclick = () => {
+        const val = input.value.trim();
+        closeModal();
+        if (val) hgToast('success'); else hgToast('warning');
+      };
+    }
+
+    /* ============ MODAL ROOT ============ */
+    function showModal(html) {
+      const root = document.getElementById('modal-root');
+      root.innerHTML = '<div class="ov" data-ov>' + html + '</div>';
+      root.querySelector('[data-ov]').addEventListener('click', (e) => { if (e.target.dataset.ov !== undefined) closeModal(); });
+    }
+    function closeModal() { document.getElementById('modal-root').innerHTML = ''; }
+
+    /* ============ SIMULASI TOAST LIBRARY ============ */
+    const LIB_LABELS = { success: 'Berhasil disimpan', error: 'Terjadi kesalahan', warning: 'Perlu diperhatikan', info: 'Ada informasi baru' };
+    function libToast(lib, type) {
+      const stack = document.getElementById(lib + '-stack');
+      const el = document.createElement('div');
+      el.className = 't ' + type;
+      const msg = LIB_LABELS[type];
+      if (lib === 'ntv') {
+        el.innerHTML = '<span class="r">' + ICON[type] + '</span>'
+          + '<div class="c"><div class="tt">' + ({success:'Sukses',error:'Error',warning:'Peringatan',info:'Info'})[type] + '</div><div class="mm">' + msg + '</div></div>';
+      } else if (lib === 'vtf') {
+        el.innerHTML = ICON[type] + '<span>' + msg + '</span><span class="bar"></span>';
+      } else if (lib === 'rtf') {
+        el.innerHTML = ICON[type] + '<span>' + msg + '</span><span class="bar"></span>';
+      } else { // son
+        el.innerHTML = ICON[type] + '<span>' + msg + '</span>';
+      }
+      stack.appendChild(el);
+      const bar = el.querySelector('.bar');
+      if (bar) bar.style.animation = 'barShrink 4000ms linear forwards';
+      setTimeout(() => { el.style.transition = 'opacity .25s, transform .25s'; el.style.opacity = '0'; el.style.transform = 'translateX(24px)'; setTimeout(() => el.remove(), 250); }, 4000);
+    }
+
+    /* ============ SWEETALERT2 (asli) ============ */
+    function swalReady() {
+      if (typeof Swal === 'undefined') { hgToast('error'); alert('SweetAlert2 gagal dimuat dari CDN (cek koneksi internet).'); return false; }
+      return true;
+    }
+    function swalConfirm() {
+      if (!swalReady()) return;
+      Swal.fire({
+        title: 'Hapus Data?', text: 'Data yang dihapus tidak dapat dikembalikan.', icon: 'warning',
+        showCancelButton: true, confirmButtonText: 'Ya, Hapus', cancelButtonText: 'Batal', reverseButtons: true,
+        customClass: { confirmButton: 'swal2-confirm danger' },
+      }).then((r) => { if (r.isConfirmed) swalToast(); });
+    }
+    function swalToast() {
+      if (!swalReady()) return;
+      Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Berhasil disimpan', showConfirmButton: false, timer: 3000, timerProgressBar: true });
+    }
+    function swalInput() {
+      if (!swalReady()) return;
+      Swal.fire({ title: 'Sisipkan Tautan', input: 'url', inputPlaceholder: 'https://contoh.com', showCancelButton: true, confirmButtonText: 'Simpan', cancelButtonText: 'Batal', reverseButtons: true })
+        .then((r) => { if (r.isConfirmed) swalToast(); });
+    }
+
+    /* ESC menutup modal buatan sendiri */
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+  </script>
+</body>
+</html>

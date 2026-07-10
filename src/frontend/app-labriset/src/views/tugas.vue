@@ -185,9 +185,11 @@ import { useAuthStore } from '@/stores/auth'
 import { tugasService } from '@/services/tugas'
 import { kelasLabService } from '@/services/kelas-lab'
 import { formatDeadline, sudahLewatDeadline } from '@/utils/format'
+import { useFeedback } from '@/composables/use-feedback'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 
+const { notify, confirmDialog } = useFeedback()
 const auth = useAuthStore()
 const isMahasiswa = computed(() => auth.user?.role === 'mahasiswa')
 const isDosen = computed(() => auth.user?.role === 'dosen')
@@ -295,13 +297,15 @@ async function kirim() {
 }
 
 async function hapus(t) {
-  if (!window.confirm(`Hapus tugas "${t.judul}"?`)) return
+  if (!(await confirmDialog(`Hapus tugas "${t.judul}"?`))) return
   aksiError.value = ''
   try {
     await tugasService.remove(t.id)
     await load()
+    notify.success('Tugas dihapus.')
   } catch (err) {
     aksiError.value = extractError(err)
+    notify.error(aksiError.value)
   }
 }
 

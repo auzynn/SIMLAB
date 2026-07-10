@@ -188,6 +188,7 @@ import { ref, computed, onMounted } from 'vue'
 import { marked } from 'marked'
 import { infoLabService } from '@/services/info-lab'
 import { dosenService } from '@/services/dosen'
+import { useFeedback } from '@/composables/use-feedback'
 import { formatTanggalId } from '@/utils/format'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import SidemenuAdmin from '@/components/sidemenu-admin.vue'
@@ -202,6 +203,7 @@ const tipes = [
 ]
 
 const activeTipe = ref('beranda')
+const { confirmDialog } = useFeedback()
 const form = ref({ judul: '', konten: '', gambar: '', dosen_id: null })
 // Tab "beranda" kini menyunting Pengumuman (daftar terstruktur), bukan konten rich-text.
 const isPengumuman = computed(() => activeTipe.value === 'beranda')
@@ -408,7 +410,7 @@ function formatTanggalLahir(iso) {
 // Hasil diisikan ke editor (judul/gambar/konten) untuk disunting lalu disimpan.
 async function generateFromDosen() {
   if (!genDosenId.value) return
-  if (form.value.konten && !confirm('Ini akan menimpa konten Kepala Lab saat ini. Lanjutkan?')) return
+  if (form.value.konten && !(await confirmDialog('Ini akan menimpa konten Kepala Lab saat ini. Lanjutkan?'))) return
 
   generating.value = true
   genError.value = ''

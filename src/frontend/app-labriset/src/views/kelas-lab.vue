@@ -65,11 +65,18 @@
                 Pembatalan hanya lewat dosen / asisten lab.
               </span>
             </div>
-            <!-- Kolom kanan: tautan ke halaman Detail Kelas Lab (berisi list tugas) -->
+            <!-- Kolom kanan: detail hanya untuk pendaftaran yang sudah disetujui -->
             <div class="sesi-action">
-              <router-link :to="`/kelaslab/${k.id}/detail`" class="sesi-detail-link">
+              <router-link
+                v-if="k.status_pendaftaran === 'disetujui'"
+                :to="`/kelaslab/${k.id}/detail`"
+                class="sesi-detail-link"
+              >
                 Lihat Detail Kelas Lab &rarr;
               </router-link>
+              <span v-else-if="k.status_pendaftaran === 'menunggu'" class="sesi-note-sm">
+                Detail tersedia setelah disetujui.
+              </span>
             </div>
           </div>
         </div>
@@ -133,12 +140,15 @@ import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { kelasLabService } from '@/services/kelas-lab'
 import { formatJam, hariLabel, statusLabel } from '@/utils/format'
+import { useFeedback } from '@/composables/use-feedback'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 
+const { notify, confirmDialog } = useFeedback()
 const auth = useAuthStore()
 const isMahasiswa = computed(() => auth.user?.role === 'mahasiswa')
-const bisaKelola = computed(() => ['dosen', 'supervisor'].includes(auth.user?.role))
+// Admin kini punya hak akses penuh Kelas Lab (kelola semua kelas + persetujuan pendaftaran).
+const bisaKelola = computed(() => ['admin', 'dosen', 'supervisor'].includes(auth.user?.role))
 
 const items = ref([])
 const loading = ref(false)
@@ -189,13 +199,14 @@ async function load() {
 }
 
 async function batalkan(k) {
-  if (!confirm(`Batalkan pendaftaran dari ${k.mata_kuliah?.nama_mk} — ${k.nama_sesi}?`)) return
+  if (!(await confirmDialog(`Batalkan pendaftaran dari ${k.mata_kuliah?.nama_mk} — ${k.nama_sesi}?`))) return
   busyId.value = k.id
   try {
     await kelasLabService.batalDaftar(k.id)
     await load()
+    notify.success('Pendaftaran dibatalkan.')
   } catch (err) {
-    alert(err.response?.data?.message || 'Operasi gagal.')
+    notify.error(err.response?.data?.message || 'Operasi gagal.')
   } finally {
     busyId.value = null
   }

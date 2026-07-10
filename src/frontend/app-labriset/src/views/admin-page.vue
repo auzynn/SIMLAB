@@ -19,7 +19,7 @@
         <!-- Area aktif → kartu yang bisa diklik -->
         <component
           :is="area.to ? 'router-link' : 'div'"
-          v-for="area in areas"
+          v-for="area in areasTampil"
           :key="area.title"
           :to="area.to"
           class="admin-card"
@@ -40,20 +40,28 @@
 </template>
 
 <script setup>
-// Halaman menu Panel Admin — entri kelola seluruh modul (mengikuti matriks RBAC Admin, 2_SRS.md Bagian 1).
-// Hanya "Kelola User" yang aktif; area lain menyusul saat modul backend-nya dibuat.
+// Halaman menu Panel kelola — entri modul sesuai matriks RBAC (2_SRS.md Bagian 1 revisi).
+// Admin melihat semua area; Supervisor hanya area yang diizinkan gate-nya
+// (Konten Info Lab, Data Master, Persetujuan Peminjaman, Katalog Sertifikasi, Laporan).
+import { computed } from 'vue'
+import { useAuthStore } from '@/stores/auth'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 
+const auth = useAuthStore()
+
+// roles: role yang boleh melihat kartu. Admin-only untuk manajemen user & delegasi aslab.
 const areas = [
-  { title: 'Kelola User & Role', desc: 'Tambah, ubah role, dan hapus akun pengguna lintas role.', to: '/admin/users' },
-  { title: 'Konten Informasi Lab', desc: 'Pengumuman, Visi-Misi, Profil Kepala Lab, dan Roadmap KK.', to: '/admin/info-lab' },
-  { title: 'Data Master', desc: 'Kelola ruangan, mata kuliah/praktikum, dan bidang minat.', to: '/admin/data-master' },
-  { title: 'Delegasi Aslab', desc: 'Tetapkan mahasiswa menjadi Asisten Lab (Supervisor).', to: '/admin/aslab' },
-  { title: 'Persetujuan Peminjaman', desc: 'Setujui/tolak peminjaman ruangan & perangkat serta perpanjangan.', to: '/persetujuan-peminjaman' },
-  { title: 'Katalog Sertifikasi', desc: 'Kelola katalog sertifikasi eksternal untuk mahasiswa.', to: '/admin/sertifikasi' },
-  { title: 'Laporan', desc: 'Rekap aktivitas lab dan unduh laporan PDF.', to: '/report' },
+  { title: 'Kelola User & Role', desc: 'Tambah, ubah role, dan hapus akun pengguna lintas role.', to: '/admin/users', roles: ['admin'] },
+  { title: 'Konten Informasi Lab', desc: 'Pengumuman, Visi-Misi, Profil Kepala Lab, dan Roadmap KK.', to: '/admin/info-lab', roles: ['admin', 'supervisor'] },
+  { title: 'Data Master', desc: 'Kelola ruangan, mata kuliah/praktikum, dan bidang minat.', to: '/admin/data-master', roles: ['admin', 'supervisor'] },
+  { title: 'Delegasi Aslab', desc: 'Tetapkan mahasiswa menjadi Asisten Lab (Supervisor).', to: '/admin/aslab', roles: ['admin'] },
+  { title: 'Persetujuan Peminjaman', desc: 'Setujui/tolak peminjaman ruangan & perangkat serta perpanjangan.', to: '/persetujuan-peminjaman', roles: ['admin', 'supervisor'] },
+  { title: 'Katalog Sertifikasi', desc: 'Kelola katalog sertifikasi eksternal untuk mahasiswa.', to: '/admin/sertifikasi', roles: ['admin', 'supervisor'] },
+  { title: 'Laporan', desc: 'Rekap aktivitas lab dan unduh laporan PDF.', to: '/report', roles: ['admin', 'supervisor'] },
 ]
+
+const areasTampil = computed(() => areas.filter((a) => a.roles.includes(auth.user?.role)))
 </script>
 
 <style scoped>

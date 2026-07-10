@@ -424,9 +424,9 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 |---|---|---|
 | GET | `/api/kelas-lab` | List (semua role); filter `mata_kuliah_id` |
 | GET | `/api/kelas-lab/{id}` | Detail satu sesi + sisa kuota |
-| POST | `/api/kelas-lab` | Buka kelas — **Dosen** (dirinya) atau **Supervisor** (wajib isi `dosen_id`). Admin tidak punya akses |
-| PATCH | `/api/kelas-lab/{id}` | Update jadwal/kuota — pemilik (`dosen_id`) atau Supervisor |
-| DELETE | `/api/kelas-lab/{id}` | Hapus kelas — pemilik atau Supervisor |
+| POST | `/api/kelas-lab` | Buka kelas — **Dosen** (dirinya) atau **Admin/Supervisor** (wajib isi `dosen_id`) |
+| PATCH | `/api/kelas-lab/{id}` | Update jadwal/kuota — **Admin/Supervisor** (semua) atau pemilik (`dosen_id`) |
+| DELETE | `/api/kelas-lab/{id}` | Hapus kelas — **Admin/Supervisor** (semua) atau pemilik (`dosen_id`) |
 | POST | `/api/kelas-lab/{id}/daftar` | Mahasiswa mendaftar — status `menunggu` |
 | DELETE | `/api/kelas-lab/{id}/daftar` | Mahasiswa batal — hanya saat `menunggu` |
 | GET | `/api/kelas-lab/{id}/peserta` | List peserta + status (pemilik/Supervisor/Admin) |
@@ -464,7 +464,8 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | GET | `/api/sertifikasi` | List katalog (semua role login) |
-| POST/PATCH/DELETE | `/api/sertifikasi[/{id}]` | CUD via Gate `manage-master-data` (Admin/Supervisor) |
+| POST | `/api/sertifikasi` | Tambah — Admin/Supervisor/Dosen (`created_by` diisi otomatis) — `SertifikasiPolicy` |
+| PATCH/DELETE | `/api/sertifikasi/{id}` | Ubah/hapus — Admin/Supervisor (semua) atau Dosen pemilik (`created_by`) — `SertifikasiPolicy` |
 
 ### 5.11 Portofolio
 | Method | Endpoint | Keterangan |
@@ -478,8 +479,8 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | GET | `/api/info-lab/{tipe}` | **(publik)** Ambil konten (beranda/visi_misi/kepala_lab/roadmap_kk) |
-| PATCH | `/api/info-lab/{tipe}` | Update konten (Admin, Gate `manage-info-lab`) |
-| POST | `/api/info-lab/upload` | Unggah lampiran konten (Admin) |
+| PATCH | `/api/info-lab/{tipe}` | Update konten (Admin/Supervisor, Gate `manage-info-lab`) |
+| POST | `/api/info-lab/upload` | Unggah lampiran konten (Admin/Supervisor) |
 
 ### 5.13 Laporan
 | Method | Endpoint | Keterangan |

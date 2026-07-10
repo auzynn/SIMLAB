@@ -89,6 +89,9 @@ import { TextStyleKit } from '@tiptap/extension-text-style'
 import TextAlign from '@tiptap/extension-text-align'
 import Highlight from '@tiptap/extension-highlight'
 import { TableKit } from '@tiptap/extension-table'
+import { useFeedback } from '@/composables/use-feedback'
+
+const { promptDialog } = useFeedback()
 
 const props = defineProps({
   modelValue: { type: String, default: '' },
@@ -154,9 +157,14 @@ function onColor(e) {
   editor.value.chain().focus().setColor(e.target.value).run()
 }
 
-function addLink() {
+async function addLink() {
   const prev = editor.value.getAttributes('link').href
-  const url = window.prompt('URL tautan:', prev || 'https://')
+  const url = await promptDialog({
+    title: 'Sisipkan Tautan',
+    message: 'Masukkan URL yang ingin ditautkan (kosongkan untuk menghapus tautan).',
+    placeholder: 'https://contoh.com',
+    defaultValue: prev || 'https://',
+  })
   if (url === null) return
   if (url === '') {
     editor.value.chain().focus().unsetLink().run()

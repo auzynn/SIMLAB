@@ -97,8 +97,10 @@ class PeminjamanRuanganTest extends TestCase
         ])->assertStatus(422);
     }
 
-    public function test_pengajuan_bentrok_dengan_peminjaman_disetujui_ditolak(): void
+    public function test_peminjaman_overlap_diterima_selama_kapasitas_tersisa(): void
     {
+        // Ruangan berkapasitas 30 komputer boleh dibagi: 1 peminjaman disetujui
+        // yang overlap tidak memblok pengajuan lain (1 peminjaman = 1 kursi).
         $ruangan = $this->ruangan();
         $tanggal = Carbon::tomorrow()->format('Y-m-d');
 
@@ -119,7 +121,63 @@ class PeminjamanRuanganTest extends TestCase
             'tanggal' => $tanggal,
             'jam_mulai' => '09:00',
             'jam_selesai' => '11:00',
-            'keperluan' => 'Bentrok',
+            'keperluan' => 'Berbagi ruangan',
+        ])->assertCreated();
+    }
+
+    public function test_pengajuan_ditolak_saat_kapasitas_penuh(): void
+    {
+        // Kapasitas 2, dua peminjaman disetujui yang overlap → slot penuh, pengajuan ke-3 ditolak.
+        $ruangan = Ruangan::create(['nama_ruangan' => 'Lab Kecil', 'kapasitas' => 2, 'status' => 'tersedia']);
+        $tanggal = Carbon::tomorrow()->format('Y-m-d');
+
+        foreach (range(1, 2) as $i) {
+            PeminjamanRuangan::create([
+                'ruangan_id' => $ruangan->id,
+                'user_id' => User::factory()->create(['role' => 'mahasiswa'])->id,
+                'tanggal' => $tanggal,
+                'jam_mulai' => '08:00:00',
+                'jam_selesai' => '10:00:00',
+                'keperluan' => 'Terpakai '.$i,
+                'status' => 'disetujui',
+            ]);
+        }
+
+        Sanctum::actingAs(User::factory()->create(['role' => 'mahasiswa']));
+
+        $this->postJson('/api/peminjaman-ruangan', [
+            'ruangan_id' => $ruangan->id,
+            'tanggal' => $tanggal,
+            'jam_mulai' => '09:00',
+            'jam_selesai' => '11:00',
+            'keperluan' => 'Kuota penuh',
+        ])->assertStatus(422);
+    }
+
+    public function test_kapasitas_null_diperlakukan_eksklusif(): void
+    {
+        // Kapasitas tak diisi (null) → diperlakukan sebagai 1: satu peminjaman disetujui memblok.
+        $ruangan = Ruangan::create(['nama_ruangan' => 'Lab Lama', 'kapasitas' => null, 'status' => 'tersedia']);
+        $tanggal = Carbon::tomorrow()->format('Y-m-d');
+
+        PeminjamanRuangan::create([
+            'ruangan_id' => $ruangan->id,
+            'user_id' => User::factory()->create(['role' => 'mahasiswa'])->id,
+            'tanggal' => $tanggal,
+            'jam_mulai' => '08:00:00',
+            'jam_selesai' => '10:00:00',
+            'keperluan' => 'Sudah disetujui',
+            'status' => 'disetujui',
+        ]);
+
+        Sanctum::actingAs(User::factory()->create(['role' => 'mahasiswa']));
+
+        $this->postJson('/api/peminjaman-ruangan', [
+            'ruangan_id' => $ruangan->id,
+            'tanggal' => $tanggal,
+            'jam_mulai' => '09:00',
+            'jam_selesai' => '11:00',
+            'keperluan' => 'Bentrok eksklusif',
         ])->assertStatus(422);
     }
 
@@ -337,7 +395,70 @@ class PeminjamanRuanganTest extends TestCase
 
         Sanctum::actingAs(User::factory()->create(['role' => 'supervisor']));
 
+        // Approve gagal (422) DAN pengajuan otomatis 'kadaluarsa' — tidak dibiarkan menggantung 'menunggu'.
         $this->patchJson("/api/peminjaman-ruangan/{$peminjaman->id}/approve")->assertStatus(422);
-        $this->assertDatabaseHas('peminjaman_ruangan', ['id' => $peminjaman->id, 'status' => 'menunggu']);
+        $this->assertDatabaseHas('peminjaman_ruangan', ['id' => $peminjaman->id, 'status' => 'kadaluarsa']);
+    }
+
+    public function test_approve_saat_kuota_penuh_otomatis_kadaluarsa(): void
+    {
+        // Kapasitas 2 sudah terisi 2 peminjaman disetujui yang overlap.
+        $ruangan = Ruangan::create(['nama_ruangan' => 'Lab Kecil', 'kapasitas' => 2, 'status' => 'tersedia']);
+        $tanggal = Carbon::tomorrow()->format('Y-m-d');
+
+        foreach (range(1, 2) as $i) {
+            PeminjamanRuangan::create([
+                'ruangan_id' => $ruangan->id,
+                'user_id' => User::factory()->create(['role' => 'mahasiswa'])->id,
+                'tanggal' => $tanggal,
+                'jam_mulai' => '08:00:00',
+                'jam_selesai' => '10:00:00',
+                'keperluan' => 'Terpakai '.$i,
+                'status' => 'disetujui',
+            ]);
+        }
+
+        // Pengajuan ke-3 masih menunggu, lalu di-approve saat slot sudah penuh.
+        $peminjaman = PeminjamanRuangan::create([
+            'ruangan_id' => $ruangan->id,
+            'user_id' => User::factory()->create(['role' => 'mahasiswa'])->id,
+            'tanggal' => $tanggal,
+            'jam_mulai' => '09:00:00',
+            'jam_selesai' => '11:00:00',
+            'keperluan' => 'Kalah kuota',
+            'status' => 'menunggu',
+        ]);
+
+        Sanctum::actingAs(User::factory()->create(['role' => 'supervisor']));
+
+        $this->patchJson("/api/peminjaman-ruangan/{$peminjaman->id}/approve")->assertStatus(422);
+        // Dibedakan dari 'ditolak' manual: slot penuh → otomatis 'kadaluarsa'.
+        $this->assertDatabaseHas('peminjaman_ruangan', ['id' => $peminjaman->id, 'status' => 'kadaluarsa']);
+
+        // Pemohon menerima notifikasi agar tahu bisa mengajukan ulang.
+        $this->assertDatabaseHas('notifikasi', [
+            'user_id' => $peminjaman->user_id,
+            'tipe' => 'status_pengajuan',
+        ]);
+    }
+
+    public function test_reject_manual_bernilai_ditolak_bukan_kadaluarsa(): void
+    {
+        // Penolakan manual oleh approver → 'ditolak' (dibedakan dari 'kadaluarsa' otomatis).
+        $ruangan = $this->ruangan();
+        $peminjaman = PeminjamanRuangan::create([
+            'ruangan_id' => $ruangan->id,
+            'user_id' => User::factory()->create(['role' => 'mahasiswa'])->id,
+            'tanggal' => Carbon::tomorrow()->format('Y-m-d'),
+            'jam_mulai' => '08:00:00',
+            'jam_selesai' => '10:00:00',
+            'keperluan' => 'x',
+            'status' => 'menunggu',
+        ]);
+
+        Sanctum::actingAs(User::factory()->create(['role' => 'supervisor']));
+
+        $this->patchJson("/api/peminjaman-ruangan/{$peminjaman->id}/reject")->assertOk();
+        $this->assertDatabaseHas('peminjaman_ruangan', ['id' => $peminjaman->id, 'status' => 'ditolak']);
     }
 }

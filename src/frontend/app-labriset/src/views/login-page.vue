@@ -280,4 +280,20 @@ function loginUnsil() {
   width: 18px;
   height: 18px;
 }
+
+/* ---------- Responsive ---------- */
+/* Di layar sempit: sembunyikan panel gambar dekoratif, form login mengisi lebar penuh.
+   (.login-container sudah dibuat 100% oleh aturan global di style.css) */
+@media (max-width: 980px) {
+  .jumbotron-login {
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .login-form,
+  .login-unsil {
+    width: 100%;
+  }
+}
 </style>

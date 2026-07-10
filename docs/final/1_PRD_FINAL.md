@@ -42,8 +42,8 @@ Sistem memiliki 4 peran pengguna dengan hak akses berbeda.
 ### 2.4 Admin (Kepala Lab)
 - **Siapa**: Pemegang kendali penuh atas sistem
 - **Bisa melakukan**: semua yang bisa dilakukan Supervisor, ditambah kelola data user (semua role), delegasi Asisten Lab (menetapkan/mengembalikan Mahasiswa ↔ Supervisor), kelola data master sistem, dan kelola konten informasi/profil publik lab (lihat 2.5)
-- **Pengecualian**: Admin **tidak dapat** membuka atau mengelola Kelas Lab/Praktikum. Kewenangan ini hanya dimiliki Dosen (untuk kelasnya sendiri) dan Supervisor (atas permintaan Dosen), agar setiap sesi kelas selalu terhubung ke Dosen pengampu yang bertanggung jawab
-- **Hak akses data**: CRUD penuh ke seluruh modul termasuk manajemen user dan role, kecuali Kelas Lab/Praktikum (lihat pengecualian di atas)
+- **Kelas Lab/Praktikum**: Admin memiliki **hak akses penuh** (buka/ubah/hapus semua kelas + approve/reject pendaftaran). Karena Admin bukan Dosen, saat membuka kelas ia **wajib menunjuk Dosen pengampu** — sehingga setiap sesi tetap terhubung ke Dosen yang bertanggung jawab (mekanisme sama seperti Supervisor)
+- **Hak akses data**: CRUD penuh ke seluruh modul termasuk manajemen user dan role
 
 ### 2.5 Halaman Informasi Lab (Dapat Diakses Semua Role)
 Selain modul transaksional, sistem menyediakan halaman informasi/profil lab yang dapat dilihat semua role:
@@ -85,7 +85,7 @@ Setelah login, setiap role melihat dashboard yang relevan: Mahasiswa (status pem
 
 ### 3.3a Kelas Lab/Praktikum
 
-**Pembukaan Kelas (Dosen, atau Supervisor atas permintaan Dosen)**:
+**Pembukaan Kelas (Dosen untuk dirinya; Admin/Supervisor untuk semua kelas dengan menunjuk Dosen pengampu)**:
 1. Membuka menu **Kelas Lab/Praktikum**
 2. Mengisi data: mata kuliah (dipilih dari daftar yang sudah ada), ruangan, hari & jam (pola berulang mingguan), tanggal mulai–selesai semester, kuota peserta (maks. 30–40), nama sesi (mis. "Kelas A")
 3. Dapat menambahkan beberapa sesi paralel (Kelas A, B, C) dari mata kuliah yang sama, masing-masing dengan kuota independen

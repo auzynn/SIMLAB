@@ -111,10 +111,12 @@ import { peminjamanPerangkatService } from '@/services/peminjaman-perangkat'
 import { useAuthStore } from '@/stores/auth'
 import { usePagination } from '@/composables/use-pagination'
 import { statusPerangkatLabel } from '@/utils/format'
+import { useFeedback } from '@/composables/use-feedback'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 import PaginationBar from '@/components/pagination-bar.vue'
 
+const { notify } = useFeedback()
 const auth = useAuthStore()
 const today = new Date().toISOString().slice(0, 10)
 const items = ref([])
@@ -173,7 +175,7 @@ async function submitAjukan(p) {
       tanggal_kembali_rencana: ajukanForm.value.tanggal_kembali_rencana,
     })
     ajukanFor.value = null
-    alert('Pengajuan peminjaman terkirim, menunggu persetujuan. Pantau di "Peminjaman Saya".')
+    notify.success('Pengajuan peminjaman terkirim, menunggu persetujuan. Pantau di "Peminjaman Saya".')
     await load()
   } catch (err) {
     ajukanError.value = extractError(err)

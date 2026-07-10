@@ -1,10 +1,11 @@
-// Composable pengganti window.alert()/confirm(). Pakai ini di <script setup>, bukan store
-// langsung, supaya pemanggilan di view tetap ringkas:
+// Composable pengganti window.alert()/confirm()/prompt(). Pakai ini di <script setup>, bukan
+// store langsung, supaya pemanggilan di view tetap ringkas:
 //
-//   const { notify, confirmDialog } = useFeedback()
+//   const { notify, confirmDialog, promptDialog } = useFeedback()
 //   notify.success('Berhasil disimpan')
 //   notify.error('Gagal: ' + pesan)
 //   if (await confirmDialog({ message: `Hapus user "${u.name}"?` })) { ... }
+//   const url = await promptDialog({ message: 'URL tautan:', defaultValue: 'https://' })
 //
 import { useFeedbackStore } from '@/stores/feedback'
 
@@ -24,5 +25,11 @@ export function useFeedback() {
     return store.askConfirm(opts)
   }
 
-  return { notify, confirmDialog }
+  // Pengganti window.prompt() — async, mengembalikan string (nilai) atau null (dibatalkan).
+  function promptDialog(options) {
+    const opts = typeof options === 'string' ? { message: options } : options
+    return store.askPrompt(opts)
+  }
+
+  return { notify, confirmDialog, promptDialog }
 }

@@ -67,9 +67,11 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { kelasLabService } from '@/services/kelas-lab'
 import { formatJam, hariLabel, statusLabel } from '@/utils/format'
+import { useFeedback } from '@/composables/use-feedback'
 import JumbotronSmall from '@/components/jumbotron-small.vue'
 import FooterComponent from '@/components/footer-component.vue'
 
+const { notify, confirmDialog } = useFeedback()
 const route = useRoute()
 const router = useRouter()
 const kelasId = route.params.id
@@ -110,21 +112,23 @@ async function terima(p) {
   try {
     await kelasLabService.approvePendaftaran(p.id)
     await load()
+    notify.success('Peserta disetujui.')
   } catch (err) {
-    alert(err.response?.data?.message || 'Gagal menyetujui.')
+    notify.error(err.response?.data?.message || 'Gagal menyetujui.')
   } finally {
     busyId.value = null
   }
 }
 
 async function keluarkan(p) {
-  if (!confirm(`Keluarkan ${p.mahasiswa?.user?.name ?? 'mahasiswa'} dari kelas ini?`)) return
+  if (!(await confirmDialog(`Keluarkan ${p.mahasiswa?.user?.name ?? 'mahasiswa'} dari kelas ini?`))) return
   busyId.value = p.id
   try {
     await kelasLabService.hapusPeserta(p.id)
     await load()
+    notify.success('Peserta dikeluarkan dari kelas.')
   } catch (err) {
-    alert(err.response?.data?.message || 'Gagal mengeluarkan peserta.')
+    notify.error(err.response?.data?.message || 'Gagal mengeluarkan peserta.')
   } finally {
     busyId.value = null
   }
