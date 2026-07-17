@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="700" viewBox="0 0 980 700" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#33475b"/>
+    </marker>
+    <marker id="arwB" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1d4ed8"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="980" height="700" fill="#ffffff"/>
+
+  <!-- Judul -->
+  <text x="490" y="34" text-anchor="middle" font-size="18" font-weight="bold" fill="#1f2d3d">Arsitektur Sistem SIM Lab. Riset</text>
+
+  <!-- Google OAuth -->
+  <rect x="600" y="58" width="330" height="48" rx="8" fill="#fdf2e3" stroke="#b45309" stroke-width="1.4"/>
+  <text x="765" y="78" text-anchor="middle" font-size="13" font-weight="bold" fill="#7c3f0a">Google OAuth 2.0</text>
+  <text x="765" y="96" text-anchor="middle" font-size="11" fill="#7c3f0a">akun institusi @unsil.ac.id / @student.unsil.ac.id</text>
+  <line x1="765" y1="106" x2="765" y2="136" stroke="#b45309" stroke-width="1.6" marker-end="url(#arw)" marker-start="url(#arw)"/>
+  <text x="778" y="126" font-size="10.5" fill="#7c3f0a" font-style="italic">Laravel Socialite — validasi domain email</text>
+
+  <!-- Pengguna -->
+  <rect x="35" y="290" width="160" height="80" rx="8" fill="#f5f8fc" stroke="#64748b" stroke-width="1.4"/>
+  <text x="115" y="320" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1f2d3d">Pengguna</text>
+  <text x="115" y="338" text-anchor="middle" font-size="10.5" fill="#33475b">Admin • Supervisor</text>
+  <text x="115" y="353" text-anchor="middle" font-size="10.5" fill="#33475b">Dosen • Mahasiswa</text>
+  <line x1="195" y1="330" x2="248" y2="330" stroke="#33475b" stroke-width="1.6" marker-end="url(#arw)" marker-start="url(#arw)"/>
+
+  <!-- Frontend -->
+  <rect x="252" y="255" width="240" height="150" rx="10" fill="#e7f6ee" stroke="#15803d" stroke-width="1.6"/>
+  <text x="372" y="282" text-anchor="middle" font-size="14" font-weight="bold" fill="#14532d">Frontend — Vue 3 SPA</text>
+  <text x="372" y="304" text-anchor="middle" font-size="11.5" fill="#14532d">Single Page Application</text>
+  <text x="372" y="324" text-anchor="middle" font-size="11.5" fill="#14532d">Vite • Vue Router • Pinia</text>
+  <text x="372" y="344" text-anchor="middle" font-size="11.5" fill="#14532d">Axios (klien HTTP)</text>
+  <text x="372" y="384" text-anchor="middle" font-size="10.5" fill="#3f6212" font-style="italic">dikerjakan tim frontend</text>
+
+  <!-- Panah request/response -->
+  <line x1="492" y1="300" x2="596" y2="300" stroke="#1d4ed8" stroke-width="1.8" marker-end="url(#arwB)"/>
+  <text x="544" y="270" text-anchor="middle" font-size="10.5" fill="#1d4ed8">Request JSON</text>
+  <text x="544" y="284" text-anchor="middle" font-size="10.5" fill="#1d4ed8">Authorization: Bearer</text>
+  <text x="544" y="296" text-anchor="middle" font-size="10" fill="#1d4ed8" font-style="italic">(token Laravel Sanctum)</text>
+  <line x1="596" y1="360" x2="492" y2="360" stroke="#1d4ed8" stroke-width="1.8" marker-end="url(#arwB)"/>
+  <text x="544" y="380" text-anchor="middle" font-size="10.5" fill="#1d4ed8">Response JSON</text>
+  <text x="544" y="394" text-anchor="middle" font-size="10" fill="#1d4ed8" font-style="italic">{ data, message }</text>
+
+  <!-- Backend -->
+  <rect x="600" y="140" width="330" height="400" rx="10" fill="#eef3fb" stroke="#1d4ed8" stroke-width="1.8"/>
+  <text x="765" y="165" text-anchor="middle" font-size="14" font-weight="bold" fill="#173ea5">Backend — Laravel 13 REST API</text>
+  <text x="765" y="182" text-anchor="middle" font-size="11" fill="#173ea5">PHP 8.5 — fokus pekerjaan penulis</text>
+
+  <!-- Lapisan internal backend -->
+  <g font-size="11.5" fill="#1f2d3d">
+    <rect x="615" y="196" width="195" height="44" rx="6" fill="#ffffff" stroke="#3b62c4"/>
+    <text x="712" y="214" text-anchor="middle" font-weight="bold">Route /api</text>
+    <text x="712" y="230" text-anchor="middle" font-size="10.5" fill="#33475b">middleware auth:sanctum</text>
+
+    <rect x="615" y="262" width="195" height="40" rx="6" fill="#ffffff" stroke="#3b62c4"/>
+    <text x="712" y="279" text-anchor="middle" font-weight="bold">Form Request</text>
+    <text x="712" y="294" text-anchor="middle" font-size="10.5" fill="#33475b">validasi input &amp; aturan bisnis</text>
+
+    <rect x="615" y="324" width="195" height="40" rx="6" fill="#ffffff" stroke="#3b62c4"/>
+    <text x="712" y="341" text-anchor="middle" font-weight="bold">Controller</text>
+    <text x="712" y="356" text-anchor="middle" font-size="10.5" fill="#33475b">logika bisnis per modul</text>
+
+    <rect x="615" y="386" width="195" height="40" rx="6" fill="#ffffff" stroke="#3b62c4"/>
+    <text x="712" y="403" text-anchor="middle" font-weight="bold">Service</text>
+    <text x="712" y="418" text-anchor="middle" font-size="10.5" fill="#33475b">JadwalRuangan • Notifikasi</text>
+
+    <rect x="615" y="448" width="195" height="40" rx="6" fill="#ffffff" stroke="#3b62c4"/>
+    <text x="712" y="465" text-anchor="middle" font-weight="bold">Model — Eloquent ORM</text>
+    <text x="712" y="480" text-anchor="middle" font-size="10.5" fill="#33475b">relasi antar tabel • casts</text>
+  </g>
+
+  <!-- Panah antar lapisan -->
+  <g stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)">
+    <line x1="712" y1="240" x2="712" y2="258"/>
+    <line x1="712" y1="302" x2="712" y2="320"/>
+    <line x1="712" y1="364" x2="712" y2="382"/>
+    <line x1="712" y1="426" x2="712" y2="444"/>
+  </g>
+
+  <!-- Pendukung di sisi kanan backend -->
+  <g font-size="10" fill="#1f2d3d">
+    <rect x="822" y="262" width="98" height="52" rx="6" fill="#fdf2e3" stroke="#b45309"/>
+    <text x="871" y="283" text-anchor="middle" font-weight="bold">Gate / Policy</text>
+    <text x="871" y="298" text-anchor="middle">RBAC 4 role</text>
+    <line x1="822" y1="300" x2="810" y2="330" stroke="#b45309" stroke-width="1.3" stroke-dasharray="4 3"/>
+
+    <rect x="822" y="336" width="98" height="52" rx="6" fill="#fdf2e3" stroke="#b45309"/>
+    <text x="871" y="357" text-anchor="middle" font-weight="bold">Scheduler</text>
+    <text x="871" y="372" text-anchor="middle">pengingat terjadwal</text>
+
+    <rect x="822" y="410" width="98" height="60" rx="6" fill="#fdf2e3" stroke="#b45309"/>
+    <text x="871" y="430" text-anchor="middle" font-weight="bold">dompdf /</text>
+    <text x="871" y="444" text-anchor="middle" font-weight="bold">PhpSpreadsheet</text>
+    <text x="871" y="459" text-anchor="middle">laporan PDF &amp; Excel</text>
+  </g>
+
+  <!-- MySQL -->
+  <line x1="712" y1="488" x2="712" y2="522" stroke="#33475b" stroke-width="1.8"/>
+  <line x1="712" y1="540" x2="712" y2="580" stroke="#33475b" stroke-width="1.8" marker-end="url(#arw)" marker-start="url(#arw)"/>
+  <text x="726" y="568" font-size="10.5" fill="#33475b" font-style="italic">query SQL (migration &amp; transaksi)</text>
+  <g>
+    <path d="M 617 600 a 95 14 0 0 0 190 0 l 0 60 a 95 14 0 0 1 -190 0 z" fill="#f5f8fc" stroke="#64748b" stroke-width="1.5"/>
+    <ellipse cx="712" cy="600" rx="95" ry="14" fill="#e2e8f0" stroke="#64748b" stroke-width="1.5"/>
+    <text x="712" y="636" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f2d3d">MySQL</text>
+    <text x="712" y="653" text-anchor="middle" font-size="10.5" fill="#33475b">18 tabel utama + pivot</text>
+  </g>
+</svg>

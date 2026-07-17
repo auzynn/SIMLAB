@@ -2,7 +2,9 @@
 
 **Nama Produk**: Sistem Informasi Manajemen Laboratorium Riset (SIM Lab. Riset)
 **Unit Terkait**: Laboratorium Riset Kelompok Keahlian (KK) Jaringan, Komputer, dan Forensik (JKF) — Prodi Informatika
-**Versi Dokumen**: 1.1
+**Versi Dokumen**: 1.2
+
+> **Perubahan v1.2 (per 2026-07-17)** — sinkronisasi dengan revisi RBAC v1.2 SRS: Admin berwenang penuh atas Kelas Lab (wajib menunjuk Dosen pengampu — lihat 2.4, catatan 3.3a); Dosen boleh menambah entri katalog Sertifikasi dan mengelola entri miliknya sendiri (`created_by` — lihat 2.2, 3.6).
 
 > **Perubahan v1.1 (per 2026-07-09)** — dokumen diselaraskan dengan kondisi implementasi terkini:
 > - Modul **Presensi** (v1.0) telah **digantikan** oleh modul **Pengumpulan Tugas** (mahasiswa mengirim tautan tugas per pertemuan Kelas Lab yang diikutinya). Referensi "presensi/check-in/check-out" dibaca sebagai riwayat.
@@ -37,7 +39,7 @@ Sistem memiliki 4 peran pengguna dengan hak akses berbeda:
 
 ### 2.2 Dosen
 - **Siapa**: Dosen pembimbing/peneliti yang terafiliasi dengan lab
-- **Bisa melakukan**: login, kelola profil & portofolio/roadmap riset pribadi, melihat jadwal ketersediaan lab (read-only), membuka & mengelola Kelas Lab/Praktikum miliknya sendiri, **menetapkan materi & deadline pengumpulan tugas per pertemuan**, menyetujui/menolak pendaftaran peserta kelasnya, serta **melihat & mengunduh Rekap Tugas** (kepatuhan pengumpulan) untuk kelas yang diampunya. **Tidak** mengajukan peminjaman ruangan (itu hak Mahasiswa)
+- **Bisa melakukan**: login, kelola profil & portofolio/roadmap riset pribadi, melihat jadwal ketersediaan lab (read-only), membuka & mengelola Kelas Lab/Praktikum miliknya sendiri, **menetapkan materi & deadline pengumpulan tugas per pertemuan**, menyetujui/menolak pendaftaran peserta kelasnya, **menambah entri katalog sertifikasi** (mengubah/menghapus hanya entri buatannya sendiri), serta **melihat & mengunduh Rekap Tugas** (kepatuhan pengumpulan) untuk kelas yang diampunya. **Tidak** mengajukan peminjaman ruangan (itu hak Mahasiswa)
 - **Hak akses data**: Create, Read, Update, Delete (CRUD) untuk data yang menjadi tanggung jawabnya
 
 ### 2.3 Supervisor (Asisten Lab / Aslab)
@@ -95,8 +97,8 @@ Berlaku untuk **semua role** terhadap akunnya masing-masing, lewat halaman **Pro
 
 ### 3.3a Kelas Lab/Praktikum
 
-**Pembukaan Kelas (Dosen, atau Supervisor atas permintaan Dosen)**:
-1. Dosen (atau Supervisor atas permintaan Dosen) membuka menu **Kelas Lab/Praktikum**
+**Pembukaan Kelas (Dosen untuk dirinya; Admin/Supervisor untuk semua kelas dengan menunjuk Dosen pengampu — lihat 2.4)**:
+1. Dosen (atau Admin/Supervisor atas nama Dosen) membuka menu **Kelas Lab/Praktikum**
 2. Mengisi data: mata kuliah (dipilih dari daftar yang sudah ada), ruangan, hari & jam (pola berulang mingguan), tanggal mulai–selesai semester, kuota peserta (maks. 30–40), nama sesi (mis. "Kelas A")
 3. Dosen dapat menambahkan beberapa sesi paralel (Kelas A, B, C) dari mata kuliah yang sama, masing-masing dengan kuota independen
 4. Sistem memvalidasi tidak ada bentrok jadwal ruangan sebelum menyimpan
@@ -109,7 +111,7 @@ Berlaku untuk **semua role** terhadap akunnya masing-masing, lewat halaman **Pro
 4. **Dosen pengampu (atau Supervisor) menyetujui/menolak** pendaftaran; mahasiswa resmi menjadi peserta setelah disetujui. Halaman "Kelas Lab Saya" menampilkan status tiap pendaftaran
 5. Mahasiswa menerima **notifikasi in-app** (lihat 3.10) atas hasil pendaftaran
 
-> **Catatan penting**: Slot yang sudah terisi jadwal Kelas Lab diperlakukan sama seperti peminjaman yang sudah disetujui — tidak tersedia untuk dipilih saat mengajukan peminjaman ruangan biasa (lihat 3.3). Admin **tidak** memiliki kewenangan membuka Kelas Lab (lihat 2.4).
+> **Catatan penting**: Slot yang sudah terisi jadwal Kelas Lab diperlakukan sama seperti peminjaman yang sudah disetujui — tidak tersedia untuk dipilih saat mengajukan peminjaman ruangan biasa (lihat 3.3). Admin memiliki hak akses penuh atas Kelas Lab dengan wajib menunjuk Dosen pengampu (lihat 2.4).
 
 ### 3.4 Peminjaman & Perpanjangan Perangkat
 1. Mahasiswa membuka menu **Peminjaman Perangkat** → melihat daftar perangkat berstatus "Tersedia"
@@ -138,7 +140,7 @@ Berlaku untuk **semua role** terhadap akunnya masing-masing, lewat halaman **Pro
 ### 3.6 Katalog Informasi Sertifikasi & Pelatihan
 > **Catatan**: Modul ini bersifat informasional. SIM Lab. Riset tidak menangani proses pendaftaran sertifikasi secara langsung — sistem hanya menyediakan informasi sertifikasi/pelatihan yang diselenggarakan pihak eksternal (mis. Mikrotik, Oracle, Cisco, RedHat). Pendaftaran sesungguhnya dilakukan mahasiswa di luar sistem, langsung ke penyelenggara.
 
-1. Supervisor/Admin menambahkan & memperbarui entri katalog sertifikasi (nama, penyelenggara, jadwal, persyaratan, tautan/cara pendaftaran ke pihak eksternal)
+1. Supervisor/Admin (semua entri) atau Dosen (entri buatannya sendiri) menambahkan & memperbarui entri katalog sertifikasi (nama, penyelenggara, jadwal, persyaratan, tautan/cara pendaftaran ke pihak eksternal)
 2. Mahasiswa membuka menu **Sertifikasi** untuk melihat daftar sertifikasi yang tersedia sebagai referensi
 3. Mahasiswa yang berminat mengikuti instruksi/tautan menuju penyelenggara eksternal untuk mendaftar
 

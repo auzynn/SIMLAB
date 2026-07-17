@@ -2,8 +2,10 @@
 
 **Nama Produk**: Sistem Informasi Manajemen Laboratorium Riset (SIM Lab. Riset)
 **Unit Terkait**: Laboratorium Riset Kelompok Keahlian (KK) Jaringan, Komputer, dan Forensik (JKF) — Prodi Informatika
-**Versi Dokumen**: 1.2
+**Versi Dokumen**: 1.3
 **Dokumen Acuan**: `1_PRD.md`
+
+> **Perubahan v1.3 (per 2026-07-17)**: aturan UC-02 diselaraskan dengan implementasi — peminjaman ruangan **berbasis kapasitas** (`ruangan.kapasitas` = jumlah peminjaman paralel pada jam sama; Kelas Lab memblok ruangan penuh) dan status **`kadaluarsa`** untuk pengajuan yang gugur otomatis saat approve karena slot penuh (dibedakan dari `ditolak` manual).
 
 > **Perubahan v1.2 (per 2026-07-10)**: penyesuaian wewenang RBAC — (1) **Kelas Lab/Praktikum**: Admin diberi hak akses penuh (CRUD semua kelas + approve/reject pendaftaran, menunjuk dosen pengampu saat membuka); (2) **Sertifikasi**: Dosen boleh Create + Update/Delete entri miliknya sendiri (`created_by`); (3) **Halaman Informasi Lab**: Supervisor diberi CRUD (kelola konten). Backend diselaraskan (KelasLabPolicy, SertifikasiPolicy, Gate `manage-info-lab`).
 
@@ -171,7 +173,7 @@ Bagian ini merinci skenario normal dan alternatif untuk use case yang punya pote
 | 5. Supervisor/Admin meninjau → Approve/Reject | |
 | 6. Status pengajuan terupdate, pengaju menerima notifikasi | |
 
-**Aturan validasi kunci**: Sistem **wajib** mencegah dua pengajuan dengan status "Disetujui" pada ruangan dan rentang waktu yang sama, mencegah pengajuan pada slot yang sudah terisi jadwal Kelas Lab/Praktikum (UC-02a), dan mencegah peminjaman pada ruangan yang statusnya bukan "tersedia" (misal: "perbaikan" atau "dipakai"). Jam peminjaman **wajib** dalam rentang operasional lab **07.00–17.00 WIB**. Peminjaman ruangan **hanya diajukan Mahasiswa** (Dosen tidak meminjam ruangan). Validasi dilakukan di level backend (bukan hanya di frontend) menggunakan Form Request.
+**Aturan validasi kunci**: Peminjaman ruangan **berbasis kapasitas** — sebuah ruangan boleh dipakai beberapa peminjaman "Disetujui" pada jam tumpang tindih **selama jumlahnya belum mencapai `ruangan.kapasitas`** (1 peminjaman = 1 slot/kursi; kapasitas kosong = 1/eksklusif). Sistem **wajib** menolak pengajuan bila slot sudah penuh, bila slot terisi jadwal Kelas Lab/Praktikum (UC-02a — Kelas Lab memblok ruangan penuh, tidak dibagi), dan bila status ruangan bukan "tersedia" (misal: "perbaikan" atau "dipakai"). Jam peminjaman **wajib** dalam rentang operasional lab **07.00–17.00 WIB**. Peminjaman ruangan **hanya diajukan Mahasiswa** (Dosen tidak meminjam ruangan). Validasi dilakukan di level backend (bukan hanya di frontend) menggunakan Form Request, dan divalidasi ulang saat approve dalam DB transaction ber-lock; bila saat approve slot ternyata sudah penuh, pengajuan otomatis berstatus **`kadaluarsa`** (dibedakan dari `ditolak` manual) dan pengaju menerima notifikasi agar bebas mengajukan ulang di waktu lain.
 
 > **Pengajuan satu/beberapa hari**: form peminjaman mendukung mode **Satu hari** (satu tanggal) atau **Beberapa hari** (pilih ≥2 hari + tanggal per hari, jam sama untuk semua). Setiap tanggal menghasilkan satu pengajuan terpisah; backend memvalidasi bentrok per tanggal.
 
@@ -234,13 +236,13 @@ Bagian ini merinci skenario normal dan alternatif untuk use case yang punya pote
 - Penetapan materi/deadline hanya oleh Dosen pengampu kelas (`dosen_id` cocok), Supervisor, atau Admin (scoping di backend).
 
 ### UC-05: Melihat Katalog Informasi Sertifikasi
-**Aktor**: Mahasiswa (pengunjung informasi), Admin/Supervisor (pengelola konten)
+**Aktor**: Mahasiswa (pengunjung informasi), Admin/Supervisor (pengelola semua entri), Dosen (pengelola entri buatannya sendiri — `created_by`)
 
 > **Catatan sifat modul**: Modul ini **murni informasional**. SIM Lab. Riset tidak menangani proses pendaftaran sertifikasi (tidak ada form registrasi, upload berkas, kuota, atau status seleksi di dalam sistem). Sistem hanya menampilkan katalog sertifikasi yang diselenggarakan pihak eksternal (mis. Mikrotik, Oracle, Cisco, RedHat), sebagai referensi bagi mahasiswa. Proses pendaftaran sertifikasi yang sesungguhnya dilakukan mahasiswa secara langsung ke penyelenggara terkait, di luar sistem.
 
 | Skenario Normal |
 |---|
-| 1. Admin/Supervisor menambahkan/mengubah entri sertifikasi di panel kelola (nama sertifikasi, penyelenggara, jadwal, persyaratan, cara/tautan pendaftaran ke pihak eksternal) |
+| 1. Admin/Supervisor (semua entri) atau Dosen (entri miliknya, `created_by`) menambahkan/mengubah entri sertifikasi di panel kelola (nama sertifikasi, penyelenggara, jadwal, persyaratan, cara/tautan pendaftaran ke pihak eksternal) |
 | 2. Mahasiswa membuka menu Sertifikasi |
 | 3. Sistem menampilkan daftar sertifikasi yang tersedia beserta detail informasinya |
 | 4. Mahasiswa membaca detail dan, jika berminat, mengikuti instruksi/tautan pendaftaran menuju pihak penyelenggara eksternal |

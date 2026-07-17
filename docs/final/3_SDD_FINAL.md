@@ -139,7 +139,7 @@ Profil mahasiswa, dibuat otomatis saat user `@student.unsil.ac.id` registrasi pe
 **Aturan**: Update profil mahasiswa mengabaikan/menolak perubahan `npm` & `angkatan` (immutable, divalidasi di backend).
 
 ### 3.4 `ruangan`
-Data master ruangan lab: `id` (PK), `nama_ruangan`, `kapasitas` (int, nullable), `status` (enum `tersedia`/`dipakai`/`perbaikan`), timestamps.
+Data master ruangan lab: `id` (PK), `nama_ruangan`, `kapasitas` (int, nullable — jumlah peminjaman paralel yang diizinkan pada jam sama; `NULL`/`0` = 1/eksklusif), `status` (enum `tersedia`/`dipakai`/`perbaikan`), timestamps.
 
 ### 3.5 `peminjaman_ruangan`
 Pengajuan peminjaman ruangan oleh Mahasiswa.
@@ -153,11 +153,11 @@ Pengajuan peminjaman ruangan oleh Mahasiswa.
 | `jam_mulai` | time | |
 | `jam_selesai` | time | |
 | `keperluan` | text | |
-| `status` | enum(`menunggu`,`disetujui`,`ditolak`) | Default `menunggu` |
+| `status` | enum(`menunggu`,`disetujui`,`ditolak`,`kadaluarsa`) | Default `menunggu`. `kadaluarsa` = gugur otomatis saat approve karena slot penuh (dibedakan dari `ditolak` manual) |
 | `disetujui_oleh` | bigint, FK → `users.id`, nullable | `on delete set null` |
 | `created_at`, `updated_at` | timestamp | |
 
-**Constraint (UC-02)**: kombinasi `ruangan_id` + `tanggal` + rentang jam berstatus `disetujui` tidak boleh tumpang tindih dengan pengajuan `disetujui` lain maupun jadwal `kelas_lab` aktif pada ruangan/hari/jam sama. Peminjaman hanya diizinkan bila `ruangan.status = 'tersedia'`. Jam wajib **07.00–17.00 WIB**. Validasi di Form Request backend.
+**Constraint (UC-02, berbasis kapasitas)**: ruangan boleh dipakai beberapa peminjaman `disetujui` pada jam tumpang tindih **selama jumlahnya belum mencapai `ruangan.kapasitas`** (1 peminjaman = 1 slot). Slot penuh/bentrok bila hitungan sudah mencapai kapasitas, atau ada jadwal `kelas_lab` aktif pada ruangan/hari/jam sama (Kelas Lab memblok ruangan penuh). Peminjaman hanya diizinkan bila `ruangan.status = 'tersedia'`. Jam wajib **07.00–17.00 WIB**. Validasi di Form Request (`JadwalRuanganService`) dan divalidasi ulang saat approve dalam transaksi ber-`lockForUpdate`; bila slot ternyata penuh, status otomatis `kadaluarsa` + notifikasi ke pengaju.
 
 ### 3.6 `mata_kuliah`
 Data master mata kuliah — induk yang mengelompokkan sesi paralel Kelas Lab: `id` (PK), `kode_mk` (nullable, unique), `nama_mk`, `sks` (nullable), timestamps.
@@ -271,7 +271,7 @@ Materi &/atau deadline pengumpulan tugas untuk satu pertemuan (1–16) sebuah Ke
 **Aturan**: Unique `(kelas_lab_id, pertemuan)` (upsert via `PUT`). Record valid bila minimal salah satu `materi`/`deadline` terisi; bila keduanya kosong, record dihapus.
 
 ### 3.13 `sertifikasi`
-Katalog informasi sertifikasi eksternal (bukan transaksi pendaftaran): `id` (PK), `nama_sertifikasi`, `penyelenggara`, `jadwal` (nullable), `persyaratan` (text, nullable), `tautan_pendaftaran` (nullable), timestamps. **Berdiri sendiri, tanpa relasi ke `users`.**
+Katalog informasi sertifikasi eksternal (bukan transaksi pendaftaran): `id` (PK), `nama_sertifikasi`, `penyelenggara`, `jadwal` (nullable), `persyaratan` (text, nullable), `tautan_pendaftaran` (nullable), `created_by` (FK → `users.id`, nullable, `on delete set null` — pembuat entri, dasar kepemilikan Dosen via `SertifikasiPolicy`; entri lama/seeder `NULL`), timestamps. **Murni katalog informasi — satu-satunya relasi ke `users` adalah `created_by`.**
 
 ### 3.14 `portofolio`
 Hasil riset/proyek/publikasi milik mahasiswa.
@@ -312,7 +312,7 @@ Notifikasi in-app. Dibuat otomatis oleh sistem sebagai efek samping aksi lain (d
 | `judul` | varchar | |
 | `pesan` | text | |
 | `tipe` | enum(`pengajuan_masuk`,`status_pengajuan`,`pendaftaran`,`pengingat`) | Menentukan ikon/warna. `pengingat` = tenggat tugas/pengembalian perangkat (terjadwal) |
-| `referensi_id` | bigint unsigned, nullable | ID entitas pemicu untuk navigasi — **tanpa FK** (lintas tabel) |
+| `referensi_id` | bigint unsigned, nullable | ID entitas pemicu untuk navigasi — **sengaja tanpa FK (by design)**: merujuk tabel berbeda-beda tergantung `tipe`, sehingga FK tunggal tidak mungkin; integritas dijaga di level aplikasi |
 | `is_read` | boolean, default false | |
 | `created_at`, `updated_at` | timestamp | Index komposit `(user_id, is_read)` |
 
@@ -353,9 +353,9 @@ kelas_lab (1) ──── (M) deadline_pertemuan   → materi/deadline per pert
 perangkat (1) ──── (M) peminjaman_perangkat
 peminjaman_perangkat (1) ──── (M) perpanjangan_peminjaman
 
-sertifikasi   → berdiri sendiri, tidak ada relasi ke users (murni katalog)
+sertifikasi   → created_by ke users (nullable) untuk kepemilikan entri Dosen; selain itu murni katalog
 info_lab      → relasi updated_by ke users; opsional dosen_id (tipe kepala_lab)
-notifikasi    → referensi_id lintas tabel (tanpa FK); hanya user_id yang ber-FK
+notifikasi    → referensi_id lintas tabel (sengaja tanpa FK — by design); hanya user_id yang ber-FK
 ```
 
 ---
@@ -409,9 +409,9 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | GET | `/api/peminjaman-ruangan` | List pengajuan (milik sendiri / semua untuk Admin/Supervisor) |
 | GET | `/api/peminjaman-ruangan/kalender` | `kelas_lab` aktif + peminjaman `disetujui` dari awal minggu berjalan ke depan |
 | POST | `/api/peminjaman-ruangan` | Ajukan (**Mahasiswa saja**) |
-| PATCH | `/api/peminjaman-ruangan/{id}/approve` | Setujui (Admin/Supervisor) — validasi ulang bentrok & status ruangan |
+| PATCH | `/api/peminjaman-ruangan/{id}/approve` | Setujui (Admin/Supervisor) — validasi ulang bentrok/kapasitas & status ruangan dalam transaksi ber-lock; slot penuh → status otomatis `kadaluarsa` |
 | PATCH | `/api/peminjaman-ruangan/{id}/reject` | Tolak (Admin/Supervisor) |
-| DELETE | `/api/peminjaman-ruangan/{id}` | Hapus pengajuan (Admin/Supervisor) |
+| DELETE | `/api/peminjaman-ruangan/{id}` | Batalkan/hapus — pemilik saat masih `menunggu`; Admin/Supervisor kapan saja |
 
 ### 5.6 Mata Kuliah (Data Master)
 | Method | Endpoint | Keterangan |
@@ -423,7 +423,7 @@ Semua endpoint berprefix `/api`, dilindungi `auth:sanctum` kecuali ditandai **(p
 | Method | Endpoint | Keterangan |
 |---|---|---|
 | GET | `/api/kelas-lab` | List (semua role); filter `mata_kuliah_id` |
-| GET | `/api/kelas-lab/{id}` | Detail satu sesi + sisa kuota |
+| GET | `/api/kelas-lab/{id}` | Detail satu sesi + sisa kuota — staf bebas; Mahasiswa hanya bila pendaftarannya `disetujui` (`KelasLabPolicy`) |
 | POST | `/api/kelas-lab` | Buka kelas — **Dosen** (dirinya) atau **Admin/Supervisor** (wajib isi `dosen_id`) |
 | PATCH | `/api/kelas-lab/{id}` | Update jadwal/kuota — **Admin/Supervisor** (semua) atau pemilik (`dosen_id`) |
 | DELETE | `/api/kelas-lab/{id}` | Hapus kelas — **Admin/Supervisor** (semua) atau pemilik (`dosen_id`) |

@@ -1,0 +1,534 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1170" viewBox="0 0 1700 1170" font-family="Arial, Helvetica, sans-serif">
+<defs>
+  <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#33475b"/></marker>
+  <marker id="arwA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#b45309"/></marker>
+</defs>
+<rect x="0" y="0" width="1700" height="1170" fill="#ffffff"/>
+<text x="480" y="26" text-anchor="middle" font-size="18" font-weight="bold" fill="#1f2d3d">Diagram Relasi Antar Tabel (ERD) — SIM Lab. Riset</text>
+<text x="480" y="46" text-anchor="middle" font-size="11.5" fill="#64748b">MySQL — 18 tabel utama + 1 tabel pivot · semua tabel memiliki created_at &amp; updated_at (tidak digambar)</text>
+<path d="M690,340 L640,340 L640,364 L590,364" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="672" y="334" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="end">1</text>
+<text x="600" y="358" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M690,650 L640,650 L640,430 L590,430" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="672" y="644" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="end">1</text>
+<text x="600" y="424" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M280,396 L360,396" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="288" y="390" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">N</text>
+<text x="350" y="390" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="end">1</text>
+<path d="M475,590 L475,506" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="483" y="584" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">N</text>
+<text x="483" y="518" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M280,808 L330,808 L330,480 L360,480" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="288" y="802" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">N</text>
+<text x="352" y="474" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="end">1</text>
+<path d="M1400,516 L1380,516 L1380,1020 L320,1020 L320,430 L360,430" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="1392" y="510" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="end">N</text>
+<text x="352" y="424" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="end">1</text>
+<path d="M590,910 L615,910 L615,470 L590,470" fill="none" stroke="#b45309" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arwA)"/>
+<text x="598" y="926" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">N</text>
+<text x="600" y="464" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M815,234 L815,290" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="823" y="244" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">N</text>
+<text x="823" y="284" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M815,170 L815,124" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="823" y="164" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">N</text>
+<text x="823" y="134" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M815,600 L815,530" fill="none" stroke="#b45309" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arwA)"/>
+<text x="823" y="594" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">N</text>
+<text x="823" y="542" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<text x="825" y="568" font-size="9" font-style="italic" fill="#b45309">pembimbing (opsional)</text>
+<path d="M1030,286 L985,286 L985,340 L940,340" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="1022" y="280" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="end">N</text>
+<text x="948" y="334" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M1400,174 L1370,174 L1370,44 L970,44 L970,310 L940,310" fill="none" stroke="#b45309" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arwA)"/>
+<text x="1392" y="168" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="end">N</text>
+<text x="948" y="304" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M1030,596 L985,596 L985,650 L940,650" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="1022" y="590" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="end">N</text>
+<text x="948" y="644" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M1030,782 L985,782 L985,720 L940,720" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="1022" y="776" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="end">N</text>
+<text x="948" y="714" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M1160,220 L1160,156" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="1168" y="214" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">N</text>
+<text x="1168" y="166" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M1290,302 L1400,302" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="1298" y="296" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">N</text>
+<text x="1392" y="296" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="end">1</text>
+<path d="M1160,530 L1160,460" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="1168" y="524" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">N</text>
+<text x="1168" y="470" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M1290,750 L1330,750 L1330,430 L1290,430" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="1298" y="764" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">N</text>
+<text x="1300" y="424" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M1290,930 L1360,930 L1360,410 L1290,410" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="1298" y="944" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">N</text>
+<text x="1300" y="402" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M165,330 L165,252" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="173" y="324" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">N</text>
+<text x="173" y="262" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M165,570 L165,490" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="173" y="564" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">N</text>
+<text x="173" y="500" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<path d="M1525,450 L1525,386" fill="none" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="1533" y="444" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">N</text>
+<text x="1533" y="396" font-size="10.5" font-weight="bold" fill="#1d4ed8" text-anchor="start">1</text>
+<g>
+<rect x="50" y="140" width="230" height="112" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="50" y="140" width="230" height="26" fill="#243b53"/>
+<text x="165" y="157.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">perangkat</text>
+<text x="58" y="178" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="272" y="178" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="54" y1="182" x2="276" y2="182" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="194" font-size="11" fill="#1f2d3d">nama_perangkat</text>
+<text x="272" y="194" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="54" y1="198" x2="276" y2="198" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="210" font-size="11" fill="#1f2d3d">nomor_seri</text>
+<text x="272" y="210" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan><tspan fill="#b91c1c" font-weight="bold"> UQ</tspan></text>
+<line x1="54" y1="214" x2="276" y2="214" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="226" font-size="11" fill="#1f2d3d">kategori</text>
+<text x="272" y="226" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="54" y1="230" x2="276" y2="230" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="242" font-size="11" fill="#1f2d3d">status</text>
+<text x="272" y="242" font-size="10" text-anchor="end"><tspan fill="#64748b">enum</tspan></text>
+</g>
+<g>
+<rect x="50" y="330" width="230" height="160" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="50" y="330" width="230" height="26" fill="#243b53"/>
+<text x="165" y="347.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">peminjaman_perangkat</text>
+<text x="58" y="368" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="272" y="368" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="54" y1="372" x2="276" y2="372" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="384" font-size="11" fill="#1f2d3d">perangkat_id</text>
+<text x="272" y="384" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan></text>
+<line x1="54" y1="388" x2="276" y2="388" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="400" font-size="11" fill="#1f2d3d">user_id</text>
+<text x="272" y="400" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan></text>
+<line x1="54" y1="404" x2="276" y2="404" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="416" font-size="11" fill="#1f2d3d">tanggal_pinjam</text>
+<text x="272" y="416" font-size="10" text-anchor="end"><tspan fill="#64748b">date</tspan></text>
+<line x1="54" y1="420" x2="276" y2="420" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="432" font-size="11" fill="#1f2d3d">tanggal_kembali_rencana</text>
+<text x="272" y="432" font-size="10" text-anchor="end"><tspan fill="#64748b">date</tspan></text>
+<line x1="54" y1="436" x2="276" y2="436" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="448" font-size="11" fill="#1f2d3d">tanggal_kembali_aktual</text>
+<text x="272" y="448" font-size="10" text-anchor="end"><tspan fill="#64748b">date</tspan></text>
+<line x1="54" y1="452" x2="276" y2="452" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="464" font-size="11" fill="#1f2d3d">status</text>
+<text x="272" y="464" font-size="10" text-anchor="end"><tspan fill="#64748b">enum</tspan></text>
+<line x1="54" y1="468" x2="276" y2="468" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="480" font-size="11" fill="#1f2d3d">disetujui_oleh</text>
+<text x="272" y="480" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan><tspan fill="#64748b" font-size="9"> → users</tspan></text>
+</g>
+<g>
+<rect x="50" y="570" width="230" height="112" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="50" y="570" width="230" height="26" fill="#243b53"/>
+<text x="165" y="587.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">perpanjangan_peminjaman</text>
+<text x="58" y="608" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="272" y="608" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="54" y1="612" x2="276" y2="612" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="624" font-size="11" fill="#1f2d3d">peminjaman_perangkat_id</text>
+<text x="272" y="624" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan></text>
+<line x1="54" y1="628" x2="276" y2="628" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="640" font-size="11" fill="#1f2d3d">tanggal_kembali_baru</text>
+<text x="272" y="640" font-size="10" text-anchor="end"><tspan fill="#64748b">date</tspan></text>
+<line x1="54" y1="644" x2="276" y2="644" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="656" font-size="11" fill="#1f2d3d">status</text>
+<text x="272" y="656" font-size="10" text-anchor="end"><tspan fill="#64748b">enum</tspan></text>
+<line x1="54" y1="660" x2="276" y2="660" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="672" font-size="11" fill="#1f2d3d">disetujui_oleh</text>
+<text x="272" y="672" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan><tspan fill="#64748b" font-size="9"> → users</tspan></text>
+</g>
+<g>
+<rect x="50" y="760" width="230" height="144" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="50" y="760" width="230" height="26" fill="#243b53"/>
+<text x="165" y="777.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">notifikasi</text>
+<text x="58" y="798" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="272" y="798" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="54" y1="802" x2="276" y2="802" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="814" font-size="11" fill="#1f2d3d">user_id</text>
+<text x="272" y="814" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan></text>
+<line x1="54" y1="818" x2="276" y2="818" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="830" font-size="11" fill="#1f2d3d">judul</text>
+<text x="272" y="830" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="54" y1="834" x2="276" y2="834" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="846" font-size="11" fill="#1f2d3d">pesan</text>
+<text x="272" y="846" font-size="10" text-anchor="end"><tspan fill="#64748b">text</tspan></text>
+<line x1="54" y1="850" x2="276" y2="850" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="862" font-size="11" fill="#1f2d3d">tipe</text>
+<text x="272" y="862" font-size="10" text-anchor="end"><tspan fill="#64748b">enum</tspan></text>
+<line x1="54" y1="866" x2="276" y2="866" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="878" font-size="11" fill="#1f2d3d">referensi_id</text>
+<text x="272" y="878" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b45309" font-weight="bold"> no-FK</tspan><tspan fill="#64748b" font-size="9"> (by design)</tspan></text>
+<line x1="54" y1="882" x2="276" y2="882" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="58" y="894" font-size="11" fill="#1f2d3d">is_read</text>
+<text x="272" y="894" font-size="10" text-anchor="end"><tspan fill="#64748b">boolean</tspan></text>
+</g>
+<g>
+<rect x="360" y="330" width="230" height="176" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="360" y="330" width="230" height="26" fill="#243b53"/>
+<text x="475" y="347.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">users</text>
+<text x="368" y="368" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="582" y="368" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="364" y1="372" x2="586" y2="372" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="384" font-size="11" fill="#1f2d3d">name</text>
+<text x="582" y="384" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="364" y1="388" x2="586" y2="388" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="400" font-size="11" fill="#1f2d3d">email</text>
+<text x="582" y="400" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan><tspan fill="#b91c1c" font-weight="bold"> UQ</tspan></text>
+<line x1="364" y1="404" x2="586" y2="404" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="416" font-size="11" fill="#1f2d3d">email_pribadi</text>
+<text x="582" y="416" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="364" y1="420" x2="586" y2="420" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="432" font-size="11" fill="#1f2d3d">no_telp</text>
+<text x="582" y="432" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="364" y1="436" x2="586" y2="436" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="448" font-size="11" fill="#1f2d3d">google_id</text>
+<text x="582" y="448" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan><tspan fill="#b91c1c" font-weight="bold"> UQ</tspan></text>
+<line x1="364" y1="452" x2="586" y2="452" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="464" font-size="11" fill="#1f2d3d">avatar</text>
+<text x="582" y="464" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="364" y1="468" x2="586" y2="468" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="480" font-size="11" fill="#1f2d3d">role</text>
+<text x="582" y="480" font-size="10" text-anchor="end"><tspan fill="#64748b">enum</tspan></text>
+<line x1="364" y1="484" x2="586" y2="484" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="496" font-size="11" fill="#1f2d3d">password</text>
+<text x="582" y="496" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+</g>
+<g>
+<rect x="360" y="590" width="230" height="128" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="360" y="590" width="230" height="26" fill="#243b53"/>
+<text x="475" y="607.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">portofolio</text>
+<text x="368" y="628" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="582" y="628" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="364" y1="632" x2="586" y2="632" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="644" font-size="11" fill="#1f2d3d">user_id</text>
+<text x="582" y="644" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan></text>
+<line x1="364" y1="648" x2="586" y2="648" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="660" font-size="11" fill="#1f2d3d">judul</text>
+<text x="582" y="660" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="364" y1="664" x2="586" y2="664" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="676" font-size="11" fill="#1f2d3d">deskripsi</text>
+<text x="582" y="676" font-size="10" text-anchor="end"><tspan fill="#64748b">text</tspan></text>
+<line x1="364" y1="680" x2="586" y2="680" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="692" font-size="11" fill="#1f2d3d">tautan</text>
+<text x="582" y="692" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="364" y1="696" x2="586" y2="696" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="708" font-size="11" fill="#1f2d3d">tanggal</text>
+<text x="582" y="708" font-size="10" text-anchor="end"><tspan fill="#64748b">date</tspan></text>
+</g>
+<g>
+<rect x="360" y="780" width="230" height="144" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="360" y="780" width="230" height="26" fill="#243b53"/>
+<text x="475" y="797.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">sertifikasi</text>
+<text x="368" y="818" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="582" y="818" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="364" y1="822" x2="586" y2="822" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="834" font-size="11" fill="#1f2d3d">nama_sertifikasi</text>
+<text x="582" y="834" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="364" y1="838" x2="586" y2="838" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="850" font-size="11" fill="#1f2d3d">penyelenggara</text>
+<text x="582" y="850" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="364" y1="854" x2="586" y2="854" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="866" font-size="11" fill="#1f2d3d">jadwal</text>
+<text x="582" y="866" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="364" y1="870" x2="586" y2="870" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="882" font-size="11" fill="#1f2d3d">persyaratan</text>
+<text x="582" y="882" font-size="10" text-anchor="end"><tspan fill="#64748b">text</tspan></text>
+<line x1="364" y1="886" x2="586" y2="886" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="898" font-size="11" fill="#1f2d3d">tautan_pendaftaran</text>
+<text x="582" y="898" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="364" y1="902" x2="586" y2="902" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="368" y="914" font-size="11" fill="#1f2d3d">created_by</text>
+<text x="582" y="914" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan><tspan fill="#64748b" font-size="9"> → users</tspan></text>
+</g>
+<g>
+<rect x="690" y="60" width="250" height="64" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="690" y="60" width="250" height="26" fill="#243b53"/>
+<text x="815" y="77.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">bidang_minat</text>
+<text x="698" y="98" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="932" y="98" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="694" y1="102" x2="936" y2="102" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="114" font-size="11" fill="#1f2d3d">nama</text>
+<text x="932" y="114" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan><tspan fill="#b91c1c" font-weight="bold"> UQ</tspan></text>
+</g>
+<g>
+<rect x="690" y="170" width="250" height="64" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="690" y="170" width="250" height="26" fill="#243b53"/>
+<text x="815" y="187.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">dosen_bidang_minat</text>
+<text x="698" y="208" font-size="11" font-weight="bold" fill="#1f2d3d">dosen_id</text>
+<text x="932" y="208" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK,FK</tspan></text>
+<line x1="694" y1="212" x2="936" y2="212" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="224" font-size="11" font-weight="bold" fill="#1f2d3d">bidang_minat_id</text>
+<text x="932" y="224" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK,FK</tspan></text>
+</g>
+<g>
+<rect x="690" y="290" width="250" height="240" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="690" y="290" width="250" height="26" fill="#243b53"/>
+<text x="815" y="307.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">dosen</text>
+<text x="698" y="328" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="932" y="328" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="694" y1="332" x2="936" y2="332" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="344" font-size="11" fill="#1f2d3d">user_id</text>
+<text x="932" y="344" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK,UQ</tspan></text>
+<line x1="694" y1="348" x2="936" y2="348" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="360" font-size="11" fill="#1f2d3d">nidn</text>
+<text x="932" y="360" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="694" y1="364" x2="936" y2="364" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="376" font-size="11" fill="#1f2d3d">jenis_kelamin</text>
+<text x="932" y="376" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="694" y1="380" x2="936" y2="380" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="392" font-size="11" fill="#1f2d3d">jabatan_fungsional</text>
+<text x="932" y="392" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="694" y1="396" x2="936" y2="396" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="408" font-size="11" fill="#1f2d3d">tempat_lahir</text>
+<text x="932" y="408" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="694" y1="412" x2="936" y2="412" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="424" font-size="11" fill="#1f2d3d">tanggal_lahir</text>
+<text x="932" y="424" font-size="10" text-anchor="end"><tspan fill="#64748b">date</tspan></text>
+<line x1="694" y1="428" x2="936" y2="428" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="440" font-size="11" fill="#1f2d3d">biografi</text>
+<text x="932" y="440" font-size="10" text-anchor="end"><tspan fill="#64748b">text</tspan></text>
+<line x1="694" y1="444" x2="936" y2="444" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="456" font-size="11" fill="#1f2d3d">credential</text>
+<text x="932" y="456" font-size="10" text-anchor="end"><tspan fill="#64748b">text</tspan></text>
+<line x1="694" y1="460" x2="936" y2="460" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="472" font-size="11" fill="#1f2d3d">roadmap_riset</text>
+<text x="932" y="472" font-size="10" text-anchor="end"><tspan fill="#64748b">text</tspan></text>
+<line x1="694" y1="476" x2="936" y2="476" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="488" font-size="11" fill="#1f2d3d">publikasi</text>
+<text x="932" y="488" font-size="10" text-anchor="end"><tspan fill="#64748b">text</tspan></text>
+<line x1="694" y1="492" x2="936" y2="492" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="504" font-size="11" fill="#1f2d3d">buku</text>
+<text x="932" y="504" font-size="10" text-anchor="end"><tspan fill="#64748b">text</tspan></text>
+<line x1="694" y1="508" x2="936" y2="508" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="520" font-size="11" fill="#1f2d3d">foto</text>
+<text x="932" y="520" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+</g>
+<g>
+<rect x="690" y="600" width="250" height="144" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="690" y="600" width="250" height="26" fill="#243b53"/>
+<text x="815" y="617.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">mahasiswa</text>
+<text x="698" y="638" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="932" y="638" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="694" y1="642" x2="936" y2="642" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="654" font-size="11" fill="#1f2d3d">user_id</text>
+<text x="932" y="654" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK,UQ</tspan></text>
+<line x1="694" y1="658" x2="936" y2="658" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="670" font-size="11" fill="#1f2d3d">dosen_pembimbing_id</text>
+<text x="932" y="670" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan></text>
+<line x1="694" y1="674" x2="936" y2="674" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="686" font-size="11" fill="#1f2d3d">npm</text>
+<text x="932" y="686" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan><tspan fill="#b91c1c" font-weight="bold"> UQ</tspan></text>
+<line x1="694" y1="690" x2="936" y2="690" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="702" font-size="11" fill="#1f2d3d">prodi</text>
+<text x="932" y="702" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="694" y1="706" x2="936" y2="706" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="718" font-size="11" fill="#1f2d3d">angkatan</text>
+<text x="932" y="718" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="694" y1="722" x2="936" y2="722" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="698" y="734" font-size="11" fill="#1f2d3d">foto</text>
+<text x="932" y="734" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+</g>
+<g>
+<rect x="1030" y="60" width="260" height="96" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="1030" y="60" width="260" height="26" fill="#243b53"/>
+<text x="1160" y="77.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">mata_kuliah</text>
+<text x="1038" y="98" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="1282" y="98" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="1034" y1="102" x2="1286" y2="102" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="114" font-size="11" fill="#1f2d3d">kode_mk</text>
+<text x="1282" y="114" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan><tspan fill="#b91c1c" font-weight="bold"> UQ</tspan></text>
+<line x1="1034" y1="118" x2="1286" y2="118" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="130" font-size="11" fill="#1f2d3d">nama_mk</text>
+<text x="1282" y="130" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="1034" y1="134" x2="1286" y2="134" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="146" font-size="11" fill="#1f2d3d">sks</text>
+<text x="1282" y="146" font-size="10" text-anchor="end"><tspan fill="#64748b">int</tspan></text>
+</g>
+<g>
+<rect x="1030" y="220" width="260" height="240" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="1030" y="220" width="260" height="26" fill="#243b53"/>
+<text x="1160" y="237.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">kelas_lab</text>
+<text x="1038" y="258" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="1282" y="258" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="1034" y1="262" x2="1286" y2="262" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="274" font-size="11" fill="#1f2d3d">mata_kuliah_id</text>
+<text x="1282" y="274" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan></text>
+<line x1="1034" y1="278" x2="1286" y2="278" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="290" font-size="11" fill="#1f2d3d">dosen_id</text>
+<text x="1282" y="290" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan></text>
+<line x1="1034" y1="294" x2="1286" y2="294" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="306" font-size="11" fill="#1f2d3d">ruangan_id</text>
+<text x="1282" y="306" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan></text>
+<line x1="1034" y1="310" x2="1286" y2="310" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="322" font-size="11" fill="#1f2d3d">dibuat_oleh</text>
+<text x="1282" y="322" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan><tspan fill="#64748b" font-size="9"> → users</tspan></text>
+<line x1="1034" y1="326" x2="1286" y2="326" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="338" font-size="11" fill="#1f2d3d">nama_sesi</text>
+<text x="1282" y="338" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="1034" y1="342" x2="1286" y2="342" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="354" font-size="11" fill="#1f2d3d">hari</text>
+<text x="1282" y="354" font-size="10" text-anchor="end"><tspan fill="#64748b">enum</tspan></text>
+<line x1="1034" y1="358" x2="1286" y2="358" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="370" font-size="11" fill="#1f2d3d">jam_mulai</text>
+<text x="1282" y="370" font-size="10" text-anchor="end"><tspan fill="#64748b">time</tspan></text>
+<line x1="1034" y1="374" x2="1286" y2="374" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="386" font-size="11" fill="#1f2d3d">jam_selesai</text>
+<text x="1282" y="386" font-size="10" text-anchor="end"><tspan fill="#64748b">time</tspan></text>
+<line x1="1034" y1="390" x2="1286" y2="390" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="402" font-size="11" fill="#1f2d3d">tanggal_mulai_semester</text>
+<text x="1282" y="402" font-size="10" text-anchor="end"><tspan fill="#64748b">date</tspan></text>
+<line x1="1034" y1="406" x2="1286" y2="406" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="418" font-size="11" fill="#1f2d3d">tanggal_selesai_semester</text>
+<text x="1282" y="418" font-size="10" text-anchor="end"><tspan fill="#64748b">date</tspan></text>
+<line x1="1034" y1="422" x2="1286" y2="422" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="434" font-size="11" fill="#1f2d3d">kuota</text>
+<text x="1282" y="434" font-size="10" text-anchor="end"><tspan fill="#64748b">int</tspan></text>
+<line x1="1034" y1="438" x2="1286" y2="438" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="450" font-size="11" fill="#1f2d3d">tautan_pengumpulan</text>
+<text x="1282" y="450" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+</g>
+<g>
+<rect x="1030" y="530" width="260" height="112" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="1030" y="530" width="260" height="26" fill="#243b53"/>
+<text x="1160" y="547.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">kelas_lab_peserta</text>
+<text x="1038" y="568" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="1282" y="568" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="1034" y1="572" x2="1286" y2="572" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="584" font-size="11" fill="#1f2d3d">kelas_lab_id</text>
+<text x="1282" y="584" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK,UQ*</tspan></text>
+<line x1="1034" y1="588" x2="1286" y2="588" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="600" font-size="11" fill="#1f2d3d">mahasiswa_id</text>
+<text x="1282" y="600" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK,UQ*</tspan></text>
+<line x1="1034" y1="604" x2="1286" y2="604" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="616" font-size="11" fill="#1f2d3d">status</text>
+<text x="1282" y="616" font-size="10" text-anchor="end"><tspan fill="#64748b">enum</tspan></text>
+<line x1="1034" y1="620" x2="1286" y2="620" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="632" font-size="11" fill="#1f2d3d">disetujui_oleh</text>
+<text x="1282" y="632" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan><tspan fill="#64748b" font-size="9"> → users</tspan></text>
+</g>
+<g>
+<rect x="1030" y="700" width="260" height="128" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="1030" y="700" width="260" height="26" fill="#243b53"/>
+<text x="1160" y="717.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">tugas</text>
+<text x="1038" y="738" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="1282" y="738" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="1034" y1="742" x2="1286" y2="742" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="754" font-size="11" fill="#1f2d3d">kelas_lab_id</text>
+<text x="1282" y="754" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK,UQ*</tspan></text>
+<line x1="1034" y1="758" x2="1286" y2="758" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="770" font-size="11" fill="#1f2d3d">pertemuan</text>
+<text x="1282" y="770" font-size="10" text-anchor="end"><tspan fill="#64748b">tinyint</tspan><tspan fill="#b91c1c" font-weight="bold"> UQ*</tspan></text>
+<line x1="1034" y1="774" x2="1286" y2="774" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="786" font-size="11" fill="#1f2d3d">mahasiswa_id</text>
+<text x="1282" y="786" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK,UQ*</tspan></text>
+<line x1="1034" y1="790" x2="1286" y2="790" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="802" font-size="11" fill="#1f2d3d">judul</text>
+<text x="1282" y="802" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="1034" y1="806" x2="1286" y2="806" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="818" font-size="11" fill="#1f2d3d">tautan</text>
+<text x="1282" y="818" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+</g>
+<g>
+<rect x="1030" y="880" width="260" height="112" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="1030" y="880" width="260" height="26" fill="#243b53"/>
+<text x="1160" y="897.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">deadline_pertemuan</text>
+<text x="1038" y="918" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="1282" y="918" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="1034" y1="922" x2="1286" y2="922" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="934" font-size="11" fill="#1f2d3d">kelas_lab_id</text>
+<text x="1282" y="934" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK,UQ*</tspan></text>
+<line x1="1034" y1="938" x2="1286" y2="938" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="950" font-size="11" fill="#1f2d3d">pertemuan</text>
+<text x="1282" y="950" font-size="10" text-anchor="end"><tspan fill="#64748b">tinyint</tspan><tspan fill="#b91c1c" font-weight="bold"> UQ*</tspan></text>
+<line x1="1034" y1="954" x2="1286" y2="954" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="966" font-size="11" fill="#1f2d3d">materi</text>
+<text x="1282" y="966" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="1034" y1="970" x2="1286" y2="970" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1038" y="982" font-size="11" fill="#1f2d3d">deadline</text>
+<text x="1282" y="982" font-size="10" text-anchor="end"><tspan fill="#64748b">datetime</tspan></text>
+</g>
+<g>
+<rect x="1400" y="60" width="250" height="144" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="1400" y="60" width="250" height="26" fill="#243b53"/>
+<text x="1525" y="77.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">info_lab</text>
+<text x="1408" y="98" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="1642" y="98" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="1404" y1="102" x2="1646" y2="102" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="114" font-size="11" fill="#1f2d3d">tipe</text>
+<text x="1642" y="114" font-size="10" text-anchor="end"><tspan fill="#64748b">enum</tspan><tspan fill="#b91c1c" font-weight="bold"> UQ</tspan></text>
+<line x1="1404" y1="118" x2="1646" y2="118" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="130" font-size="11" fill="#1f2d3d">judul</text>
+<text x="1642" y="130" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="1404" y1="134" x2="1646" y2="134" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="146" font-size="11" fill="#1f2d3d">konten</text>
+<text x="1642" y="146" font-size="10" text-anchor="end"><tspan fill="#64748b">longtext</tspan></text>
+<line x1="1404" y1="150" x2="1646" y2="150" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="162" font-size="11" fill="#1f2d3d">gambar</text>
+<text x="1642" y="162" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="1404" y1="166" x2="1646" y2="166" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="178" font-size="11" fill="#1f2d3d">dosen_id</text>
+<text x="1642" y="178" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan></text>
+<line x1="1404" y1="182" x2="1646" y2="182" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="194" font-size="11" fill="#1f2d3d">updated_by</text>
+<text x="1642" y="194" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan><tspan fill="#64748b" font-size="9"> → users</tspan></text>
+</g>
+<g>
+<rect x="1400" y="290" width="250" height="96" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="1400" y="290" width="250" height="26" fill="#243b53"/>
+<text x="1525" y="307.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">ruangan</text>
+<text x="1408" y="328" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="1642" y="328" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="1404" y1="332" x2="1646" y2="332" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="344" font-size="11" fill="#1f2d3d">nama_ruangan</text>
+<text x="1642" y="344" font-size="10" text-anchor="end"><tspan fill="#64748b">varchar</tspan></text>
+<line x1="1404" y1="348" x2="1646" y2="348" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="360" font-size="11" fill="#1f2d3d">kapasitas</text>
+<text x="1642" y="360" font-size="10" text-anchor="end"><tspan fill="#64748b">int</tspan></text>
+<line x1="1404" y1="364" x2="1646" y2="364" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="376" font-size="11" fill="#1f2d3d">status</text>
+<text x="1642" y="376" font-size="10" text-anchor="end"><tspan fill="#64748b">enum</tspan></text>
+</g>
+<g>
+<rect x="1400" y="450" width="250" height="176" fill="#ffffff" stroke="#243b53" stroke-width="1.4"/>
+<rect x="1400" y="450" width="250" height="26" fill="#243b53"/>
+<text x="1525" y="467.5" text-anchor="middle" font-size="13" font-weight="bold" fill="#ffffff">peminjaman_ruangan</text>
+<text x="1408" y="488" font-size="11" font-weight="bold" fill="#1f2d3d">id</text>
+<text x="1642" y="488" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> PK</tspan></text>
+<line x1="1404" y1="492" x2="1646" y2="492" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="504" font-size="11" fill="#1f2d3d">ruangan_id</text>
+<text x="1642" y="504" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan></text>
+<line x1="1404" y1="508" x2="1646" y2="508" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="520" font-size="11" fill="#1f2d3d">user_id</text>
+<text x="1642" y="520" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan></text>
+<line x1="1404" y1="524" x2="1646" y2="524" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="536" font-size="11" fill="#1f2d3d">tanggal</text>
+<text x="1642" y="536" font-size="10" text-anchor="end"><tspan fill="#64748b">date</tspan></text>
+<line x1="1404" y1="540" x2="1646" y2="540" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="552" font-size="11" fill="#1f2d3d">jam_mulai</text>
+<text x="1642" y="552" font-size="10" text-anchor="end"><tspan fill="#64748b">time</tspan></text>
+<line x1="1404" y1="556" x2="1646" y2="556" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="568" font-size="11" fill="#1f2d3d">jam_selesai</text>
+<text x="1642" y="568" font-size="10" text-anchor="end"><tspan fill="#64748b">time</tspan></text>
+<line x1="1404" y1="572" x2="1646" y2="572" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="584" font-size="11" fill="#1f2d3d">keperluan</text>
+<text x="1642" y="584" font-size="10" text-anchor="end"><tspan fill="#64748b">text</tspan></text>
+<line x1="1404" y1="588" x2="1646" y2="588" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="600" font-size="11" fill="#1f2d3d">status</text>
+<text x="1642" y="600" font-size="10" text-anchor="end"><tspan fill="#64748b">enum</tspan></text>
+<line x1="1404" y1="604" x2="1646" y2="604" stroke="#e2e8f0" stroke-width="0.6"/>
+<text x="1408" y="616" font-size="11" fill="#1f2d3d">disetujui_oleh</text>
+<text x="1642" y="616" font-size="10" text-anchor="end"><tspan fill="#64748b">bigint</tspan><tspan fill="#b91c1c" font-weight="bold"> FK</tspan><tspan fill="#64748b" font-size="9"> → users</tspan></text>
+</g>
+<g font-size="10.5" fill="#33475b">
+<text x="50" y="1052" font-size="12" font-weight="bold" fill="#1f2d3d">Keterangan:</text>
+<line x1="50" y1="1070" x2="100" y2="1070" stroke="#33475b" stroke-width="1.5" marker-end="url(#arw)"/>
+<text x="108" y="1074">relasi foreign key — panah menunjuk tabel induk yang dirujuk (1 = satu, N = banyak)</text>
+<line x1="50" y1="1090" x2="100" y2="1090" stroke="#b45309" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arwA)"/>
+<text x="108" y="1094">relasi opsional/nullable (dosen_pembimbing_id, info_lab.dosen_id, sertifikasi.created_by)</text>
+<text x="50" y="1114"><tspan font-weight="bold" fill="#b91c1c">PK</tspan> = Primary Key · <tspan font-weight="bold" fill="#b91c1c">FK</tspan> = Foreign Key · <tspan font-weight="bold" fill="#b91c1c">UQ</tspan> = Unique · <tspan font-weight="bold" fill="#b91c1c">UQ*</tspan> = unik komposit (mis. kelas_lab_id + pertemuan + mahasiswa_id pada tugas)</text>
+<text x="50" y="1132">Kolom audit bertanda "FK → users" (disetujui_oleh, dibuat_oleh, updated_by, created_by) merujuk users.id — garisnya tidak digambar agar diagram tetap terbaca.</text>
+<text x="50" y="1150"><tspan font-weight="bold" fill="#b45309">no-FK</tspan>: notifikasi.referensi_id sengaja tanpa foreign key (keputusan desain) — merujuk entitas lintas tabel sesuai kolom tipe; integritas dijaga di level aplikasi.</text>
+</g>
+</svg>

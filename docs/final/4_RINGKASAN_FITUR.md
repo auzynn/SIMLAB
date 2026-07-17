@@ -27,17 +27,17 @@
 - Master **Bidang Minat** (dikelola Admin/Supervisor, dipilih Dosen)
 
 ### 1.3 Data Master
-- **Ruangan** (nama, kapasitas, status: tersedia/dipakai/perbaikan)
+- **Ruangan** (nama, kapasitas — jumlah peminjaman paralel yang diizinkan pada jam sama, status: tersedia/dipakai/perbaikan)
 - **Mata Kuliah** (kode, nama, SKS)
 - **Perangkat** (nama, nomor seri, kategori, status: tersedia/dipinjam/perbaikan)
-- **Katalog Sertifikasi** (informasi sertifikasi eksternal)
+- **Katalog Sertifikasi** (informasi sertifikasi eksternal; Dosen juga boleh menambah entri & mengelola miliknya sendiri via `created_by`)
 - Semua CRUD dikelola Admin/Supervisor; read terbuka untuk role login
 
 ### 1.4 Peminjaman Ruangan
 - Kalender ketersediaan ruangan (kelas mingguan + peminjaman disetujui, dikelompokkan Minggu ini / Mendatang)
 - Form pengajuan Mahasiswa (mode Satu hari / Beberapa hari; jam operasional 07.00–17.00 WIB)
-- **Validasi bentrok jadwal dua-arah** (peminjaman ↔ jadwal Kelas Lab)
-- Alur persetujuan (Approve/Reject) oleh Supervisor/Admin dengan re-validasi bentrok
+- **Validasi bentrok jadwal dua-arah** (peminjaman ↔ jadwal Kelas Lab), **berbasis kapasitas ruangan** (beberapa peminjaman paralel diizinkan hingga kapasitas penuh; Kelas Lab memblok penuh)
+- Alur persetujuan (Approve/Reject) oleh Supervisor/Admin dengan re-validasi bentrok dalam transaksi ber-lock; slot penuh saat approve → status otomatis **kadaluarsa** + notifikasi ke pengaju
 - Halaman "Peminjaman Saya" dan panel Persetujuan dengan filter kolom
 
 ### 1.5 Kelas Lab / Praktikum
@@ -89,13 +89,13 @@
 Login, kelola profil, lihat jadwal lab, ajukan peminjaman ruangan, daftar Kelas Lab, ajukan peminjaman & perpanjangan perangkat, kumpulkan tugas per pertemuan, kelola portofolio, lihat katalog sertifikasi, terima notifikasi.
 
 ### Dosen
-Login, kelola profil & roadmap riset, buka & kelola Kelas Lab miliknya, tetapkan materi & deadline pertemuan, setujui/tolak pendaftaran peserta, lihat tugas masuk, unduh Rekap Tugas kelasnya, lihat jadwal lab (read-only), terima notifikasi.
+Login, kelola profil & roadmap riset, buka & kelola Kelas Lab miliknya, tetapkan materi & deadline pertemuan, setujui/tolak pendaftaran peserta, lihat tugas masuk, unduh Rekap Tugas kelasnya, tambah entri katalog sertifikasi (kelola miliknya sendiri), lihat jadwal lab (read-only), terima notifikasi.
 
 ### Supervisor (Asisten Lab)
 Login, approve/reject peminjaman ruangan & perangkat + perpanjangan, kelola data master (ruangan/perangkat/mata kuliah/sertifikasi), buka Kelas Lab atas nama Dosen, setujui pendaftaran, unduh Laporan & Rekap Tugas semua kelas, terima notifikasi.
 
 ### Admin (Kepala Lab)
-Seluruh kewenangan Supervisor + kelola akun user & role, delegasi Asisten Lab, kelola konten informasi/profil lab. **Tidak** dapat membuka Kelas Lab.
+Seluruh kewenangan Supervisor + kelola akun user & role, delegasi Asisten Lab, kelola konten informasi/profil lab. Berwenang penuh atas Kelas Lab (buka/ubah/hapus semua kelas dengan menunjuk dosen pengampu + approve/reject pendaftaran).
 
 ---
 
@@ -103,7 +103,7 @@ Seluruh kewenangan Supervisor + kelola akun user & role, delegasi Asisten Lab, k
 
 - **Backend**: Laravel 13 (PHP 8.5), REST API, Laravel Sanctum, Laravel Socialite (Google OAuth)
 - **Frontend**: Vue 3 (Composition API) + Vite, Vue Router, Pinia, Axios — SPA
-- **Basis Data**: MySQL — 17 tabel utama (users, dosen, mahasiswa, bidang_minat & pivot, ruangan, mata_kuliah, peminjaman_ruangan, kelas_lab, kelas_lab_peserta, perangkat, peminjaman_perangkat, perpanjangan_peminjaman, tugas, deadline_pertemuan, sertifikasi, portofolio, info_lab, notifikasi)
+- **Basis Data**: MySQL — 18 tabel utama + 1 tabel pivot (users, dosen, mahasiswa, bidang_minat + pivot dosen_bidang_minat, ruangan, mata_kuliah, peminjaman_ruangan, kelas_lab, kelas_lab_peserta, perangkat, peminjaman_perangkat, perpanjangan_peminjaman, tugas, deadline_pertemuan, sertifikasi, portofolio, info_lab, notifikasi)
 - **Otorisasi**: Laravel Gate/Policy per modul, mengacu matriks RBAC
 - **Laporan**: PDF (dompdf) & Excel (PhpSpreadsheet)
 - **Penjadwalan**: Laravel Scheduler untuk notifikasi pengingat

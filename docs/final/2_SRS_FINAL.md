@@ -162,7 +162,7 @@
 | 5. Supervisor/Admin meninjau → Approve/Reject | |
 | 6. Status terupdate, pengaju menerima notifikasi | |
 
-**Aturan validasi kunci**: Sistem mencegah dua pengajuan "Disetujui" pada ruangan & rentang waktu sama, mencegah pengajuan pada slot Kelas Lab, dan mencegah peminjaman pada ruangan yang statusnya bukan "tersedia". Jam peminjaman wajib dalam rentang operasional lab **07.00–17.00 WIB**. Peminjaman ruangan **hanya diajukan Mahasiswa**. Validasi di level backend via Form Request.
+**Aturan validasi kunci**: Peminjaman ruangan **berbasis kapasitas** — ruangan boleh dipakai beberapa pengajuan "Disetujui" pada jam tumpang tindih selama jumlahnya belum mencapai `ruangan.kapasitas` (1 peminjaman = 1 slot; kapasitas kosong = 1/eksklusif). Sistem menolak pengajuan bila slot penuh, bila slot terisi jadwal Kelas Lab (Kelas Lab memblok ruangan penuh), dan bila status ruangan bukan "tersedia". Jam peminjaman wajib dalam rentang operasional lab **07.00–17.00 WIB**. Peminjaman ruangan **hanya diajukan Mahasiswa**. Validasi di level backend via Form Request, divalidasi ulang saat approve dalam transaksi ber-lock; bila slot ternyata sudah penuh, pengajuan otomatis berstatus **`kadaluarsa`** (bukan `ditolak`) dan pengaju dinotifikasi.
 
 > **Pengajuan satu/beberapa hari**: form mendukung mode **Satu hari** atau **Beberapa hari** (pilih ≥2 hari + tanggal per hari, jam sama). Tiap tanggal menghasilkan satu pengajuan terpisah; backend memvalidasi bentrok per tanggal.
 
@@ -173,7 +173,7 @@
 
 | Skenario Normal (Pembukaan Kelas) | Skenario Pendaftaran Peserta |
 |---|---|
-| 1. Dosen (atau Supervisor atas permintaan Dosen) membuka menu Kelas Lab | 1. Mahasiswa membuka menu Kelas Lab |
+| 1. Dosen (atau Admin/Supervisor atas nama Dosen) membuka menu Kelas Lab | 1. Mahasiswa membuka menu Kelas Lab |
 | 2. Mengisi data: mata kuliah, ruangan, hari & jam (berulang mingguan), tanggal mulai-selesai, kuota (maks. 30-40) | 2. Melihat daftar sesi tersedia (mis. Kelas A 08.00, Kelas B 10.00) + sisa kuota |
 | 3. Dapat menambahkan sesi paralel, kuota independen | 3. Memilih satu sesi dan mendaftar → status **menunggu persetujuan** |
 | 4. Sistem memvalidasi tidak bentrok dengan jadwal ruangan lain & status ruangan 'tersedia' | 4. Sistem memvalidasi kuota, 1-sesi-per-mata-kuliah, dan tidak bentrok jadwal kelas lain |
@@ -223,13 +223,13 @@
 - Penetapan materi/deadline hanya oleh Dosen pengampu kelas (`dosen_id` cocok), Supervisor, atau Admin
 
 ### UC-05: Melihat Katalog Informasi Sertifikasi
-**Aktor**: Mahasiswa (pengunjung informasi), Admin/Supervisor (pengelola konten)
+**Aktor**: Mahasiswa (pengunjung informasi), Admin/Supervisor (pengelola semua entri), Dosen (pengelola entri buatannya sendiri — `created_by`)
 
 > Modul ini **murni informasional**. Sistem tidak menangani pendaftaran sertifikasi (tidak ada form registrasi, upload berkas, kuota, atau status seleksi). Hanya menampilkan katalog sertifikasi eksternal (mis. Mikrotik, Oracle, Cisco, RedHat) sebagai referensi. Pendaftaran dilakukan mahasiswa langsung ke penyelenggara, di luar sistem.
 
 | Skenario Normal |
 |---|
-| 1. Admin/Supervisor menambahkan/mengubah entri sertifikasi (nama, penyelenggara, jadwal, persyaratan, cara/tautan pendaftaran eksternal) |
+| 1. Admin/Supervisor (semua entri) atau Dosen (entri miliknya, `created_by`) menambahkan/mengubah entri sertifikasi (nama, penyelenggara, jadwal, persyaratan, cara/tautan pendaftaran eksternal) |
 | 2. Mahasiswa membuka menu Sertifikasi |
 | 3. Sistem menampilkan daftar sertifikasi beserta detail informasinya |
 | 4. Mahasiswa membaca detail dan, jika berminat, mengikuti instruksi/tautan menuju penyelenggara eksternal |

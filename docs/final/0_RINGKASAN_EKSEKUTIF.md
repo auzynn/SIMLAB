@@ -21,7 +21,7 @@ Dengan sistem ini, seluruh proses menjadi **transparan, terlacak, dan tervalidas
 | Peran | Ringkasan Tanggung Jawab |
 |---|---|
 | **Mahasiswa** | Meminjam ruangan & perangkat, mendaftar Kelas Lab, mengumpulkan tugas, mengunggah portofolio, melihat katalog sertifikasi |
-| **Dosen** | Membuka & mengelola Kelas Lab miliknya, menetapkan materi & tenggat tugas per pertemuan, menyetujui pendaftaran peserta, mengunduh rekap kepatuhan tugas kelasnya |
+| **Dosen** | Membuka & mengelola Kelas Lab miliknya, menetapkan materi & tenggat tugas per pertemuan, menyetujui pendaftaran peserta, mengunduh rekap kepatuhan tugas kelasnya, menambah entri katalog sertifikasi (kelola miliknya sendiri) |
 | **Supervisor (Asisten Lab)** | Menyetujui/menolak peminjaman, mengelola perangkat & katalog sertifikasi, membuka Kelas Lab atas nama Dosen, mengunduh laporan & rekap semua kelas |
 | **Admin (Kepala Lab)** | Seluruh kewenangan Supervisor, ditambah kelola akun pengguna, delegasi Asisten Lab, dan kelola konten informasi/profil lab |
 

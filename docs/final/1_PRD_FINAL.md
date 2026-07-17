@@ -31,7 +31,7 @@ Sistem memiliki 4 peran pengguna dengan hak akses berbeda.
 
 ### 2.2 Dosen
 - **Siapa**: Dosen pembimbing/peneliti yang terafiliasi dengan lab
-- **Bisa melakukan**: login, kelola profil & portofolio/roadmap riset pribadi, melihat jadwal ketersediaan lab (read-only), membuka & mengelola Kelas Lab/Praktikum miliknya sendiri, menetapkan materi & deadline pengumpulan tugas per pertemuan, menyetujui/menolak pendaftaran peserta kelasnya, serta melihat & mengunduh Rekap Tugas (kepatuhan pengumpulan) untuk kelas yang diampunya. Dosen **tidak** mengajukan peminjaman ruangan (itu hak Mahasiswa)
+- **Bisa melakukan**: login, kelola profil & portofolio/roadmap riset pribadi, melihat jadwal ketersediaan lab (read-only), membuka & mengelola Kelas Lab/Praktikum miliknya sendiri, menetapkan materi & deadline pengumpulan tugas per pertemuan, menyetujui/menolak pendaftaran peserta kelasnya, menambah entri katalog sertifikasi (mengubah/menghapus hanya entri buatannya sendiri), serta melihat & mengunduh Rekap Tugas (kepatuhan pengumpulan) untuk kelas yang diampunya. Dosen **tidak** mengajukan peminjaman ruangan (itu hak Mahasiswa)
 - **Hak akses data**: CRUD untuk data yang menjadi tanggung jawabnya
 
 ### 2.3 Supervisor (Asisten Lab / Aslab)
@@ -126,7 +126,7 @@ Setelah login, setiap role melihat dashboard yang relevan: Mahasiswa (status pem
 ### 3.6 Katalog Informasi Sertifikasi & Pelatihan
 > Modul ini bersifat **informasional**. Sistem hanya menyediakan informasi sertifikasi/pelatihan yang diselenggarakan pihak eksternal (mis. Mikrotik, Oracle, Cisco, RedHat). Pendaftaran dilakukan mahasiswa langsung ke penyelenggara, di luar sistem.
 
-1. Supervisor/Admin menambahkan & memperbarui entri katalog (nama, penyelenggara, jadwal, persyaratan, tautan/cara pendaftaran eksternal)
+1. Supervisor/Admin (semua entri) atau Dosen (entri buatannya sendiri) menambahkan & memperbarui entri katalog (nama, penyelenggara, jadwal, persyaratan, tautan/cara pendaftaran eksternal)
 2. Mahasiswa membuka menu **Sertifikasi** untuk melihat daftar sebagai referensi
 3. Mahasiswa yang berminat mengikuti instruksi/tautan menuju penyelenggara eksternal
 

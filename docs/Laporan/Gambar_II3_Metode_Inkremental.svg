@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="600" viewBox="0 0 960 600" font-family="Arial, Helvetica, sans-serif">
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#33475b"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="960" height="600" fill="#ffffff"/>
+
+  <!-- Judul -->
+  <text x="480" y="34" text-anchor="middle" font-size="19" font-weight="bold" fill="#1f2d3d">Metode Pengembangan Inkremental — SIM Lab. Riset</text>
+
+  <!-- ================= SIKLUS PER FASE ================= -->
+  <rect x="28" y="58" width="904" height="200" rx="10" fill="#f5f8fc" stroke="#b9c6d6"/>
+  <text x="480" y="82" text-anchor="middle" font-size="14" font-weight="bold" fill="#33475b">Siklus yang diulang pada setiap fase (increment)</text>
+
+  <!-- Kotak siklus -->
+  <g font-size="13.5" fill="#1f2d3d">
+    <rect x="55"  y="105" width="185" height="62" rx="8" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.4"/>
+    <text x="147" y="131" text-anchor="middle" font-weight="bold">1. Analisis Kebutuhan</text>
+    <text x="147" y="151" text-anchor="middle" font-size="11.5" fill="#33475b">rincian kebutuhan modul fase ini</text>
+
+    <rect x="285" y="105" width="185" height="62" rx="8" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.4"/>
+    <text x="377" y="131" text-anchor="middle" font-weight="bold">2. Perancangan</text>
+    <text x="377" y="151" text-anchor="middle" font-size="11.5" fill="#33475b">skema basis data &amp; kontrak API</text>
+
+    <rect x="515" y="105" width="185" height="62" rx="8" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.4"/>
+    <text x="607" y="131" text-anchor="middle" font-weight="bold">3. Implementasi</text>
+    <text x="607" y="151" text-anchor="middle" font-size="11.5" fill="#33475b">backend REST API &amp; frontend</text>
+
+    <rect x="745" y="105" width="185" height="62" rx="8" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.4"/>
+    <text x="837" y="131" text-anchor="middle" font-weight="bold">4. Pengujian</text>
+    <text x="837" y="151" text-anchor="middle" font-size="11.5" fill="#33475b">feature test otomatis</text>
+  </g>
+
+  <!-- Panah antar kotak -->
+  <g stroke="#33475b" stroke-width="1.8" marker-end="url(#arw)">
+    <line x1="240" y1="136" x2="281" y2="136"/>
+    <line x1="470" y1="136" x2="511" y2="136"/>
+    <line x1="700" y1="136" x2="741" y2="136"/>
+  </g>
+
+  <!-- Panah umpan balik -->
+  <path d="M 837 172 L 837 218 L 147 218 L 147 172" fill="none" stroke="#c2410c" stroke-width="1.8" stroke-dasharray="6 4" marker-end="url(#arw)"/>
+  <text x="492" y="236" text-anchor="middle" font-size="12" fill="#c2410c" font-style="italic">umpan balik: hasil pengujian &amp; masukan pengguna menjadi penyesuaian fase berikutnya</text>
+
+  <!-- Panah turun ke deretan fase -->
+  <line x1="480" y1="258" x2="480" y2="292" stroke="#33475b" stroke-width="1.8" marker-end="url(#arw)"/>
+
+  <!-- ================= DERETAN INCREMENT ================= -->
+  <text x="480" y="318" text-anchor="middle" font-size="14" font-weight="bold" fill="#33475b">Urutan increment pembangunan sistem</text>
+
+  <!-- 10 kotak fase -->
+  <g font-size="11" fill="#1f2d3d">
+    <!-- Fase 0 -->
+    <rect x="40"  y="336" width="80" height="72" rx="6" fill="#e7f6ee" stroke="#15803d" stroke-width="1.3"/>
+    <text x="80"  y="356" text-anchor="middle" font-weight="bold">Fase 0</text>
+    <text x="80"  y="374" text-anchor="middle">Fondasi</text>
+    <text x="80"  y="389" text-anchor="middle">Proyek</text>
+    <!-- Fase 1 -->
+    <rect x="130" y="336" width="80" height="72" rx="6" fill="#e7f6ee" stroke="#15803d" stroke-width="1.3"/>
+    <text x="170" y="356" text-anchor="middle" font-weight="bold">Fase 1</text>
+    <text x="170" y="374" text-anchor="middle">Autentikasi</text>
+    <text x="170" y="389" text-anchor="middle">&amp; User</text>
+    <!-- Fase 2 -->
+    <rect x="220" y="336" width="80" height="72" rx="6" fill="#e7f6ee" stroke="#15803d" stroke-width="1.3"/>
+    <text x="260" y="356" text-anchor="middle" font-weight="bold">Fase 2</text>
+    <text x="260" y="374" text-anchor="middle">Informasi</text>
+    <text x="260" y="389" text-anchor="middle">Lab</text>
+    <!-- Fase 3 -->
+    <rect x="310" y="336" width="80" height="72" rx="6" fill="#e7f6ee" stroke="#15803d" stroke-width="1.3"/>
+    <text x="350" y="356" text-anchor="middle" font-weight="bold">Fase 3</text>
+    <text x="350" y="374" text-anchor="middle">Ruangan &amp;</text>
+    <text x="350" y="389" text-anchor="middle">Kelas Lab</text>
+    <!-- Fase 4 -->
+    <rect x="400" y="336" width="80" height="72" rx="6" fill="#e7f6ee" stroke="#15803d" stroke-width="1.3"/>
+    <text x="440" y="356" text-anchor="middle" font-weight="bold">Fase 4</text>
+    <text x="440" y="374" text-anchor="middle">Peminjaman</text>
+    <text x="440" y="389" text-anchor="middle">Perangkat</text>
+    <!-- Fase 5 -->
+    <rect x="490" y="336" width="80" height="72" rx="6" fill="#e7f6ee" stroke="#15803d" stroke-width="1.3"/>
+    <text x="530" y="356" text-anchor="middle" font-weight="bold">Fase 5</text>
+    <text x="530" y="374" text-anchor="middle">Pengumpulan</text>
+    <text x="530" y="389" text-anchor="middle">Tugas</text>
+    <!-- Fase 6 -->
+    <rect x="580" y="336" width="80" height="72" rx="6" fill="#e7f6ee" stroke="#15803d" stroke-width="1.3"/>
+    <text x="620" y="356" text-anchor="middle" font-weight="bold">Fase 6</text>
+    <text x="620" y="374" text-anchor="middle">Katalog</text>
+    <text x="620" y="389" text-anchor="middle">Sertifikasi</text>
+    <!-- Fase 7 -->
+    <rect x="670" y="336" width="80" height="72" rx="6" fill="#e7f6ee" stroke="#15803d" stroke-width="1.3"/>
+    <text x="710" y="356" text-anchor="middle" font-weight="bold">Fase 7</text>
+    <text x="710" y="374" text-anchor="middle">Portofolio</text>
+    <text x="710" y="389" text-anchor="middle">Mahasiswa</text>
+    <!-- Fase 8 -->
+    <rect x="760" y="336" width="80" height="72" rx="6" fill="#e7f6ee" stroke="#15803d" stroke-width="1.3"/>
+    <text x="800" y="356" text-anchor="middle" font-weight="bold">Fase 8</text>
+    <text x="800" y="374" text-anchor="middle">Laporan</text>
+    <text x="800" y="389" text-anchor="middle">(Report)</text>
+    <!-- Fase 9 -->
+    <rect x="850" y="336" width="80" height="72" rx="6" fill="#e7f6ee" stroke="#15803d" stroke-width="1.3"/>
+    <text x="890" y="356" text-anchor="middle" font-weight="bold">Fase 9</text>
+    <text x="890" y="374" text-anchor="middle">Notifikasi</text>
+    <text x="890" y="389" text-anchor="middle">In-App</text>
+  </g>
+
+  <!-- Panah kecil antar fase -->
+  <g stroke="#33475b" stroke-width="1.4" marker-end="url(#arw)">
+    <line x1="121" y1="372" x2="128" y2="372"/>
+    <line x1="211" y1="372" x2="218" y2="372"/>
+    <line x1="301" y1="372" x2="308" y2="372"/>
+    <line x1="391" y1="372" x2="398" y2="372"/>
+    <line x1="481" y1="372" x2="488" y2="372"/>
+    <line x1="571" y1="372" x2="578" y2="372"/>
+    <line x1="661" y1="372" x2="668" y2="372"/>
+    <line x1="751" y1="372" x2="758" y2="372"/>
+    <line x1="841" y1="372" x2="848" y2="372"/>
+  </g>
+
+  <!-- Penyempurnaan lintas fase -->
+  <path d="M 890 408 L 890 438 L 485 438" fill="none" stroke="#c2410c" stroke-width="1.6" stroke-dasharray="6 4"/>
+  <path d="M 485 438 L 80 438 L 80 412" fill="none" stroke="#c2410c" stroke-width="1.6" stroke-dasharray="6 4" marker-end="url(#arw)"/>
+  <text x="485" y="456" text-anchor="middle" font-size="12" fill="#c2410c" font-style="italic">penyempurnaan lintas fase: revisi RBAC, pertemuan &amp; deadline kelas, rekap tugas PDF/Excel, pengingat terjadwal</text>
+
+  <!-- Panah ke hasil akhir -->
+  <line x1="480" y1="470" x2="480" y2="500" stroke="#33475b" stroke-width="1.8" marker-end="url(#arw)"/>
+
+  <!-- Hasil akhir -->
+  <rect x="255" y="504" width="450" height="62" rx="10" fill="#1d4ed8" stroke="#173ea5"/>
+  <text x="480" y="530" text-anchor="middle" font-size="15" font-weight="bold" fill="#ffffff">SIM Lab. Riset — sistem final</text>
+  <text x="480" y="551" text-anchor="middle" font-size="12" fill="#dbeafe">setiap fase menghasilkan bagian sistem yang berfungsi dan teruji (increment)</text>
+</svg>
